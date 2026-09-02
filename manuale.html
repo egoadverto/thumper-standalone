@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<!--
+Thumper — Micro Planner
+Copyright (c) 2026 Paolo Cioli
+
+[IT] Questo programma è software libero: puoi ridistribuirlo e modificarlo
+nei termini della GNU Affero General Public License, versione 3, pubblicata
+dalla Free Software Foundation. Vedi il file LICENSE. È distribuito nella
+speranza che sia utile, ma SENZA ALCUNA GARANZIA.
+Per usi che l'AGPL non consente — per esempio incorporarlo in un prodotto
+proprietario o rivenderlo senza rilasciare il sorgente — è disponibile una
+licenza commerciale: vedi LICENZA-COMMERCIALE.md.
+Sviluppato fuori dalle mansioni assegnate e con
+mezzi propri. Strumento di uso generale per uffici, non specifico
+di alcuna azienda.
+
+[EN] This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License, version 3, as
+published by the Free Software Foundation. See the LICENSE file. It is
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY.
+For uses the AGPL does not allow — such as embedding it in a proprietary
+product or reselling it without releasing the source — a commercial licence
+is available: see LICENZA-COMMERCIALE.md.
+Developed outside assigned duties and with personal
+means. A general-purpose tool for offices, not specific to any
+one company.
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thumper — Micro Planner · Manuale utente</title>
+<link rel="stylesheet" href="stile.css">
+<style>
+  /* solo per questa pagina: impaginazione a due colonne con indice fisso.
+     Non tocca stile.css, che resta quello dell'app. */
+  body{background:var(--sfondo)}
+  .manuale{display:flex;align-items:flex-start;gap:0;max-width:1180px;margin:0 auto}
+  .indice{
+    position:sticky;top:0;flex:0 0 220px;padding:20px 14px;max-height:100vh;overflow:auto;
+  }
+  .indice a{display:block;padding:4px 8px;border-radius:6px;color:var(--tenue);text-decoration:none;font-size:12px}
+  .indice a:hover{background:var(--carta);color:var(--inchiostro)}
+  .indice .cap{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue);
+    margin:16px 0 4px;padding:0 8px}
+  .indice .cap:first-child{margin-top:0}
+  .testo{flex:1 1 auto;min-width:0;padding:20px 20px 60px}
+  .testo h2{margin-top:0}
+  .testo .pannello{scroll-margin-top:14px}
+  .testo .pannello+.pannello{margin-top:16px}
+  .testo p{margin:0 0 10px}
+  .testo ul,.testo ol{margin:0 0 10px;padding-left:20px}
+  .testo li{margin-bottom:5px}
+  .testo table{margin:10px 0}
+  kbd{font-family:Consolas,monospace;background:#EFF1F2;border:1px solid var(--linea-forte);
+    border-radius:4px;padding:1px 6px;font-size:11px}
+  .torna-su{position:fixed;right:22px;bottom:22px;z-index:5}
+  [hidden]{display:none !important}
+  @media (max-width:860px){ .indice{display:none} }
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <div class="marchio din"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#152029"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo" id="marchio-sotto"><b>Thumper</b><span>Manuale utente</span></span></div>
+  <div class="spazio"></div>
+  <div class="azioni">
+    <button class="btn" id="btn-lingua" title="Cambia lingua / Change language">IT</button>
+    <a class="btn primario" id="link-torna" href="Thumper.html">← Torna al programma</a>
+  </div>
+</div>
+
+<!-- ================= ITALIANO ================= -->
+<div class="manuale pagina-it">
+  <nav class="indice">
+    <div class="cap">Iniziare</div>
+    <a href="#cose">Cos'è e come si apre</a>
+    <a href="#lettura-modifica">Sola lettura e modifica</a>
+    <a href="#salvare">Salvare il lavoro</a>
+    <div class="cap">Le schede</div>
+    <a href="#pianificazione">Pianificazione</a>
+    <a href="#commesse">Progetti</a>
+    <a href="#backlog">Backlog</a>
+    <a href="#verifiche">Verifiche</a>
+    <a href="#organico">Organico</a>
+    <a href="#impostazioni">Impostazioni</a>
+    <div class="cap">Altro</div>
+    <a href="#domande">Domande frequenti</a>
+  </nav>
+
+  <div class="testo">
+
+    <div class="pannello" id="cose">
+      <h2 class="din">Cos'è e come si apre</h2>
+      <h3>A cosa serve</h3>
+      <p>Thumper aiuta ad organizzare i vari team e le persone che lavorano sui progetti. Aiuta a
+      definire i tempi, i carichi di lavoro e rispettare i tempi di scadenza delle varie
+      milestone.</p>
+      <h3>Come si apre</h3>
+      <p>Non serve installarlo: basta fare doppio clic su
+      <span class="mono">Thumper.html</span>, nella cartella di rete dove si trova il programma.
+      Si apre nel browser come una qualsiasi pagina web, ma gira sul tuo computer e senza una
+      connessione a un server.</p>
+      <p class="nota">Consiglio: crea un collegamento a <span class="mono">Thumper.html</span> sul desktop, così non devi
+      cercarlo ogni volta nella cartella di rete.</p>
+    </div>
+
+    <div class="pannello" id="lettura-modifica">
+      <h2 class="din">Sola lettura e modalità modifica</h2>
+      <h3>Sola lettura</h3>
+      <p>Quando apri il programma ti viene chiesto chi sei, non è un vero e proprio login: il
+      nome serve solo a "firmare" le note e a sapere chi ha salvato per ultimo, per questo non
+      c'è una password da inserire (per il momento). Una volta dentro ricordati che ti trovi in
+      <b>sola lettura</b>: puoi guardare tutto, ma non puoi modificare niente. Il pallino accanto
+      alla scritta in alto a destra ti dice sempre in che modalità sei:</p>
+      <table><tbody>
+        <tr><td style="width:140px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tenue)"></span> Sola lettura</td><td>Nessuna modifica possibile. Va bene per consultare il piano.</td></tr>
+        <tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3D8A5C"></span> Allineato</td><td>Modalità modifica attiva, tutto quello che hai fatto è già salvato.</td></tr>
+        <tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--oggi)"></span> Modifiche non salvate</td><td>Hai cambiato qualcosa: premi <b>Salva</b> prima di chiudere la pagina.</td></tr>
+      </tbody></table>
+      <h3>Attivare la modifica</h3>
+      <p>Per poter effettuare le modifiche basta cliccare su <b>Attiva modifica</b> in alto a
+      destra.</p>
+      <div class="avviso"><b>Attenzione se siete in più a usare il programma.</b>
+      Ad oggi il programma non sa se più persone hanno attivato le modifiche nello stesso
+      momento: se un collega salva prima di te, il tuo salvataggio viene annullato e verrai
+      avvisato. Purtroppo dovrai ricaricare l'ultima versione salvata dal collega e inserire
+      nuovamente le modifiche che avevi fatto. Un consiglio: prima di iniziare una sessione di
+      modifiche, avvisa i colleghi, costa meno che doverle rifare.</div>
+    </div>
+
+    <div class="pannello" id="salvare">
+      <h2 class="din">Salvare il lavoro</h2>
+      <h3>Come funziona</h3>
+      <p>Il piano intero vive in un solo file, <span class="mono">dati.js</span>, nella stessa
+      cartella di <span class="mono">Thumper.html</span>. Cosa succede quando premi <b>Salva</b>
+      dipende dal browser e da cosa hai scelto la prima volta, in uno di questi tre casi:</p>
+      <ol>
+        <li>Il browser scrive direttamente <span class="mono">dati.js</span> al posto giusto: non devi fare nient'altro.</li>
+        <li>Il browser ti chiede la cartella dove si trova <span class="mono">dati.js</span>: la scegli una volta sola, e da lì in poi salva da sé per tutta la sessione, finché non richiudi la pagina.</li>
+        <li>Se il browser non supporta niente di tutto questo, <span class="mono">dati.js</span> viene scaricato nella cartella Download: <b>vai a spostarlo a mano</b> nella cartella di rete, sovrascrivendo il vecchio.</li>
+      </ol>
+      <h3>Backup e recupero</h3>
+      <p>Se ti viene chiesta la cartella di salvataggio (il caso 2), il programma tiene da solo una copia delle
+      <b>ultime 5 versioni precedenti</b> in una sottocartella <span class="mono">backup</span>
+      accanto a <span class="mono">dati.js</span>: un salvagente rapido se un salvataggio va
+      storto o qualcuno cancella qualcosa per sbaglio.</p>
+      <p class="nota">Il pulsante <b>Apri file…</b> serve a caricare un file dati diverso da
+      quello aperto in automatico, per esempio proprio una di quelle versioni di backup, senza
+      dover chiudere e riaprire la pagina.</p>
+    </div>
+
+    <div class="pannello" id="pianificazione">
+      <h2 class="din">Pianificazione</h2>
+      <p>È la scheda principale: un calendario con una riga per persona, raggruppate per gruppo
+      di lavoro, e una colonna per giorno. I blocchi colorati sono le attività assegnate; fai clic
+      sul nome di una persona per aprire la sua scheda.</p>
+      <h3>Leggere il calendario</h3>
+      <div class="legenda" style="flex-wrap:wrap;gap:14px;margin-bottom:10px">
+        <span><i style="background:var(--festivo)"></i>Weekend</span>
+        <span><i style="background:var(--chiuso)"></i>Festivi e chiusure</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#C3EEF0 0 3px,#D5F3F5 3px 6px)"></i>Ferie</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#E953FA 0 3px,#F087FC 3px 6px)"></i>Permessi</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#BD3C63 0 3px,#D17792 3px 6px)"></i>Malattia</span>
+        <span><i style="background:#438A8C"></i>Smart working</span>
+        <span><i style="background:#343A40"></i>Trasferta</span>
+        <span><i style="background:#438A8C;border-style:dashed;border-color:#fff"></i>Deroga</span>
+        <span>✓ Conclusa</span>
+      </div>
+      <p>Il colore di un blocco identifica sempre il progetto, con lo stesso colore ovunque quel
+      progetto compaia nel programma, mentre le righe a tinta unita sotto ai blocchi mostrano
+      ferie, permessi, malattia, smart working o trasferta della persona in quei giorni.</p>
+      <h3>Aggiungere un'attività</h3>
+      <p>In modalità modifica basta un clic su una casella vuota nella riga della persona: si apre
+      l'editor con persona e data di partenza già compilate. In alternativa, usa il pulsante
+      <b>+ Attività</b> in alto. L'editor chiede:</p>
+      <ul>
+        <li><b>Chi e cosa</b>: persona, progetto (cercabile per numero o riferimento, o creabile
+        al volo se non esiste ancora) e una descrizione libera, per distinguere lavori diversi
+        della stessa persona sullo stesso progetto.</li>
+        <li><b>Quando</b>: tre modi diversi di vincolare l'attività nel tempo: <b>Parte il</b>,
+        con una data di inizio fissa da cui il programma calcola da sola la fine in base al monte
+        ore; <b>Consegna entro il</b>, con una scadenza fissa da cui il programma calcola
+        all'indietro quando deve iniziare; oppure <b>Dal … al … (carico ripartito)</b>, dove il
+        monte ore si spalma da solo su tutta la finestra indicata, utile per lavori a bassa
+        priorità distribuiti su un periodo lungo.</li>
+        <li><b>Monte ore</b> e, se serve, <b>ore al giorno in deroga</b>, per lavorare a un ritmo
+        diverso da quello normale della persona solo su questa attività.</li>
+        <li><b>Sviluppo interno</b>: la tipologia di sviluppo interno di questa attività — determina
+        la sua data limite di inizio (le tipologie disponibili si gestiscono in Impostazioni →
+        Lead time). Lasciala non indicata se questo lavoro non ha un tempo di sviluppo interno da
+        contare a parte.</li>
+        <li><b>Stato</b>: spunta "Attività conclusa" quando è finita, con la data di chiusura.</li>
+      </ul>
+      <p>Per <b>spostare</b> un'attività già pianificata trascinala orizzontalmente con il mouse:
+      si muove di un giorno alla volta. Per intervenire nel dettaglio, fai clic sul blocco.</p>
+      <p>Se chiudi un'attività <b>prima</b> del previsto — spunti "Attività conclusa" con una data
+      più vicina della fine pianificata — quella persona si ritrova delle giornate libere. Il
+      programma allora ti chiede se vuoi <b>anticipare le attività successive</b>: ti elenca
+      quelle che vengono dopo, con le loro date e le loro ore, e scegli con una spunta quali far
+      partire prima. Quelle che lasci senza spunta restano dove sono. Le attività che anticipi si
+      spostano tutte della stessa quantità, mantenendo le distanze che avevano tra loro, così
+      l'ordine del lavoro non cambia. Se preferisci non toccare nulla, "Non spostare niente"
+      chiude la finestra senza modifiche.</p>
+      <h3>Assenze e smart working</h3>
+      <p>Il pulsante <b>+ Assenza o smart</b> apre una finestra simile per registrare ferie,
+      permesso (a ore: riduce le ore disponibili di quel giorno), malattia, smart working o
+      trasferta. Lo smart working non riduce le ore disponibili, perché la persona lavora
+      comunque, solo da un altro posto, ma conta sul limite settimanale impostato in
+      Impostazioni. La trasferta invece è un'attività diversa da quella ordinaria, quindi riduce
+      le ore disponibili come un permesso: puoi indicare "Tutta la giornata" oppure solo alcune
+      ore (utile per un sopralluogo di mezza giornata), e non conta su nessun limite settimanale.
+      Se un giorno eccezionale serve superare il limite di smart working, spunta "Deroga
+      eccezionale" e indica il motivo: non intacca il conteggio delle altre settimane.</p>
+      <h3>Filtro progetto e navigazione</h3>
+      <p>Il campo <b>Progetto</b> nella barra degli strumenti filtra il calendario su un solo
+      progetto, utile per vedere subito chi ci sta lavorando. I pulsanti ◀ <b>Oggi</b> ▶ spostano
+      la finestra temporale mostrata; <b>Periodo</b> e <b>Larghezza</b> cambiano quanto tempo
+      vedi e quanto è larga ogni colonna. Il menu <b>Periodo</b> offre un numero di settimane
+      (da 4 a 52) oppure un mese solare: mese in corso, mese precedente, o gli ultimi 3, 6 o 12
+      mesi — utile soprattutto nel Report carico per fotografare un periodo passato per intero.</p>
+    </div>
+
+    <div class="pannello" id="commesse">
+      <h2 class="din">Progetti</h2>
+      <h3>Elenco</h3>
+      <p>Di default mostra solo i progetti attivi o sospesi; il filtro <b>Stato</b> fa vedere
+      anche i chiusi e gli archiviati. Si cerca per numero, riferimento o descrizione, e oltre
+      allo stato si filtra per tipologia, anno e "solo in ritardo"; <b>Ordina per</b> cambia
+      l'ordine tra apertura più recente, numero, riferimento, ore pianificate o percentuale di
+      attività concluse. Per ogni progetto la tabella riassume riferimento, descrizione,
+      tipologia, gruppi coinvolti, stato (con "in corso" e l'eventuale ritardo in evidenza),
+      quante persone ci lavorano, le ore pianificate, quante attività sono concluse, il periodo
+      pianificato e la consegna concordata. Se la ricerca non trova nulla, un pulsante crea al
+      volo un nuovo progetto con quel numero. Il numero però deve essere unico: se provi a
+      salvarne uno già usato da un altro progetto il programma te lo dice e non salva, così non
+      finisci con due schede diverse per la stessa commessa.</p>
+      <p>Il pulsante <b>Scheda</b> apre il riepilogo completo del progetto: ore e attività
+      pianificate persona per persona, le segnalazioni automatiche (per esempio una consegna a
+      rischio, una tipologia senza data di consegna indicata, o un progetto attivo ancora senza
+      attività), la cartella dei documenti collegata e le sue note. <b>Modifica</b> apre invece
+      solo i campi anagrafici del progetto.</p>
+      <p>I progetti chiusi passano in archivio da soli, e spariscono dalle ricerche normali, dopo
+      il periodo impostato in Impostazioni; quando ce n'è almeno uno chiuso in attesa, un
+      pulsante in fondo alla pagina li archivia subito senza aspettare quel periodo.</p>
+      <h3>Tipologie</h3>
+      <p>L'elenco personalizzabile con cui classificare i progetti (per ordine, sviluppo di nuova
+      gamma, manutenzione, e così via): sigla, nome, se richiede una consegna concordata e quanti
+      progetti la usano oggi. È usato nei filtri di Elenco e nelle medie di Verifiche →
+      Tempistiche. Quando la spunta "consegna richiesta" è attiva, i progetti attivi di quella
+      tipologia senza una data di consegna ricevono un avviso sulla propria scheda; senza nessuna
+      tipologia definita, i progetti restano senza classificazione.</p>
+    </div>
+
+    <div class="pannello" id="backlog">
+      <h2 class="din">Backlog</h2>
+      <p>Richieste, idee o attività fuori progetto — tutto ciò che non ha ancora né una commessa
+      né una data. Un Kanban a 3 colonne (<b>Da fare</b>, <b>In corso</b>, <b>Fatto</b>): ogni
+      elemento ha titolo, descrizione facoltativa, priorità (Alta/Media/Bassa) ed eventualmente
+      un responsabile tra le persone in organico. Sposti un elemento da una colonna all'altra
+      col selettore sulla card; "+ Nuovo elemento" ne crea uno, cliccando sul titolo lo apri per
+      modificarlo.</p>
+      <p>Il backlog è separato dal calendario e dai carichi: finché un elemento resta lì non
+      occupa ore di nessuno e non compare da nessun'altra parte. <b>Promuovi</b> apre l'editor di
+      una vera attività, pre-compilato con responsabile e titolo — completa progetto e date come
+      per qualunque altra attività. L'elemento sparisce dal backlog solo quando salvi
+      quell'attività: se annulli, resta lì intatto. Se non hai un progetto vero a cui appoggiare
+      la promozione, puoi crearne uno al volo con "+ Crea un nuovo progetto" dentro lo stesso
+      editor (es. un progetto generico per le attività non legate a una commessa specifica).</p>
+    </div>
+
+    <div class="pannello" id="verifiche">
+      <h2 class="din">Verifiche</h2>
+      <h3>Carichi e capacità</h3>
+      <p>Mostra, nel periodo selezionato nella barra, i vari carichi di lavoro delle persone in
+      carico ai vari team: ore disponibili, ore pianificate e quanti giorni superano la capacità.
+      Sotto, l'elenco dei singoli giorni in sovraccarico, con la causa: assenza, giorno non
+      lavorativo o troppe ore assegnate.</p>
+      <p>Quando un giorno è in sovraccarico, il pulsante <b>Opzioni</b> apre le proposte di
+      riassegnazione per le attività che lo occupano, ordinate per quanti giorni di margine
+      restano prima della loro data limite. Per ogni attività il programma propone fino a due
+      strade: spostarla al primo giorno libero successivo (mai indietro nel tempo), oppure, a
+      parità di date, affidarla a un collega libero con la stessa mansione ed abilitato allo
+      stesso gruppo. Nessuna proposta si applica da sola: serve sempre confermare con un clic su
+      <b>Applica</b>.</p>
+      <h3>Tempistiche</h3>
+      <p>Tre pannelli, tutti indipendenti dal periodo mostrato nel calendario.</p>
+      <ul>
+        <li><b>Media tempistiche</b>: calcolata sui progetti chiusi e archiviati, su tutta la
+        storia disponibile. Per tipologia di progetto e per gruppo mostra ore medie e giorni
+        lavorati, con la mediana (non la media, per non farsi spostare da un caso isolato) e lo
+        scarto; finché le chiusure sono meno di cinque elenca i singoli valori invece di una
+        mediana poco affidabile. Sono ore stimate in pianificazione, non ore realmente
+        consuntivate: qui nessuno registra il tempo davvero speso. La tabella per gruppo serve
+        soprattutto a stimare il monte ore quando arriva un progetto nuovo.</li>
+        <li><b>Attività a rischio</b>: i progetti aperti con una consegna concordata la cui data
+        limite — la più stretta fra le sue attività pianificate, ciascuna calcolata da consegna,
+        sviluppo interno, fornitura esterna e margine di sicurezza — non regge più con la
+        pianificazione attuale, oppure che non sono ancora pianificati affatto (compresi quelli
+        senza nessuna attività, per cui la data limite non è ancora calcolabile).</li>
+        <li><b>Tempistiche non rispettate</b>: le singole attività con un vincolo "Consegna
+        entro il" che, con le ore assegnate oggi, non rientrano più nella scadenza nemmeno
+        anticipando l'inizio al massimo.</li>
+      </ul>
+      <h3>Report carico</h3>
+      <p>Una fotografia stampabile del carico di lavoro, filtrabile per tutto l'ufficio, un gruppo
+      o una singola persona, con tabelle per persona e per settimana. <b>Stampa / PDF</b> permette
+      di stampare su carta o salvare in PDF; <b>Esporta CSV</b> scarica gli stessi dati per poi
+      poterli importare in Excel.</p>
+    </div>
+
+    <div class="pannello" id="organico">
+      <h2 class="din">Organico</h2>
+      <h3>Persone</h3>
+      <p>L'elenco di chi lavora in ufficio, raggruppato per gruppo di lavoro, con qualche numero
+      riassuntivo in alto: persone attive, gruppi, ore al giorno totali disponibili, attività
+      assegnate e sforamenti di smart working in corso. Per ogni persona la tabella mostra i
+      gruppi extra in cui è "anche operativa", l'eventuale mansione, le ore al giorno, il limite
+      personale di smart working (se diverso da quello generale, segnato con ✦) e quante attività
+      ha. Disattivare una persona, invece di eliminarla, la toglie dai pool di lavoro futuri senza
+      perdere lo storico di quello che ha già fatto. Chi è disattivato sparisce dai menu a tendina
+      in cui si sceglie una persona, ma se era già stato scelto da qualche parte — la persona di
+      un'attività, il responsabile di un elemento del backlog — resta lì, segnalato come
+      "(non attivo)": in questo modo, se riapri e salvi quella scheda per tutt'altro motivo, il
+      programma non lo sostituisce di nascosto con un collega. Il pulsante <b>Scheda</b> apre il suo
+      riepilogo: ore disponibili, pianificate ed eccedenti nel periodo mostrato, lo stesso conto
+      per il mese di calendario in corso (indipendente dalla finestra impostata in barra), e
+      l'elenco delle sue attività, aperte e concluse.</p>
+      <h3>Gruppi e mansioni</h3>
+      <p>Due pannelli distinti. <b>Gruppi di lavoro</b> elenca i reparti, con sigla, nome, quante
+      persone e le ore al giorno totali, nell'ordine in cui compaiono ovunque nel programma,
+      comprese le fasce del calendario: le frecce ▲▼ lo cambiano. <b>Mansioni</b> distingue,
+      dentro uno stesso gruppo, chi non fa lo stesso lavoro (per esempio due progettisti elettrici
+      e un software nello stesso gruppo): senza nessuna mansione definita, le riassegnazioni
+      suggerite di Verifiche proporranno solo spostamenti di data, mai di persona.</p>
+      <h3>Ferie e permessi</h3>
+      <p>L'elenco di tutte le giornate registrate dal calendario, non solo ferie e permessi: anche
+      malattia, smart working e trasferta. Per ognuna vedi la persona, il tipo (con le ore per i
+      permessi e per le trasferte a ore, e il segno della deroga quando c'è), le date e quanti
+      giorni copre. Il pulsante <b>+ Nuova giornata</b> è lo stesso editor del pulsante
+      <b>+ Assenza o smart</b> in Pianificazione.</p>
+      <h3>Controlli</h3>
+      <p>Due pannelli. <b>Smart working oltre il limite</b> elenca, settimana per settimana, chi
+      ha superato il tetto di giorni di smart working (quello generale o quello personale, se
+      impostato): le trasferte non contano nel conteggio, e la vista guarda tutte le settimane
+      registrate, non solo quelle nel periodo mostrato nel calendario. <b>Deroghe registrate</b>
+      elenca le giornate segnate come eccezione al limite, col motivo indicato.</p>
+    </div>
+
+    <div class="pannello" id="impostazioni">
+      <h2 class="din">Impostazioni</h2>
+      <h3>Calendario e orario</h3>
+      <ul>
+        <li><b>Coefficiente di efficienza</b>: riduce le ore nominali di ogni giorno per ottenere
+        quanto tempo è davvero disponibile da pianificare (ore moltiplicate per il coefficiente).
+        Lascialo al 100% se non vuoi nessuna riduzione.</li>
+        <li><b>Smart working</b>: il limite generale di giorni a settimana, valido per tutti; le
+        deroghe per singola persona si impostano nella sua scheda, in Organico.</li>
+        <li><b>Giorni lavorativi</b>: per ogni giorno della settimana decidi se è lavorativo e
+        quante ore ha. Sono le ore che valgono per tutti: un orario part-time impostato in
+        Organico resta sul suo, più corto; un orario personale più lungo non supera comunque il
+        tetto del giorno.</li>
+        <li><b>Chiusure aziendali</b>: i periodi in cui l'ufficio è chiuso per tutti, come i
+        ponti, la chiusura estiva o il santo patrono. Si comportano come una festività, ma si
+        aggiungono e tolgono a mano, voce per voce.</li>
+        <li><b>Festività nazionali</b>: un elenco personalizzabile di festività valide per
+        qualunque anno, a data fissa, relative alla Pasqua (come il Lunedì dell'Angelo) oppure
+        "l'N-esimo giorno della settimana di un mese" (come il quarto giovedì di novembre, per
+        gli Stati Uniti). Parte precompilato con le festività italiane. Il pannello <b>Applica
+        calendario nazionale</b>, separato, sostituisce in blocco l'intero elenco con un altro
+        preset (Italia, Germania, USA), mostrando il fuso orario del paese scelto prima di
+        confermare. Più sotto, l'<b>Anteprima</b> mostra a quali date corrispondono le festività
+        per l'anno scelto, e con il suo selettore <b>Calendario</b> puoi anche confrontarle al
+        volo con quelle di un altro paese (utile per i colleghi di una sede estera) senza toccare
+        il calendario attivo.</li>
+      </ul>
+      <h3>Lead time</h3>
+      <p>Il margine di sicurezza si imposta per primo, in giorni lavorativi dell'ufficio: è un
+      cuscinetto in aggiunta ai lead time, che restano invece di calendario. Per esempio, una
+      scadenza di lunedì con 2 giorni di margine anticipa a giovedì, senza che il weekend "mangi"
+      il cuscinetto. Sotto, nello stesso ordine in cui compaiono a schermo, ci sono i due elenchi di
+      lead time veri e propri: <b>Fornitura esterna</b>, le forniture critiche con il loro tempo
+      di consegna (il calcolo usa sempre la voce più lunga, le altre servono solo a ricordare da
+      dove esce il numero), e <b>Sviluppo interno</b>, una riga per ogni tipologia di sviluppo
+      interno, poi assegnata alla singola attività nel suo editor. In entrambi i casi il tempo si
+      inserisce in giorni o settimane, ma resta sempre tempo di calendario, non lavorativo: un
+      fornitore che promette 10 settimane intende 10 settimane vere, non 10 settimane d'ufficio.
+      Ogni voce di Sviluppo interno ha anche la spunta <b>Fornitura est.</b>, attiva di default:
+      se una lavorazione non dipende da fornitori esterni (es. una modifica solo interna),
+      disattivala e la scadenza di quella tipologia si calcola sul solo tempo di sviluppo interno,
+      senza sommare la fornitura esterna.</p>
+      <h3>Protezione</h3>
+      <p>Un codice richiesto prima di azioni distruttive (eliminare persone, progetti, gruppi,
+      svuotare tutto). Serve contro i danni involontari di un clic distratto, non contro
+      un'azione volontaria: quindi non usare una password che usi anche altrove.</p>
+      <h3>Archivio e dati</h3>
+      <p>Le cartelle archivio collegate (aggiungerne di nuove, riprendere un collegamento scaduto —
+      tutte insieme o una alla volta — e rimuovere quelle non più necessarie), dopo quanti giorni un
+      progetto chiuso passa in archivio, esportazione CSV, download manuale di
+      <span class="mono">dati.js</span> e la funzione "Svuota tutto".</p>
+      <h3>Licenza</h3>
+      <p>I termini di utilizzo del programma.</p>
+    </div>
+
+    <div class="pannello" id="domande">
+      <h2 class="din">Domande frequenti</h2>
+      <h3>Ho dimenticato il codice di protezione, e adesso?</h3>
+      <p>Dato che non è una sicurezza vera, chiunque abbia accesso al file
+      <span class="mono">dati.js</span> può aprirlo con un editor di testo, cercare
+      <span class="mono">"codice"</span> dentro <span class="mono">config</span> e impostarlo a
+      <span class="mono">null</span>. Dopo aver ricaricato la pagina la protezione risulta
+      disattivata e se ne può impostare una nuova da Impostazioni.</p>
+      <h3>Due persone hanno modificato il piano nello stesso momento: cosa succede?</h3>
+      <p>Il programma rilegge il file un istante prima di scrivere: se da quando hai aperto la
+      pagina (o dal tuo ultimo salvataggio) qualcun altro ha già salvato, il tuo salvataggio viene
+      annullato con un avviso invece di sovrascrivere il suo lavoro. Non scatta per ogni
+      salvataggio altrui in assoluto, solo per uno più recente del tuo. L'avviso ti dice chi e
+      quando, e ti offre un pulsante per ricaricare l'ultima
+      versione: dovrai poi rifare a mano le modifiche che avevi appena fatto, perché il piano è
+      un unico blocco e il programma non può unire le due versioni da solo. Per le note dei progetti (nella
+      cartella collegata) funziona allo stesso principio ma con un esito più comodo, perché lì si
+      può solo aggiungere: puoi semplicemente riprovare, senza perdere nulla. Resta comunque
+      meglio avvisarsi a voce quando si fanno modifiche importanti, per evitare il fastidio di
+      doverle rifare.</p>
+      <h3>Posso usare il programma da telefono o tablet?</h3>
+      <p>È pensato per un computer, con il mouse per trascinare le attività. Su schermi piccoli
+      resta leggibile, ma scomodo da modificare.</p>
+      <h3>Il colore di un progetto cambia da solo?</h3>
+      <p>Se non ne assegni uno esplicitamente nella scheda del progetto, il programma ne sceglie
+      uno stabile in base al numero, così due aperture diverse del programma mostrano sempre lo
+      stesso colore per lo stesso progetto, senza doverlo scegliere a mano.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= ENGLISH ================= -->
+<div class="manuale pagina-en" hidden>
+  <nav class="indice">
+    <div class="cap">Getting started</div>
+    <a href="#what-en">What it is and how to open it</a>
+    <a href="#read-edit-en">Read only and edit mode</a>
+    <a href="#saving-en">Saving your work</a>
+    <div class="cap">The tabs</div>
+    <a href="#planning-en">Planning</a>
+    <a href="#jobs-en">Projects</a>
+    <a href="#backlog-en">Backlog</a>
+    <a href="#checks-en">Checks</a>
+    <a href="#staff-en">Staff</a>
+    <a href="#settings-en">Settings</a>
+    <div class="cap">More</div>
+    <a href="#faq-en">Frequently asked questions</a>
+  </nav>
+
+  <div class="testo">
+
+    <div class="pannello" id="what-en">
+      <h2 class="din">What it is and how to open it</h2>
+      <h3>What it's for</h3>
+      <p>Thumper helps organise the various teams and the people working on projects. It helps
+      define timelines, workloads and meet the deadlines of the various milestones.</p>
+      <h3>How to open it</h3>
+      <p>Nothing to install: just double-click <span class="mono">Thumper.html</span>, in the
+      network folder where the program lives. It opens in the browser like any web page, but
+      runs on your computer, with no server connection needed.</p>
+      <p class="nota">Tip: create a shortcut to <span class="mono">Thumper.html</span> on the desktop, so you don't have to
+      hunt for it in the network folder every time.</p>
+    </div>
+
+    <div class="pannello" id="read-edit-en">
+      <h2 class="din">Read only and edit mode</h2>
+      <h3>Read only</h3>
+      <p>When you open the program you're asked who you are, it isn't a real login: the name is
+      only used to "sign" notes and to know who saved last, which is why there's no password to
+      enter (for now). Once inside, remember you're always in <b>read only</b> mode: you can look
+      at everything, but you can't change anything. The dot next to the text in the top right
+      always tells you which mode you're in:</p>
+      <table><tbody>
+        <tr><td style="width:140px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tenue)"></span> Read only</td><td>No changes possible. Fine for just consulting the plan.</td></tr>
+        <tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3D8A5C"></span> Saved</td><td>Edit mode is on, and everything you've done is already saved.</td></tr>
+        <tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--oggi)"></span> Unsaved changes</td><td>You've changed something: press <b>Save</b> before closing the page.</td></tr>
+      </tbody></table>
+      <h3>Turning on editing</h3>
+      <p>To make changes, just click <b>Enable editing</b> in the top right.</p>
+      <div class="avviso"><b>A note if more than one of you uses the program.</b>
+      Today the program has no way of knowing if several people have turned on editing at the
+      same time: if a colleague saves before you do, your save is cancelled and you'll be
+      warned. Unfortunately you'll then have to reload the version your colleague saved and
+      re-enter the changes you'd made. One tip: before starting an editing session, give your
+      colleagues a heads-up, it's cheaper than redoing them.</div>
+    </div>
+
+    <div class="pannello" id="saving-en">
+      <h2 class="din">Saving your work</h2>
+      <h3>How it works</h3>
+      <p>The whole plan lives in a single file, <span class="mono">dati.js</span>, in the same
+      folder as <span class="mono">Thumper.html</span>. What happens when you press <b>Save</b>
+      depends on the browser and what you chose the first time, in one of these three cases:</p>
+      <ol>
+        <li>The browser writes <span class="mono">dati.js</span> directly in the right place: nothing else to do.</li>
+        <li>The browser asks for the folder where <span class="mono">dati.js</span> lives: pick it once, and
+        from then on it saves there by itself for the rest of the session, until you close the page.</li>
+        <li>If the browser supports neither, <span class="mono">dati.js</span> is downloaded to the Downloads
+        folder: <b>you then need to move it by hand</b> into the network folder, overwriting the old one.</li>
+      </ol>
+      <h3>Backup and recovery</h3>
+      <p>If you're asked for the save folder (case 2), the program automatically keeps a copy of
+      the <b>last 5 previous versions</b> in a <span class="mono">backup</span> subfolder next to
+      <span class="mono">dati.js</span>: a quick fix if a save goes wrong or someone deletes something by mistake.</p>
+      <p class="nota">The <b>Open file…</b> button lets you load a data file other than the one opened
+      automatically, for instance one of those backup versions, without closing and reopening the page.</p>
+    </div>
+
+    <div class="pannello" id="planning-en">
+      <h2 class="din">Planning</h2>
+      <p>It's the main tab: a calendar with one row per person, grouped by work group, and one
+      column per day. The coloured blocks are the assigned activities; click a person's name to
+      open their record.</p>
+      <h3>Reading the calendar</h3>
+      <div class="legenda" style="flex-wrap:wrap;gap:14px;margin-bottom:10px">
+        <span><i style="background:var(--festivo)"></i>Weekend</span>
+        <span><i style="background:var(--chiuso)"></i>Holidays and closures</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#C3EEF0 0 3px,#D5F3F5 3px 6px)"></i>Annual leave</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#E953FA 0 3px,#F087FC 3px 6px)"></i>Time off</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#BD3C63 0 3px,#D17792 3px 6px)"></i>Sick leave</span>
+        <span><i style="background:#438A8C"></i>Remote work</span>
+        <span><i style="background:#343A40"></i>Business trip</span>
+        <span><i style="background:#438A8C;border-style:dashed;border-color:#fff"></i>Exception</span>
+        <span>✓ Completed</span>
+      </div>
+      <p>A block's colour always identifies the project, the same colour everywhere that project
+      appears in the program, while the solid-colour rows under the blocks show annual leave,
+      time off, sick leave, remote work or a business trip for that person on those days.</p>
+      <h3>Adding an activity</h3>
+      <p>In edit mode, just click an empty cell in the person's row: the editor opens with the
+      person and start date already filled in. Alternatively, use the <b>+ Activity</b> button
+      at the top. The editor asks for:</p>
+      <ul>
+        <li><b>Who and what</b>: person, project (searchable by number or reference, or created
+        on the fly if it doesn't exist yet) and a free-text description, to tell apart different
+        pieces of work by the same person on the same project.</li>
+        <li><b>When</b>: three different ways to constrain the activity in time: <b>Starts on</b>,
+        with a fixed start date from which the program works out the end by itself based on the
+        total hours; <b>Due by</b>, with a fixed deadline from which the program works backwards
+        to when it needs to start; or <b>From … to … (spread load)</b>, where the total hours
+        are automatically spread across the whole window given, useful for low-priority work
+        spread over a long period.</li>
+        <li><b>Total hours</b> and, if needed, <b>hours per day — override</b>, to work at a
+        different pace than the person's usual one, only for this activity.</li>
+        <li><b>Internal development</b>: this activity's internal-development type — it determines
+        its own deadline for starting (the available types are managed in Settings → Lead time).
+        Leave it unset if this work has no internal-development time to count separately.</li>
+        <li><b>Status</b>: tick "Activity completed" once it's done, with the completion date.</li>
+      </ul>
+      <p>To <b>move</b> an already-planned activity, drag it horizontally with the mouse: it
+      moves one day at a time. To edit its details, click the block.</p>
+      <p>If you close an activity <b>earlier</b> than planned — you tick "Activity completed" with
+      a date sooner than the planned end — that person ends up with free days. The program then
+      asks whether you want to <b>bring the next activities forward</b>: it lists the ones that
+      come after, with their dates and hours, and you tick which ones should start sooner. The
+      ones you leave unticked stay where they are. The activities you do bring forward all move by
+      the same amount, keeping the gaps they had between them, so the order of the work doesn't
+      change. If you'd rather not touch anything, "Don't move anything" closes the window with no
+      changes.</p>
+      <h3>Leave and remote work</h3>
+      <p>The <b>+ Leave or remote</b> button opens a similar window to record annual leave, time
+      off (in hours: reduces the available hours for that day), sick leave, remote work or a
+      business trip. Remote work doesn't reduce available hours, because the person is still
+      working, just from a different place, but it counts towards the weekly limit set in
+      Settings. A business trip, on the other hand, is a different activity from the ordinary
+      one, so it reduces available hours like time off: you can mark "All day" or just some
+      hours (useful for a half-day site visit), and it doesn't count towards any weekly limit.
+      If an exceptional day needs to go over the remote-work limit, tick "One-off exception" and
+      give a reason: it doesn't affect the count for other weeks.</p>
+      <h3>Project filter and navigation</h3>
+      <p>The <b>Project</b> field in the toolbar filters the calendar down to a single project,
+      useful to see straight away who's working on it. The ◀ <b>Today</b> ▶ buttons move the
+      time window shown; <b>Period</b> and <b>Width</b> change how much time you see and how wide
+      each column is. The <b>Period</b> menu offers a number of weeks (4 to 52) or a calendar
+      month: current month, previous month, or the last 3, 6, or 12 months — handy in the
+      Load report to capture a whole past period at once.</p>
+    </div>
+
+    <div class="pannello" id="jobs-en">
+      <h2 class="din">Projects</h2>
+      <h3>List</h3>
+      <p>By default it shows only active or suspended projects; the <b>Status</b> filter also
+      shows closed and archived ones. You search by number, reference or description, and
+      besides status you can filter by type, year and "delayed only"; <b>Sort by</b> changes the
+      order between most recently opened, number, reference, planned hours or percentage of
+      completed activities. For each project the table summarises reference, description, type,
+      groups involved, status (with "in progress" and any delay highlighted), how many people
+      work on it, planned hours, how many activities are completed, the planned period and the
+      agreed delivery date. If the search finds nothing, a button creates a new project with that
+      number on the fly. The number has to be unique, though: if you try to save one that another
+      project already uses, the program tells you and doesn't save, so you don't end up with two
+      separate records for the same job.</p>
+      <p>The <b>Record</b> button opens the project's full summary: hours and activities planned
+      person by person, automatic warnings (for example a delivery at risk, a type with no
+      delivery date given, or an active project still with no activity), the connected documents
+      folder and its notes. <b>Edit</b> instead opens only the project's own fields.</p>
+      <p>Closed projects move to the archive by themselves, and drop out of normal searches,
+      after the period set in Settings; when there's at least one closed project waiting, a
+      button at the bottom of the page archives it right away without waiting for that period.</p>
+      <h3>Types</h3>
+      <p>The customisable list used to classify projects (made to order, new range development,
+      maintenance, and so on): code, name, whether it requires an agreed delivery date, and how
+      many projects use it today. It's used in the List filters and in the Checks → Timing
+      averages. When the "delivery required" box is checked, active projects of that type with
+      no delivery date get a warning on their record; with no type defined at all, projects stay
+      unclassified.</p>
+    </div>
+
+    <div class="pannello" id="backlog-en">
+      <h2 class="din">Backlog</h2>
+      <p>Requests, ideas, or work outside any project — anything that doesn't have a project or a
+      date yet. A 3-column Kanban board (<b>To do</b>, <b>In progress</b>, <b>Done</b>): each item
+      has a title, an optional description, a priority (High/Medium/Low), and optionally an owner
+      from among the people on staff. Move an item between columns with the select on its card;
+      "+ New item" creates one, clicking its title opens it for editing.</p>
+      <p>The backlog is separate from the calendar and the workload: as long as an item sits
+      there, it takes up nobody's hours and shows up nowhere else. <b>Promote</b> opens the editor
+      for a real activity, pre-filled with the owner and title — fill in the project and dates
+      like for any other activity. The item leaves the backlog only once you save that activity:
+      if you cancel, it stays put. If you don't have a real project to attach the promotion to,
+      you can create one on the fly with "+ Create a new project" inside the same editor (e.g. a
+      generic project for work that isn't tied to a specific job).</p>
+    </div>
+
+    <div class="pannello" id="checks-en">
+      <h2 class="din">Checks</h2>
+      <h3>Workload and capacity</h3>
+      <p>Shows, for the period selected in the bar, the various workloads of the people in
+      charge of the various teams: available hours, planned hours and how many days go over
+      capacity. Below, the list of individual overloaded days, with the cause: absence,
+      non-working day, or too many hours assigned.</p>
+      <p>When a day is overloaded, the <b>Options</b> button opens reassignment proposals for the
+      activities occupying it, ordered by how many days of margin remain before their deadline.
+      For each activity the program proposes up to two routes: move it to the next free day
+      (never backward in time), or, on the same dates, hand it to a free colleague with the same
+      role and enabled for the same group. No proposal applies itself: it always takes an
+      explicit click on <b>Apply</b>.</p>
+      <h3>Timing</h3>
+      <p>Three panels, all independent of the period shown on the calendar.</p>
+      <ul>
+        <li><b>Timing averages</b>: calculated on closed and archived projects, over all
+        available history. By project type and by group it shows average hours and days worked,
+        with the median (not the average, so it isn't skewed by one outlier) and the spread;
+        while closures are fewer than five it lists the individual values instead of an
+        unreliable median. These are hours estimated at planning time, not hours actually
+        logged: nobody records time really spent here. The by-group table is mainly there to
+        estimate the hours budget when a new project comes in.</li>
+        <li><b>At-risk activities</b>: open projects with an agreed delivery date whose deadline —
+        the tightest among their planned activities, each calculated from delivery, internal
+        development, external supply and safety margin — no longer holds with the current plan,
+        or that aren't planned at all yet (including those with no activity at all, for which the
+        deadline can't be calculated yet).</li>
+        <li><b>Missed timing</b>: individual activities with a "Due by" constraint that, with
+        the hours assigned today, no longer fit the deadline even by bringing the start forward
+        as much as possible.</li>
+      </ul>
+      <h3>Load report</h3>
+      <p>A printable snapshot of the workload, filterable by the whole office, a group or a
+      single person, with tables by person and by week. <b>Print / PDF</b> lets you print on
+      paper or save as PDF; <b>Export CSV</b> downloads the same data so you can later import it
+      into Excel.</p>
+    </div>
+
+    <div class="pannello" id="staff-en">
+      <h2 class="din">Staff</h2>
+      <h3>People</h3>
+      <p>The list of who works in the office, grouped by work group, with a few summary numbers
+      at the top: active people, groups, total available hours per day, assigned activities and
+      remote-work limits currently exceeded. For each person the table shows the extra groups
+      they're "also active in", any role, hours per day, their personal remote-work limit (if
+      different from the general one, marked with ✦) and how many activities they have.
+      Deactivating a person, instead of deleting them, removes them from future work pools
+      without losing the history of what they've already done. Someone deactivated disappears from
+      the drop-down menus where you pick a person, but if they had already been picked somewhere —
+      the person on an activity, the owner of a backlog item — they stay there, marked
+      "(Inactive)": that way, if you reopen and save that record for some unrelated reason, the
+      program doesn't quietly swap them for a colleague. The <b>Record</b> button opens
+      their summary: available, planned and exceeding hours in the period shown, the same count
+      for the current calendar month (independent of the window set in the toolbar), and the list
+      of their activities, open and completed.</p>
+      <h3>Groups and roles</h3>
+      <p>Two separate panels. <b>Work groups</b> lists the departments, with code, name, how many
+      people and total hours per day, in the order they appear everywhere in the program,
+      including the calendar's rows: the ▲▼ arrows change it. <b>Roles</b> distinguishes, within
+      the same group, who does different work (for example two electrical designers and one
+      software designer in the same group): with no role defined, the suggested reassignments in
+      Checks will only propose date changes, never a change of person.</p>
+      <h3>Leave and time off</h3>
+      <p>The list of every day recorded from the calendar, not just leave and time off: also
+      sick leave, remote work and business trips. For each one you see the person, the type
+      (with hours for time off and for hourly business trips, and the exception mark when there
+      is one), the dates and how many days it covers. The <b>+ New entry</b> button is the same
+      editor as the <b>+ Leave or remote</b> button in Planning.</p>
+      <h3>Checks</h3>
+      <p>Two panels. <b>Remote work over the limit</b> lists, week by week, who has gone over the
+      cap of remote-working days (the general one or the personal one, if set): business trips
+      don't count towards it, and the view looks at all recorded weeks, not just the ones in the
+      period shown on the calendar. <b>Recorded exceptions</b> lists the days marked as an
+      exception to the limit, with the reason given.</p>
+    </div>
+
+    <div class="pannello" id="settings-en">
+      <h2 class="din">Settings</h2>
+      <h3>Calendar and working time</h3>
+      <ul>
+        <li><b>Efficiency coefficient</b>: reduces the nominal hours of each day to get how much
+        time is really available to plan (hours multiplied by the coefficient). Leave it at 100%
+        if you don't want any reduction.</li>
+        <li><b>Remote working</b>: the general limit of days per week, valid for everyone;
+        personal exceptions are set on each person's own record, in Staff.</li>
+        <li><b>Working days</b>: for each day of the week you decide whether it's a working day
+        and how many hours it has. These are the hours that apply to everyone: a part-time
+        schedule set in Staff stays on its own, shorter, hours; a longer personal schedule never
+        exceeds the day's cap.</li>
+        <li><b>Company closures</b>: periods when the office is closed for everyone, such as
+        bridge days, the summer break or the patron saint's day. They behave like a holiday, but
+        are added and removed by hand, one at a time.</li>
+        <li><b>National holidays</b>: a customisable list of holidays valid for any year, on a
+        fixed date, relative to Easter (like Easter Monday) or "the Nth day of the week of a
+        month" (like the fourth Thursday of November, for the United States). It starts
+        pre-filled with Italian holidays. The separate <b>Apply national calendar</b> panel
+        replaces the whole list in bulk with another preset (Italy, Germany, USA), showing the
+        chosen country's time zone before confirming. Further down, the <b>Preview</b> shows
+        which dates the holidays fall on for the chosen year, and with its <b>Calendar</b>
+        selector you can also compare them on the fly with another country's (useful for
+        colleagues at a foreign site) without touching the active calendar.</li>
+      </ul>
+      <h3>Lead time</h3>
+      <p>The safety margin is set first, in the office's own working days: it's a buffer on top
+      of the lead times, which stay calendar time instead. For example, a Monday deadline with a
+      2-day margin moves to Thursday, so the weekend never eats into the buffer. Below, in the
+      same order they appear on screen, are the two lists of actual lead times:
+      <b>External supply</b>, the critical supplies with their delivery time (the calculation
+      always uses the longest entry, the others are just there to remind you where the number
+      comes from), and <b>Internal development</b>, one row for each internal-development type,
+      later assigned to the individual activity in its editor. In both cases the time is entered
+      in days or weeks, but always stays calendar time, not working time: a supplier promising
+      10 weeks means 10 real weeks, not 10 office weeks.
+      Every Internal development row also has the <b>External supply</b> tick, on by default:
+      if a job doesn't depend on external suppliers (e.g. a purely internal change), turn it off
+      and that type's deadline is calculated from internal development time alone, without adding
+      external supply.</p>
+      <h3>Protection</h3>
+      <p>A code required before destructive actions (deleting people, projects, groups, clearing
+      everything). It guards against the damage of an accidental click, not against a deliberate
+      action: so don't use a password you use anywhere else.</p>
+      <h3>Archive and data</h3>
+      <p>The linked archive folders (add new ones, resume a lapsed link — all at once or one at a
+      time — and remove those no longer needed), how many days after closing a project it moves to
+      the archive, CSV export, manually downloading <span class="mono">dati.js</span> and the
+      "Clear everything" function.</p>
+      <h3>License</h3>
+      <p>The program's terms of use.</p>
+    </div>
+
+    <div class="pannello" id="faq-en">
+      <h2 class="din">Frequently asked questions</h2>
+      <h3>I forgot the protection code, now what?</h3>
+      <p>Since it isn't real security, anyone with access to the <span class="mono">dati.js</span>
+      file can open it in a text editor, find <span class="mono">"codice"</span> inside
+      <span class="mono">config</span> and set it to <span class="mono">null</span>. After
+      reloading the page, protection shows as disabled and a new one can be set from Settings.</p>
+      <h3>Two people edited the plan at the same time: what happens?</h3>
+      <p>The program re-reads the file an instant before writing: if since you opened the page
+      (or since your last save) someone else has already saved, your save is cancelled with a
+      warning instead of overwriting their work. It doesn't trigger for just any save by someone
+      else, only for one more recent than yours. The warning tells you who and when, and offers
+      a button to reload the latest version: you'll then need to redo by hand the changes you'd
+      just made, because the plan is a single block and the program can't merge the two versions
+      on its own. For project notes (in the connected folder) it works on the same principle but
+      with a more convenient outcome, because there you can only add: you can simply try again,
+      without losing anything. It's still better to give each other a heads-up when making
+      important changes, though, to avoid the hassle of redoing them.</p>
+      <h3>Can I use the program from a phone or tablet?</h3>
+      <p>It's designed for a computer, with a mouse to drag activities around. On small screens
+      it stays readable, but awkward to edit.</p>
+      <h3>Does a project's colour change by itself?</h3>
+      <p>If you don't explicitly assign one on the project's record, the program picks a stable
+      one based on the number, so two different sessions of the program always show the same
+      colour for the same project, without having to choose it by hand.</p>
+    </div>
+
+  </div>
+</div>
+
+<a class="btn primario torna-su" href="#">↑ <span id="torna-su-testo">Inizio pagina</span></a>
+
+<script>
+"use strict";
+function impostaLingua(l){
+  document.body.dataset.lingua = l;
+  document.documentElement.lang = l;
+  document.querySelector(".pagina-it").hidden = (l !== "it");
+  document.querySelector(".pagina-en").hidden = (l !== "en");
+  document.getElementById("btn-lingua").textContent = (l === "it") ? "IT" : "EN";
+  document.getElementById("link-torna").textContent = (l === "it") ? "← Torna al programma" : "← Back to the app";
+  document.getElementById("torna-su-testo").textContent = (l === "it") ? "Inizio pagina" : "Back to top";
+  document.querySelector("#marchio-sotto span").textContent = (l === "it") ? "Manuale utente" : "User manual";
+  try{ localStorage.setItem("planer-manuale-lingua", l); }catch(err){}
+}
+document.getElementById("btn-lingua").addEventListener("click", function(){
+  impostaLingua(document.body.dataset.lingua === "it" ? "en" : "it");
+});
+// stessa euristica di internazionalizzazione.js: hash della pagina, poi lingua salvata, poi lingua del browser
+var scelta = (location.hash.indexOf("en") >= 0) ? "en" : (location.hash.indexOf("it") >= 0) ? "it" : null;
+if(!scelta){ try{ scelta = localStorage.getItem("planer-manuale-lingua"); }catch(err){} }
+if(!scelta){ scelta = ((navigator.language || "it").toLowerCase().indexOf("it") === 0) ? "it" : "en"; }
+impostaLingua(scelta);
+</script>
+
+</body>
+</html>

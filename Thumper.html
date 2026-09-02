@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!--
+Thumper — Micro Planner
+Copyright (c) 2026 Paolo Cioli
+
+[IT] Questo programma è software libero: puoi ridistribuirlo e modificarlo
+nei termini della GNU Affero General Public License, versione 3, pubblicata
+dalla Free Software Foundation. Vedi il file LICENSE. È distribuito nella
+speranza che sia utile, ma SENZA ALCUNA GARANZIA.
+Per usi che l'AGPL non consente — per esempio incorporarlo in un prodotto
+proprietario o rivenderlo senza rilasciare il sorgente — è disponibile una
+licenza commerciale: vedi LICENZA-COMMERCIALE.md.
+Sviluppato fuori dalle mansioni assegnate e con
+mezzi propri. Strumento di uso generale per uffici, non specifico
+di alcuna azienda.
+
+[EN] This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License, version 3, as
+published by the Free Software Foundation. See the LICENSE file. It is
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY.
+For uses the AGPL does not allow — such as embedding it in a proprietary
+product or reselling it without releasing the source — a commercial licence
+is available: see LICENZA-COMMERCIALE.md.
+Developed outside assigned duties and with personal
+means. A general-purpose tool for offices, not specific to any
+one company.
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thumper — Micro Planner</title>
+<script src="dizionario.js"></script>
+<script src="dati.js" onerror="window.PLANNER_DATA_MANCANTE=true"></script>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div id="app">
+  <div class="barra">
+    <div class="barra-sx">
+      <div class="marchio din"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#152029"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo"><b>Thumper</b><span>Micro Planner</span></span></div>
+      <div class="schede" role="tablist" id="schede">
+        <button class="scheda din" role="tab" data-vista="piano" aria-selected="true">Pianificazione</button>
+        <button class="scheda din" role="tab" data-vista="commesse" aria-selected="false">Progetti</button>
+        <button class="scheda din" role="tab" data-vista="backlog" aria-selected="false">Backlog</button>
+        <button class="scheda din" role="tab" data-vista="carichi" aria-selected="false">Verifiche</button>
+        <button class="scheda din" role="tab" data-vista="anagrafiche" aria-selected="false">Organico</button>
+        <button class="scheda din" role="tab" data-vista="impostazioni" aria-selected="false">Impostazioni</button>
+      </div>
+    </div>
+    <div class="azioni">
+      <div class="stato"><span class="pallino lettura" id="pallino"></span><span id="testo-stato">Sola lettura</span></div>
+      <button class="btn" id="btn-modifica">Attiva modifica</button>
+      <button class="btn primario" id="btn-salva" disabled>Salva</button>
+      <div class="menu-altro" id="menu-altro">
+        <button class="btn" id="btn-altro" aria-haspopup="true" aria-expanded="false" aria-label="Altre azioni" title="Altre azioni">⋯</button>
+        <div class="menu-lista" id="menu-lista" hidden role="menu">
+          <button class="btn" id="btn-apri" role="menuitem">Apri file…</button>
+          <button class="btn" id="btn-cartelle" role="menuitem" title="Collega la cartella che contiene tutti i progetti">Collega cartelle</button>
+          <button class="btn" id="btn-utente" role="menuitem" title="Fatti riconoscere">Chi sei?</button>
+          <a class="btn" href="manuale.html" target="_blank" rel="noopener" role="menuitem"
+             onclick="window.open('manuale.html','_blank');return false;"
+             title="Apre il manuale utente in una nuova scheda">Manuale</a>
+          <div class="voce-lingua" role="menuitem">
+            <span class="voce-lingua-eti">Lingua</span>
+            <div class="lingua-scelta" id="lingua-scelta">
+              <button class="lingua-opt" id="lingua-it" data-l="it">IT</button>
+              <button class="lingua-opt" id="lingua-en" data-l="en">EN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="posto-strumenti"></div>
+  <div class="strumenti" id="strumenti">
+    <button class="btn piccolo" id="nav-indietro">◀</button>
+    <button class="btn piccolo" id="nav-oggi">Oggi</button>
+    <button class="btn piccolo" id="nav-avanti">▶</button>
+    <div class="divisore"></div>
+    <label for="da">Dal</label>
+    <input type="date" id="da">
+    <label for="settimane">Periodo</label>
+    <select id="settimane">
+      <option value="4">4 settimane</option><option value="8">8 settimane</option>
+      <option value="12" selected>12 settimane</option><option value="20">20 settimane</option>
+      <option value="30">30 settimane</option><option value="52">52 settimane</option>
+      <option value="mese-corrente">Mese in corso</option>
+      <option value="mese-precedente">Mese precedente</option>
+      <option value="3m">Ultimi 3 mesi</option>
+      <option value="6m">Ultimi 6 mesi</option>
+      <option value="12m">Ultimi 12 mesi</option>
+    </select>
+    <span class="gruppo-strumenti solo-piano">
+      <label for="zoom">Larghezza</label>
+      <select id="zoom">
+        <option value="22">Compatta</option><option value="34" selected>Normale</option><option value="48">Larga</option>
+      </select>
+      <div class="divisore"></div>
+      <label for="filtro-commessa">Progetto</label>
+      <div class="cerca" style="width:210px"><input type="text" id="filtro-commessa" placeholder="Tutti i progetti" autocomplete="off"></div>
+    </span>
+    <div class="spazio"></div>
+    <span class="gruppo-strumenti solo-piano">
+      <button class="btn piccolo" id="btn-nuova-att">+ Attività</button>
+      <button class="btn piccolo" id="btn-nuova-assenza">+ Assenza o smart</button>
+      <label class="spunta" style="text-transform:none;letter-spacing:0;color:var(--inchiostro)">
+        <input type="checkbox" id="nascondi-fatte"> Nascondi concluse</label>
+      <div class="divisore"></div>
+      <div class="legenda">
+        <span><i style="background:var(--festivo)"></i>Weekend</span>
+        <span><i style="background:var(--chiuso)"></i>Festivi e chiusure</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#C3EEF0 0 3px,#D5F3F5 3px 6px)"></i>Ferie</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#E953FA 0 3px,#F087FC 3px 6px)"></i>Permessi</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#BD3C63 0 3px,#D17792 3px 6px)"></i>Malattia</span>
+        <span><i style="background:#438A8C"></i>Smart working</span>
+        <span><i style="background:#343A40"></i>Trasferta</span>
+        <span><i style="background:#438A8C;border-style:dashed;border-color:#fff"></i>Deroga</span>
+        <span>✓ Conclusa</span>
+      </div>
+    </span>
+  </div>
+
+  <div class="pagina" id="pagina"></div>
+</div>
+
+<script src="js/internazionalizzazione.js"></script>
+<script src="js/dati-demo.js"></script>
+<script src="js/utilita-date.js"></script>
+<script src="js/stato.js"></script>
+<script src="js/calcoli.js"></script>
+<script src="js/persistenza.js"></script>
+<script src="js/render-piano.js"></script>
+<script src="js/render-carichi.js"></script>
+<script src="js/render-persone.js"></script>
+<script src="js/render-commesse.js"></script>
+<script src="js/render-backlog.js"></script>
+<script src="js/report.js"></script>
+<script src="js/stato-sessione-cartelle.js"></script>
+<script src="js/identificazione-utente.js"></script>
+<script src="js/gestore-documenti.js"></script>
+<script src="js/scheda-commessa.js"></script>
+<script src="js/impostazioni.js"></script>
+<script src="js/finestre-modali.js"></script>
+<script src="js/csv.js"></script>
+<script src="js/avvio.js"></script>
+</body>
+</html>
