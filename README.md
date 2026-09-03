@@ -7,9 +7,19 @@
 
 > ⚠️ **Stato del progetto / Project status**: in sviluppo attivo, usato quotidianamente in produzione da un piccolo team — le interfacce e il modello dati possono ancora cambiare. / Actively developed and used daily in production by a small team — interfaces and data model may still change.
 
-<!--
-![Screenshot di Thumper](assets/screenshot.png)
--->
+<img src="assets/Screenshot-Planning.png" alt="Vista di pianificazione: calendario per persona, raggruppato per team, con assenze e sovraccarichi a colpo d'occhio" width="900">
+
+<details>
+<summary><b>Altri screenshot / More screenshots</b></summary>
+<br>
+
+| | |
+|---|---|
+| <img src="assets/Screenshot-Project.png" width="420"><br>Elenco progetti / Project list | <img src="assets/Screenshot-Checks.png" width="420"><br>Carico di lavoro e sovraccarichi / Workload & overloaded days |
+| <img src="assets/Screenshot-Backlog.png" width="420"><br>Backlog Kanban | <img src="assets/Screenshot-Staff.png" width="420"><br>Organico e gruppi / Staff & groups |
+| <img src="assets/Screenshot-Setting.png" width="420"><br>Impostazioni / Settings | <img src="assets/Screenshot-Login.png" width="420"><br>"Chi sei?" all'avvio / "Who are you?" on launch |
+
+</details>
 
 ---
 
