@@ -128,7 +128,7 @@ async function salva(){
       const w = await manico.createWritable();
       await w.write(testo); await w.close();
       salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi("Salvato in dati.js");
+      modificato = false; aggiornaStato(); brindisi(tr("Salvato in dati.js"));
       return;
     }catch(err){
       if(err && err.name === "AbortError"){ S.meta.salvatoIl = vecchioTimestamp; return; }

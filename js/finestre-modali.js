@@ -926,7 +926,7 @@ function apriCommessa(id, pre){
   };
   document.getElementById("c-ok").onclick = ()=>{
     const numero = val("c-num");
-    if(!numero){ alert("Serve il numero di progetto."); return; }
+    if(!numero){ alert(tr("Serve il numero di progetto.")); return; }
     const doppio = S.commesse.some(x => x.id !== (c?c.id:null) && (x.numero||"").toLowerCase() === numero.toLowerCase());
     if(doppio){ alert(tr("Esiste già un progetto con questo numero: deve essere univoco.")); return; }
     const nuovoStato = val("c-stato") || "attiva";

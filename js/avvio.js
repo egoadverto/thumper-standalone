@@ -152,8 +152,8 @@ function avvia(){
   document.getElementById("nav-indietro").onclick = ()=>salta(-7);
   document.getElementById("nav-avanti").onclick = ()=>salta(7);
   document.getElementById("nav-oggi").onclick = ()=>{ V.inizio = iso(inizioSettimana(new Date())); document.getElementById("da").value=V.inizio; rendi(); };
-  document.getElementById("btn-nuova-att").onclick = ()=>{ if(!modificabile) return brindisi("Attiva prima la modifica"); apriAttivita(null,{}); };
-  document.getElementById("btn-nuova-assenza").onclick = ()=>{ if(!modificabile) return brindisi("Attiva prima la modifica"); apriAssenza(null); };
+  document.getElementById("btn-nuova-att").onclick = ()=>{ if(!modificabile) return brindisi(tr("Attiva prima la modifica")); apriAttivita(null,{}); };
+  document.getElementById("btn-nuova-assenza").onclick = ()=>{ if(!modificabile) return brindisi(tr("Attiva prima la modifica")); apriAssenza(null); };
 
   // eventi delegati per le schede tabellari
   document.getElementById("pagina").addEventListener("click", e=>{
@@ -186,7 +186,7 @@ function avvia(){
     const bs = e.target.closest("[data-scheda]");
     if(bs){ apriSchedaCommessa(bs.dataset.scheda); return; }
     if(e.target.closest("[data-nuova-cerca]")){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       apriCommessa(null, {numero:F.testo.trim()}); return;
     }
     const bg = e.target.closest("[data-mod-gruppo]");
@@ -259,10 +259,10 @@ function avvia(){
     const ba = e.target.closest("[data-mod-assenza]");
     const dc = e.target.closest("[data-del-chiusura]");
     if(bp||bc||ba||dc){
-      if(!modificabile){ brindisi("Attiva prima la modifica"); return; }
+      if(!modificabile){ brindisi(tr("Attiva prima la modifica")); return; }
     }
     if(e.target.id === "btn-archivia"){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const n = S.commesse.filter(c=>c.stato==="chiusa").length;
       if(!confirm(tr("Archiviare {0} progetti chiusi? Restano nel calendario e nello storico, ma non compaiono più nelle ricerche.", n))) return;
       S.commesse.forEach(c=>{ if(c.stato==="chiusa") c.stato="archiviata"; });
@@ -273,14 +273,14 @@ function avvia(){
     else if(ba) apriAssenza(ba.dataset.modAssenza || null);
     else if(dc){ S.config.chiusure.splice(+dc.dataset.delChiusura,1); invalida(); segnaModificato(); rendi(); }
     else if(e.target.id==="ch-aggiungi"){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const dal=val("ch-dal"), al=val("ch-al");
       if(!dal||!al||al<dal){ alert(tr("Controlla le date della chiusura.")); return; }
       S.config.chiusure.push({nome:val("ch-nome")||"Chiusura", dal, al});
       invalida(); segnaModificato(); rendi();
     }
     else if(e.target.id==="lf-aggiungi" || e.target.id==="lp-aggiungi"){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const forn = e.target.id === "lf-aggiungi";
       const nome = val(forn?"lf-nome":"lp-nome");
       const valore = numVal(forn?"lf-valore":"lp-valore");
@@ -295,14 +295,14 @@ function avvia(){
       segnaModificato(); rendi();
     }
     else if(e.target.closest("[data-modifica-forn]") || e.target.closest("[data-modifica-prod]")){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const bm = e.target.closest("[data-modifica-forn]");
       const id = bm ? bm.dataset.modificaForn : e.target.closest("[data-modifica-prod]").dataset.modificaProd;
       if(V.leadModifica.has(id)) V.leadModifica.delete(id); else V.leadModifica.add(id);
       rendi();
     }
     else if(e.target.closest("[data-del-forn]") || e.target.closest("[data-del-prod]")){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const bf = e.target.closest("[data-del-forn]");
       if(bf){
         S.config.leadFornitura = (S.config.leadFornitura||[]).filter(v=>v.id!==bf.dataset.delForn);
@@ -337,7 +337,7 @@ function avvia(){
     else if(e.target.id==="btn-csv") esportaCsv();
     else if(e.target.id==="btn-scarica") scarica("dati.js", serializza());
     else if(e.target.id==="btn-svuota"){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       if(!autorizza(tr("Elimina persone, progetti, attività e assenze. I gruppi e le impostazioni restano. Procedere?"))) return;
       S.persone=[]; S.commesse=[]; S.assegnazioni=[]; S.assenze=[];
       invalida(); segnaModificato(); rendi();
@@ -360,7 +360,7 @@ function avvia(){
   });
   document.getElementById("pagina").addEventListener("change", e=>{
     if(e.target.id==="cfg-archivio"){
-      if(!modificabile){ e.target.value = S.config.giorniArchiviazione; return brindisi("Attiva prima la modifica"); }
+      if(!modificabile){ e.target.value = S.config.giorniArchiviazione; return brindisi(tr("Attiva prima la modifica")); }
       S.config.giorniArchiviazione = Math.max(0, parseInt(e.target.value) || 0);
       const n = archiviaScadute();
       segnaModificato(); rendi();
@@ -383,20 +383,20 @@ function avvia(){
     else if(e.target.id==="q-ordine"){ F.ordine = e.target.value; rendiCommesse(); }
     else if(e.target.id==="cfg-efficienza"){
       const pctAttuale = Math.round((S.config.efficienza!=null?S.config.efficienza:1)*100);
-      if(!modificabile){ e.target.value = pctAttuale; return brindisi("Attiva prima la modifica"); }
+      if(!modificabile){ e.target.value = pctAttuale; return brindisi(tr("Attiva prima la modifica")); }
       const pct = Math.max(1, parseFloat(e.target.value) || 100);
       S.config.efficienza = pct/100;
       invalida(); segnaModificato(); rendi();
       brindisi(tr("Ricalcolate le attività a tempo pieno"));
     }
     else if(e.target.id==="cfg-margine"){
-      if(!modificabile){ e.target.value = S.config.margineGiorni||0; return brindisi("Attiva prima la modifica"); }
+      if(!modificabile){ e.target.value = S.config.margineGiorni||0; return brindisi(tr("Attiva prima la modifica")); }
       S.config.margineGiorni = Math.max(0, parseInt(e.target.value) || 0);
       segnaModificato();
     }
     else if(e.target.dataset && (e.target.dataset.lfNome!==undefined || e.target.dataset.lfValore!==undefined || e.target.dataset.lfUnita!==undefined
                               || e.target.dataset.lpNome!==undefined || e.target.dataset.lpValore!==undefined || e.target.dataset.lpUnita!==undefined)){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const ds = e.target.dataset;
       const forn = ds.lfNome!==undefined || ds.lfValore!==undefined || ds.lfUnita!==undefined;
       const id = ds.lfNome || ds.lfValore || ds.lfUnita || ds.lpNome || ds.lpValore || ds.lpUnita;
@@ -416,21 +416,21 @@ function avvia(){
       segnaModificato();
     }
     else if(e.target.dataset && e.target.dataset.lpFornitura!==undefined){
-      if(!modificabile){ e.target.checked = !e.target.checked; return brindisi("Attiva prima la modifica"); }
+      if(!modificabile){ e.target.checked = !e.target.checked; return brindisi(tr("Attiva prima la modifica")); }
       const voce = (S.config.leadProduzione||[]).find(v=>v.id===e.target.dataset.lpFornitura);
       if(!voce) return;
       voce.richiedeFornitura = e.target.checked;
       segnaModificato();
     }
     else if(e.target.dataset && e.target.dataset.bkStato!==undefined){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const it = backlogItem(e.target.dataset.bkStato);
       if(!it) return;
       it.stato = e.target.value;
       segnaModificato(); rendi();
     }
     else if(e.target.dataset && e.target.dataset.giorno!==undefined){
-      if(!modificabile){ e.target.checked=!e.target.checked; return brindisi("Attiva prima la modifica"); }
+      if(!modificabile){ e.target.checked=!e.target.checked; return brindisi(tr("Attiva prima la modifica")); }
       const n = +e.target.dataset.giorno;
       if(e.target.checked) S.config.giorniLavorativi.push(n);
       // le ore del giorno restano salvate anche da spento: si ritrovano se lo si riattiva
@@ -438,7 +438,7 @@ function avvia(){
       invalida(); segnaModificato(); rendiImpostazioni(); applicaLingua();
     }
     else if(e.target.dataset && e.target.dataset.oregiorno!==undefined){
-      if(!modificabile) return brindisi("Attiva prima la modifica");
+      if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const n = e.target.dataset.oregiorno;
       if(!S.config.oreGiorniSettimana) S.config.oreGiorniSettimana = {};
       const v = parseFloat(String(e.target.value).replace(",","."));

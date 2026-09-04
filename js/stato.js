@@ -164,4 +164,6 @@ function aggiornaStato(){
   if(!modificabile){ pal.className="pallino lettura"; txt.textContent="Sola lettura"; }
   else if(modificato){ pal.className="pallino modificato"; txt.textContent="Modifiche non salvate"; }
   else { pal.className="pallino"; txt.textContent="Allineato"; }
+  applicaLingua();   // il testo qui sopra e' scritto raw: senza questo, in lingua "en" resterebbe
+                      // in italiano finche' qualcos'altro non forza un rendi() completo
 }
