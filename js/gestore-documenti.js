@@ -339,7 +339,7 @@ function trovaAppunti(piatto){
     if(rel.includes("/")) return;                       // solo nella radice della commessa
     const e = estensione(n.nome);
     if(e !== "md" && e !== "txt") return;
-    if(!/appunti|note/i.test(n.nome)) return;
+    if(!/appunti|note|notes/i.test(n.nome)) return;
     if(!scelto || e === "md") scelto = n;
   });
   return scelto;
@@ -505,7 +505,7 @@ async function scriviNota(c, testo){
       handle = f.handle;
       vecchio = await (await handle.getFile()).text();
     }else{
-      handle = await h.getFileHandle(c.numero + " - APPUNTI.md", {create:true});
+      handle = await h.getFileHandle(c.numero + " - NOTES.md", {create:true});
       vecchio = await (await handle.getFile()).text();   // vuoto se appena creato
     }
   }catch(err){
@@ -533,7 +533,7 @@ async function scriviNota(c, testo){
 async function creaFileNote(c){
   const h = CARTELLE.get(c.id); if(!h) return;
   try{
-    const handle = await h.getFileHandle(c.numero + " - APPUNTI.md", {create:true});
+    const handle = await h.getFileHandle(c.numero + " - NOTES.md", {create:true});
     if((await handle.getFile()).size > 0){        // esisteva gia': non va svuotato
       brindisi(tr("Il file esiste già: lo rileggo"));
       return disegnaCartella(c);
