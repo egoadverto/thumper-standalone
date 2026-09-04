@@ -238,9 +238,10 @@ function distribuzioni(){
 }
 function invalida(){ cacheDist = null; svuotaCacheFest(); }
 
-/* Ordine alfabetico dei nomi: localeCompare tiene conto di accenti e
-   maiuscole come farebbe un elenco cartaceo italiano. */
-function perNome(a, b){ return (a.nome||"").localeCompare(b.nome||"", "it", {sensitivity:"base"}); }
+/* Ordine alfabetico dei nomi: localeCompare tiene conto di accenti e maiuscole.
+   Locale del browser (undefined), non fisso "it": altrimenti nomi con accenti
+   non italiani si ordinerebbero secondo regole non loro. */
+function perNome(a, b){ return (a.nome||"").localeCompare(b.nome||"", undefined, {sensitivity:"base"}); }
 function personeOrdinate(soloAttivi, perGruppo){
   const v = soloAttivi ? S.persone.filter(p=>p.attivo !== false) : S.persone.slice();
   if(!perGruppo) return v.sort(perNome);

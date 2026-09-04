@@ -281,12 +281,12 @@ function rendiImpostazioni(){
     </div>
     <div class="pannello">
       <h2 class="din">Dati</h2>
-      <p class="nota">Il piano vive in un file <span class="mono">dati.js</span> accanto a questa pagina. Chi apre la pagina vede l'ultimo file salvato.
+      <p class="nota">Il piano vive in un file <span class="mono">${nomeFileDati()}</span> accanto a questa pagina. Chi apre la pagina vede l'ultimo file salvato.
       Se il browser lo permette, ogni salvataggio tiene anche una copia della versione precedente in una sottocartella <span class="mono">backup</span>
-      accanto a <span class="mono">dati.js</span> (le ultime ${MAX_BACKUP}, le più vecchie si scartano da sole) — un rimedio rapido se un salvataggio va storto.</p>
+      accanto a <span class="mono">${nomeFileDati()}</span> (le ultime ${MAX_BACKUP}, le più vecchie si scartano da sole) — un rimedio rapido se un salvataggio va storto.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
         <button class="btn" id="btn-csv">Esporta CSV</button>
-        <button class="btn" id="btn-scarica">Scarica dati.js</button>
+        <button class="btn" id="btn-scarica">${tr("Scarica {0}", nomeFileDati())}</button>
         <button class="btn pericolo" id="btn-svuota">Svuota tutto</button>
       </div>
       <p class="nota" style="margin-top:12px">${tr("Ultimo salvataggio: {0}", S.meta.salvatoIl ? new Date(S.meta.salvatoIl).toLocaleString(lingua==="it"?"it-IT":"en-GB") : tr("mai"))}${S.meta.salvatoDa?" · "+esc(S.meta.salvatoDa):""}</p>

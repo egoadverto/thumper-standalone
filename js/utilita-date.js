@@ -47,7 +47,12 @@ function spezzaInSettimane(gg){
   for(let i=0;i<gg.length;i+=7) sett.push(gg.slice(i,i+7));
   return sett;
 }
-function itData(x){ const t=d(x); return String(t.getDate()).padStart(2,"0")+"/"+String(t.getMonth()+1).padStart(2,"0")+"/"+t.getFullYear(); }
+// gg/mm/aaaa in italiano; in inglese ISO aaaa-mm-gg invece di mm/dd/aaaa — quest'ultimo
+// e' ambiguo fuori dagli USA, l'ISO non lo e' per nessuno
+function itData(x){
+  const t=d(x), gg=String(t.getDate()).padStart(2,"0"), mm=String(t.getMonth()+1).padStart(2,"0"), aaaa=t.getFullYear();
+  return lingua === "en" ? aaaa+"-"+mm+"-"+gg : gg+"/"+mm+"/"+aaaa;
+}
 // elenco (stringhe ISO) dei giorni del mese di calendario a cui appartiene la data data,
 // indipendente dalla finestra temporale scelta in barra (usato per le statistiche "mese corrente")
 function giorniMese(dt){

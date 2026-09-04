@@ -31,8 +31,8 @@ one company.
    ========================================================== */
 function esportaCsv(){
   const MODI = {inizio:"Parte il", fine:"Consegna entro il", finestra:"Finestra ripartita"};
-  const righe = [["Persona","Gruppo","Progetto","Riferimento","Tipologia","Descrizione","Dal","Al","Vincolo","Consegna entro",
-                  "Attività","Ore totali","Ore/giorno","Sviluppo interno","Consegna","Fine ufficio entro","Ultimo inizio utile","Note"]];
+  const righe = [["Person","Group","Project","Reference","Type","Description","From","To","Constraint","Due by",
+                  "Activity","Total hours","Hours/day","In-house development","Delivery","Office deadline","Latest viable start","Notes"]];
   S.assegnazioni.forEach(a=>{
     const p = persona(a.personaId), c = commessa(a.commessaId), e = estremi(a);
     if(!p||!c) return;
@@ -50,6 +50,6 @@ function esportaCsv(){
   const csv = "\uFEFF" + righe.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
   const b = new Blob([csv], {type:"text/csv;charset=utf-8"});
   const u = URL.createObjectURL(b);
-  const a = document.createElement("a"); a.href=u; a.download="pianificazione.csv"; a.click();
+  const a = document.createElement("a"); a.href=u; a.download="plan.csv"; a.click();
   setTimeout(()=>URL.revokeObjectURL(u),4000);
 }

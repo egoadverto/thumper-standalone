@@ -1,4 +1,7 @@
 # Il piano vero e proprio: stato dell'applicazione, non sorgente. Vive accanto a
 # Thumper.html sulla condivisione di rete e cambia a ogni salvataggio. Se manca,
 # avvio.js riparte da datiDemo() — vedi `window.PLANNER_DATA || datiDemo()`.
+# data.js è il nome per le installazioni nuove, dati.js resta per quelle esistenti
+# (Thumper.html carica il primo e ricade sul secondo se manca — vedi persistenza.js).
+data.js
 dati.js

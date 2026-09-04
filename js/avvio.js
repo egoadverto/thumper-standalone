@@ -335,7 +335,7 @@ function avvia(){
       segnaModificato(); rendi(); brindisi(tr("Protezione rimossa"));
     }
     else if(e.target.id==="btn-csv") esportaCsv();
-    else if(e.target.id==="btn-scarica") scarica("dati.js", serializza());
+    else if(e.target.id==="btn-scarica") scarica(nomeFileDati(), serializza());
     else if(e.target.id==="btn-svuota"){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       if(!autorizza(tr("Elimina persone, progetti, attività e assenze. I gruppi e le impostazioni restano. Procedere?"))) return;

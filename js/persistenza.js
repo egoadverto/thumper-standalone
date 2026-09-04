@@ -34,6 +34,11 @@ function serializza(){
   return "// Dati di Thumper — Micro Planner. Non modificare a mano.\n" +
          "window.PLANNER_DATA = " + JSON.stringify(S, null, 1) + ";\n";
 }
+// nome del file dati da usare/creare quando non c'e' ancora un handle aperto:
+// window.PLANNER_DATA_FILE e' impostato da Thumper.html in base a quale dei due
+// script (data.js o, se manca, dati.js) e' effettivamente riuscito a caricare —
+// installazioni esistenti restano sul loro dati.js, quelle nuove partono da data.js.
+function nomeFileDati(){ return window.PLANNER_DATA_FILE || "data.js"; }
 const MAX_BACKUP = 5;   // copie precedenti tenute nella sottocartella backup/, le altre si scartano
 // copia il contenuto che sta per essere sovrascritto in cartella/backup/, poi tiene solo le ultime MAX_BACKUP.
 // È un extra: se fallisce (permessi, disco pieno...) non deve mai bloccare il salvataggio vero.
@@ -97,14 +102,14 @@ async function salva(){
       await w.write(testo); await w.close();
       if(cartellaSalvataggio) await backupPrimaDiScrivere(vecchio);
       salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi(tr("Salvato in dati.js"));
+      modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
       return;
     }catch(err){ manico = null; cartellaSalvataggio = null; }
   }
   if(window.showDirectoryPicker){
     try{
       const dir = await window.showDirectoryPicker({mode:"readwrite", id:"dati-planner"});
-      manico = await dir.getFileHandle("dati.js", {create:true});
+      manico = await dir.getFileHandle(nomeFileDati(), {create:true});
       cartellaSalvataggio = dir;
       const vecchio = await manico.getFile().then(f=>f.text()).catch(()=>"");
       if(conflittoSalvataggio(vecchio)){ S.meta.salvatoIl = vecchioTimestamp; return; }
@@ -112,7 +117,7 @@ async function salva(){
       await w.write(testo); await w.close();
       await backupPrimaDiScrivere(vecchio);
       salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi(tr("Salvato in dati.js"));
+      modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
       return;
     }catch(err){
       if(err && err.name === "AbortError"){ S.meta.salvatoIl = vecchioTimestamp; return; }
@@ -120,7 +125,7 @@ async function salva(){
   } else if(window.showSaveFilePicker){
     try{
       manico = await window.showSaveFilePicker({
-        suggestedName:"dati.js",
+        suggestedName: nomeFileDati(),
         types:[{description:"Dati Thumper", accept:{"text/javascript":[".js"]}}]
       });
       const vecchio = await manico.getFile().then(f=>f.text()).catch(()=>"");
@@ -128,15 +133,15 @@ async function salva(){
       const w = await manico.createWritable();
       await w.write(testo); await w.close();
       salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi(tr("Salvato in dati.js"));
+      modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
       return;
     }catch(err){
       if(err && err.name === "AbortError"){ S.meta.salvatoIl = vecchioTimestamp; return; }
     }
   }
-  scarica("dati.js", testo);
+  scarica(nomeFileDati(), testo);
   modificato = false; aggiornaStato();
-  brindisi(tr("dati.js scaricato: spostalo nella cartella di rete sovrascrivendo il vecchio"));
+  brindisi(tr("{0} scaricato: spostalo nella cartella di rete sovrascrivendo il vecchio", nomeFileDati()));
 }
 function scarica(nome, testo){
   const b = new Blob([testo], {type:"text/javascript"});

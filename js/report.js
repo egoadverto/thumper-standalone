@@ -186,7 +186,7 @@ function reportCsv(){
   const gg = giorniVisibili();
   const righe = contiReport(gg, personeAmbito());
   const num = v => String(arr(v)).replace(".", ",");
-  const testa = ["Persona","Gruppo","Ore disponibili","Ore pianificate","Saturazione %","Giorni oltre","Primo giorno critico"];
+  const testa = ["Person","Group","Available hours","Planned hours","Saturation %","Days over","First critical day"];
   const corpo = ordinaReport(righe).map(r=>{
     const g = gruppo(r.p.gruppoId);
     return [r.p.nome, g ? g.sigla : "", num(r.disp), num(r.pian),
@@ -198,7 +198,7 @@ function reportCsv(){
   const b = new Blob([testo], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(b);
-  a.download = "carico_" + iso(new Date()) + ".csv";
+  a.download = "workload_" + iso(new Date()) + ".csv";
   a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
   brindisi(tr("CSV scaricato"));
