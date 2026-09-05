@@ -30,9 +30,10 @@ one company.
    3. STATO
    ========================================================== */
 // versione del programma (non lo schema dati: quella è meta.versione, cosa diversa —
-// vedi PLANNER_DATA in CLAUDE.md), mostrata in Impostazioni > Licenza. Aggiornarla ad ogni
-// rilascio pubblico.
-const VERSIONE_APP = "1.0.0";
+// vedi PLANNER_DATA in CLAUDE.md), mostrata in Impostazioni > Licenza. Politica di
+// aggiornamento in CLAUDE.md (repo Thumper01-dev), sezione "Versione dell'app": semver,
+// un push su main = un rilascio, incremento a cura di chi fa il push in base a cosa contiene.
+const VERSIONE_APP = "1.1.0";
 let S = null;
 let modificabile = false;
 let modificato = false;
