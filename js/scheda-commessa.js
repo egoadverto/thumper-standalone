@@ -51,7 +51,9 @@ function apriSchedaCommessa(id){
         a.scadenza?`<div class="nota">${tr("entro {0}", itData(a.scadenza))}${tardi?" ⚠":""}</div>`:""}</td>
       <td class="num-cella mono">${e?arr(e.ore):0}${
         e&&Math.abs(e.ore-(a.oreTotali||0))>0.01?`<div class="nota">${tr("di {0}", a.oreTotali)}</div>`:""}</td>
-      <td class="num-cella">${a.fatta
+      <td class="num-cella">${a.annullata
+        ? '<span style="color:var(--allarme);font-weight:700">✕</span>'
+        : a.fatta
         ? '<span style="color:#0A7A34;font-weight:700">✓</span>'
         : '<span style="color:var(--linea-forte)">○</span>'}</td></tr>`;
   }).join("") || `<tr><td colspan="5" style="color:var(--tenue);padding:14px">Nessuna attività pianificata su questo progetto.</td></tr>`;

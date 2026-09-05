@@ -122,9 +122,9 @@ function rendiPiano(){
         const tardi = sforaConsegna(x.a);
         const vincolo = modoAtt(x.a)==="fine" ? "&#10;Consegna entro il "+itData(x.a.scadenza)+(tardi?" ⚠ NON RISPETTATA":"")
                       : modoAtt(x.a)==="finestra" ? "&#10;Finestra: carico ripartito" : "";
-        blocchi += `<div class="blocco ${tardi?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${arr(x.e.ore)} h totali · ${perG} h/giorno&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.fatta?"&#10;✓ Conclusa":""}"
+        blocchi += `<div class="blocco ${tardi?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${arr(x.e.ore)} h totali · ${perG} h/giorno&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ Annullata":x.a.fatta?"&#10;✓ Conclusa":""}"
           style="left:${left}px;width:${wid}px;top:${x.corsia*26+3}px;background:${coloreCommessa(c)}">
-          ${x.a.fatta?'<span class="segno" title="Conclusa">✓</span>':""}<span class="num mono">${esc(c.numero)}</span>
+          ${x.a.annullata?'<span class="segno" title="Annullata">✕</span>':x.a.fatta?'<span class="segno" title="Conclusa">✓</span>':""}<span class="num mono">${esc(c.numero)}</span>
           <span class="cli">${esc(c.cliente)}</span>
           <span class="ore mono">${arr(x.e.ore)}h</span></div>`;
       });

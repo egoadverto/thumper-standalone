@@ -513,7 +513,9 @@ function statisticheCommesse(){
     const att = S.assegnazioni.filter(a => a.commessaId === c.id);
     const g = out[c.natura && out[c.natura] ? c.natura : ""];
     if(!att.length){ g.senzaAttivita++; return; }
-    g.ore.push(att.reduce((s,a)=> s + (a.oreTotali||0), 0));
+    // ore REALMENTE distribuite (estremi(a).ore), non il monte ore pianificato (a.oreTotali):
+    // un'attività chiusa in anticipo (annullata compresa) non deve contare ore mai lavorate
+    g.ore.push(att.reduce((s,a)=> s + ((estremi(a)||{}).ore||0), 0));
     // giorni lavorativi in cui c'e' stata almeno un'ora su QUESTA commessa: non "dal primo giorno
     // toccato all'ultimo" (che conterebbe anche le pause per altro — altre commesse, ferie, attesa
     // fornitori) e non risente di quando cade nell'anno solare, perche' nei non lavorativi non si
@@ -524,7 +526,7 @@ function statisticheCommesse(){
     // ore per gruppo: conta solo il gruppo principale di chi ha lavorato, per non contare due volte
     S.gruppi.forEach(gr=>{
       const ore = att.filter(a=>{ const p = persona(a.personaId); return p && p.gruppoId === gr.id; })
-                     .reduce((s,a)=> s + (a.oreTotali||0), 0);
+                     .reduce((s,a)=> s + ((estremi(a)||{}).ore||0), 0);
       if(ore > 0) (g.perGruppo[gr.id] = g.perGruppo[gr.id] || []).push(ore);
     });
   });

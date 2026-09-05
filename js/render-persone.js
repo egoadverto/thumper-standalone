@@ -76,7 +76,9 @@ function apriSchedaPersona(id){
       <td class="mono" style="white-space:nowrap${tardi?";color:var(--allarme);font-weight:700":""}">${
         x.e ? itData(x.e.dal)+" – "+itData(x.e.al) : "–"}</td>
       <td class="num-cella mono">${x.e?arr(x.e.ore):0}</td>
-      <td class="num-cella">${x.a.fatta
+      <td class="num-cella">${x.a.annullata
+        ? '<span style="color:var(--allarme);font-weight:700;font-size:16px">✕</span>'
+        : x.a.fatta
         ? '<span style="color:#0A7A34;font-weight:700;font-size:16px">✓</span>'
         : '<span style="color:var(--linea-forte);font-size:16px">○</span>'}</td></tr>`;
   }).join("") || `<tr><td colspan="4" style="color:var(--tenue);padding:14px">${tr("Nessuna attività assegnata.")}</td></tr>`;

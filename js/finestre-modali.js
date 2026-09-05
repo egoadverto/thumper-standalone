@@ -235,6 +235,8 @@ function apriAttivita(id, pre){
           <div class="campo"><label class="spunta"><input type="checkbox" id="f-fatta" ${a&&a.fatta?"checked":""}> Attività conclusa</label></div>
           <div class="campo" style="margin-top:8px"><label for="f-fine">Conclusa il</label>
             <input type="date" id="f-fine" value="${a&&a.dataFine?a.dataFine:iso(new Date())}"></div>
+          <div class="campo" style="margin-top:8px"><label class="spunta"><input type="checkbox" id="f-annullata" ${a&&a.annullata?"checked":""}> Annullata</label></div>
+          <span class="aiuto">${tr('Non si farà più. Le ore già spese restano (storia immutabile), quelle future si liberano — come una conclusione anticipata, ma segnalata come annullamento invece che completamento nelle statistiche.')}</span>
         </div>
 
         <div class="sc-sezione">
@@ -428,6 +430,19 @@ function apriAttivita(id, pre){
     e.addEventListener("change", anteprima);
   });
   anteprima();
+  // annullata implica sempre fatta: un'attività annullata è comunque risolta, non ha
+  // più bisogno di attenzione. Il collegamento vive solo qui nell'editor, non come
+  // vincolo nel modello dati — vedi commento su assegnazioni[].annullata in CLAUDE.md
+  document.getElementById("f-annullata").addEventListener("change", e=>{
+    if(e.target.checked){
+      document.getElementById("f-fatta").checked = true;
+      document.getElementById("f-fine").value = iso(new Date());
+    }
+    anteprima();
+  });
+  document.getElementById("f-fatta").addEventListener("change", e=>{
+    if(!e.target.checked) document.getElementById("f-annullata").checked = false;
+  });
 
   document.getElementById("f-annulla").onclick = chiudi;
   if(a) document.getElementById("f-elimina").onclick = ()=>{
@@ -460,6 +475,7 @@ function apriAttivita(id, pre){
                   orePerGiorno: (modo === "finestra" || !val("f-oreg")) ? null : numVal("f-oreg"),
                   fatta: document.getElementById("f-fatta").checked,
                   dataFine: document.getElementById("f-fatta").checked ? val("f-fine") : null,
+                  annullata: document.getElementById("f-annullata").checked,
                   note:val("f-note"), descrizione: val("f-desc"),
                   tipologiaId: val("f-tipologia") || null};
     if(!dati.commessaId){ alert(tr("Scegli un progetto dall'elenco.")); return; }
@@ -490,7 +506,8 @@ function anteprimaAttivita(id){
       <tr><th>Monte ore</th><td class="mono">${a.oreTotali} h · ${arr(orePerGiornoEff(a))} h/giorno</td></tr>
       <tr><th>Periodo</th><td class="mono">${e?itData(e.dal)+" → "+itData(e.al):"–"}</td></tr>
       <tr><th>Vincolo</th><td>${modoAtt(a)==="fine"?tr("Consegna entro il {0}", itData(a.scadenza)):modoAtt(a)==="finestra"?tr("Finestra dal {0} al {1}, carico ripartito", itData(a.dataInizio), itData(a.scadenza)):tr("Parte il {0}", itData(a.dataInizio))}</td></tr>
-      ${a.fatta?`<tr><th>Stato</th><td style="color:#0A7A34"><b>✓ Conclusa</b></td></tr>`:""}
+      ${a.annullata?`<tr><th>Stato</th><td style="color:var(--allarme)"><b>✕ Annullata</b></td></tr>`
+        :a.fatta?`<tr><th>Stato</th><td style="color:#0A7A34"><b>✓ Conclusa</b></td></tr>`:""}
       ${a.note?`<tr><th>Note</th><td>${esc(a.note)}</td></tr>`:""}
     </tbody></table>
     <p class="nota" style="margin-top:12px">Attiva la modifica in alto a destra per cambiare questa attività.</p>`,
@@ -930,6 +947,16 @@ function apriCommessa(id, pre){
     const doppio = S.commesse.some(x => x.id !== (c?c.id:null) && (x.numero||"").toLowerCase() === numero.toLowerCase());
     if(doppio){ alert(tr("Esiste già un progetto con questo numero: deve essere univoco.")); return; }
     const nuovoStato = val("c-stato") || "attiva";
+    // si può chiudere solo se ogni attività è risolta (conclusa o annullata): non blocca
+    // il resalvataggio di un progetto già chiuso in passato con attività irrisolte (dati
+    // precedenti a questa regola) — blocca solo l'atto di chiudere, non l'edit successivo
+    if(nuovoStato === "chiusa" && c && c.stato !== "chiusa"){
+      const info = datiCommessa(c);
+      if(info.tot && info.fatte < info.tot){
+        alert(tr("Non puoi chiudere questo progetto: {0} attività non sono ancora concluse o annullate.", info.tot - info.fatte));
+        return;
+      }
+    }
     const dati = {numero, cliente:val("c-cli"), descrizione:val("c-desc"), colore:scelto || null,
                   stato:nuovoStato, apertura:val("c-apertura") || null,
                   consegnaCliente:val("c-consegna") || null,

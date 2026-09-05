@@ -48,6 +48,7 @@ const DIZ = {
 "Nascondi concluse":"Hide completed","Weekend":"Weekend","Festivi e chiusure":"Holidays and closures",
 "Ferie":"Annual leave","Permessi":"Time off","Malattia":"Sick leave","Smart working":"Remote work",
 "Trasferta":"Business trip","Deroga":"Exception","✓ Conclusa":"✓ Completed","Conclusa":"Completed",
+"✕ Annullata":"✕ Cancelled","Annullata":"Cancelled",
 "Persona":"Person","in organico":"on staff","Gruppo":"Group","Anche in":"Also in","h/giorno":"h/day",
 "Max smart":"Max remote","Attività":"Activities","Stato":"Status","Attivo":"Active","Non attivo":"Inactive",
 "Nome":"Name","Nome e cognome":"Full name","Gruppo principale":"Main group","Ore al giorno":"Hours per day",
@@ -147,6 +148,10 @@ const DIZ = {
 "Vincolo":"Constraint","Parte il":"Starts on","Consegna entro il":"Due by","Giorno di partenza":"Start day",
 "Data di consegna":"Due date","Monte ore":"Total hours","Vuoto = tempo pieno.":"Empty = full time.",
 "Attività conclusa":"Activity completed","Conclusa il":"Completed on",
+"Non si farà più. Le ore già spese restano (storia immutabile), quelle future si liberano — come una conclusione anticipata, ma segnalata come annullamento invece che completamento nelle statistiche.":
+  "Won't happen anymore. Hours already spent stay (immutable history), future ones are freed — like an early completion, but flagged as a cancellation instead of a completion in the statistics.",
+"Non puoi chiudere questo progetto: {0} attività non sono ancora concluse o annullate.":
+  "You can't close this project: {0} activities are not yet completed or cancelled.",
 "Nuova attività":"New activity","Modifica attività":"Edit activity","Aggiungi attività":"Add activity",
 "Salva attività":"Save activity","Nuovo progetto":"New project","Cerca numero o riferimento":"Search number or reference",
 "Esiste già un progetto con questo numero: deve essere univoco.":"A project with this number already exists: it must be unique.",
