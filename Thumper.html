@@ -31,7 +31,8 @@ one company.
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thumper — Micro Planner</title>
 <script src="dizionario.js"></script>
-<script src="data.js" onload="window.PLANNER_DATA_FILE='data.js'" onerror="var s=document.createElement('script');s.async=false;s.src='dati.js';s.onload=function(){window.PLANNER_DATA_FILE='dati.js'};s.onerror=function(){window.PLANNER_DATA_MANCANTE=true};document.head.appendChild(s);"></script>
+<script src="data.js" onload="window.PLANNER_DATA_FILE='data.js'"></script>
+<script src="dati.js" onload="if(!window.PLANNER_DATA_FILE)window.PLANNER_DATA_FILE='dati.js'" onerror="if(!window.PLANNER_DATA_FILE)window.PLANNER_DATA_MANCANTE=true"></script>
 <link rel="stylesheet" href="stile.css">
 </head>
 <body>
