@@ -30,7 +30,7 @@ one company.
    8quater. STATO DI SESSIONE — CARTELLA DELLA COMMESSA
    ----------------------------------------------------------
    Due cose separate, ed e' importante capire perche':
-   - IL PERCORSO (es. F:\COMMESSE\25-0412 - Frimeccanica) lo scrive
+   - IL PERCORSO (es. Z:\PROGETTI\25-0412 - Frimeccanica) lo scrive
      l'utente e finisce in dati.js. Il browser non lo rivela
      mai da solo. Serve per costruire i collegamenti che
      aprono i file nel loro programma.
@@ -41,7 +41,7 @@ one company.
 const CARTELLE = new Map();   // id commessa -> handle, vive solo in questa sessione
 const ALBERI   = new Map();   // id commessa -> elenco piatto dei file letti
 const RADICI   = [];          // le cartelle archivio collegate in questa sessione
-const PREFISSI = new Map();   // nome radice -> pezzo iniziale del percorso (es. F:\COMMESSE)
+const PREFISSI = new Map();   // nome radice -> pezzo iniziale del percorso (es. Z:\PROGETTI)
 const DENTRO   = new Map();   // id commessa -> {radice, dentro} dove e' stata trovata
 let RADICI_SOSPESE = [];      // ricordate dal browser, in attesa di una conferma
 /* Chi firma le note. Vive solo in questa sessione e NON finisce in dati.js:
