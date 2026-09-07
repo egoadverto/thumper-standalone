@@ -55,6 +55,8 @@ function apriSchedaCommessa(id){
         ? '<span style="color:var(--allarme);font-weight:700">✕</span>'
         : a.fatta
         ? '<span style="color:#0A7A34;font-weight:700">✓</span>'
+        : a.sospesa
+        ? '<span style="color:var(--neutro);font-weight:700" title="Sospesa">⏸</span>'
         : '<span style="color:var(--linea-forte)">○</span>'}</td></tr>`;
   }).join("") || `<tr><td colspan="5" style="color:var(--tenue);padding:14px">Nessuna attività pianificata su questo progetto.</td></tr>`;
 
@@ -68,6 +70,10 @@ function apriSchedaCommessa(id){
   if(!i.tot && c.stato === "attiva") avvisi.push(tr("Progetto attivo senza nessuna attività pianificata."));
   if(c.stato === "chiusa" && i.tot && i.fatte < i.tot)
     avvisi.push(tr("Progetto chiuso con {0} attività non concluse.", i.tot - i.fatte));
+  if(c.stato === "attiva" && i.sospese)
+    avvisi.push(i.sospese===1
+      ? tr("1 attività sospesa: riprendila con una nuova data o pianifica il resto con “Duplica attività”.")
+      : tr("{0} attività sospese: riprendile con una nuova data o pianifica il resto con “Duplica attività”.", i.sospese));
   const boxAvvisi = avvisi.length
     ? avvisi.map(t=>`<div class="sc-avviso"><span>⚠</span><span>${t}</span></div>`).join("")
     : `<div class="nota">${tr("Nessuna segnalazione.")}</div>`;

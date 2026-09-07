@@ -33,7 +33,7 @@ one company.
 // vedi PLANNER_DATA in CLAUDE.md), mostrata in Impostazioni > Licenza. Politica di
 // aggiornamento in CLAUDE.md, sezione "Versione dell'app": semver, un push su main = un
 // rilascio, incremento a cura di chi fa il push in base a cosa contiene quel push.
-const VERSIONE_APP = "1.2.3";
+const VERSIONE_APP = "1.3.0";
 let S = null;
 let modificabile = false;
 let modificato = false;

@@ -80,6 +80,8 @@ function apriSchedaPersona(id){
         ? '<span style="color:var(--allarme);font-weight:700;font-size:16px">✕</span>'
         : x.a.fatta
         ? '<span style="color:#0A7A34;font-weight:700;font-size:16px">✓</span>'
+        : x.a.sospesa
+        ? '<span style="color:var(--neutro);font-weight:700;font-size:16px">⏸</span>'
         : '<span style="color:var(--linea-forte);font-size:16px">○</span>'}</td></tr>`;
   }).join("") || `<tr><td colspan="4" style="color:var(--tenue);padding:14px">${tr("Nessuna attività assegnata.")}</td></tr>`;
 

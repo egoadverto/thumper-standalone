@@ -161,6 +161,9 @@ function apriAttivita(id, pre){
   const oreG = a ? a.orePerGiorno : null;
   const modoIni = a ? modoAtt(a) : "inizio";
   const dataRif = a ? (modoIni==="fine"?a.scadenza:a.dataInizio) : (p.dataInizio||iso(new Date()));
+  // "Duplica attività" (pre) passa persona/commessa/descrizione/tipologia ma non date/ore:
+  // vanno ricompilate da capo, coerente con la Roadmap in CLAUDE.md
+  const tipoIni = a ? a.tipologiaId : (p.tipologiaId || "");
   /* Stessa impaginazione della scheda commessa: a sinistra chi fa cosa e
      quando, a destra prodotto e stato. In fondo, a tutta larghezza, i
      riquadri che il pianificatore riempie da solo mentre compili. */
@@ -186,8 +189,7 @@ function apriAttivita(id, pre){
             <button class="btn piccolo" id="n-annulla">Annulla</button></div>
           </div>
           <div class="campo" style="margin-top:10px"><label for="f-desc">Descrizione dell'attività</label>
-            <input type="text" id="f-desc" value="${esc(a&&a.descrizione?a.descrizione:(p.descrizione||""))}" placeholder="Es. schema di potenza, cablaggio quadro, distinta">
-            <span class="aiuto">Distingue i lavori diversi della stessa persona sullo stesso progetto.</span></div>
+            <textarea id="f-desc" rows="2" placeholder="Es. schema di potenza, cablaggio quadro, distinta">${esc(a&&a.descrizione?a.descrizione:(p.descrizione||""))}</textarea></div>
         </div>
 
         <div class="sc-sezione">
@@ -224,24 +226,23 @@ function apriAttivita(id, pre){
           <div class="campo"><label for="f-tipologia">Tipologia di sviluppo interno</label>
             <select id="f-tipologia">
               <option value="">— non indicata —</option>
-              <option value="nessuna" ${a&&a.tipologiaId==="nessuna"?"selected":""}>Nessuno sviluppo interno</option>
-              ${(S.config.leadProduzione||[]).map(x=>`<option value="${x.id}" ${a&&a.tipologiaId===x.id?"selected":""}>${tr("{0} · {1}", esc(x.nome), testoValoreLead(x))}</option>`).join("")}
-            </select>
-            <span class="aiuto">${tr('Determina il lead time di sviluppo interno di questa attività, e la data limite di inizio qui sotto. Anche la documentazione può averne uno proprio (es. tempo di preparazione sul supporto richiesto): aggiungila come voce normale in Impostazioni → Lead time, non è un caso speciale.')}</span></div>
+              <option value="nessuna" ${tipoIni==="nessuna"?"selected":""}>Nessuno sviluppo interno</option>
+              ${(S.config.leadProduzione||[]).map(x=>`<option value="${x.id}" ${tipoIni===x.id?"selected":""}>${tr("{0} · {1}", esc(x.nome), testoValoreLead(x))}</option>`).join("")}
+            </select></div>
         </div>
 
         <div class="sc-sezione">
           <h5 class="titoletto din">Stato</h5>
-          <div class="campo"><label class="spunta"><input type="checkbox" id="f-fatta" ${a&&a.fatta?"checked":""}> Attività conclusa</label></div>
-          <div class="campo" style="margin-top:8px"><label for="f-fine">Conclusa il</label>
-            <input type="date" id="f-fine" value="${a&&a.dataFine?a.dataFine:iso(new Date())}"></div>
-          <div class="campo" style="margin-top:8px"><label class="spunta"><input type="checkbox" id="f-annullata" ${a&&a.annullata?"checked":""}> Annullata</label></div>
-          <span class="aiuto">${tr('Non si farà più. Le ore già spese restano (storia immutabile), quelle future si liberano — come una conclusione anticipata, ma segnalata come annullamento invece che completamento nelle statistiche.')}</span>
+          <div class="campo"><label for="f-fine">Giorno</label>
+            <input type="date" id="f-fine" value="${a&&a.dataFine?a.dataFine:iso(new Date())}" ${a&&(a.fatta||a.sospesa)?"":"disabled"}></div>
+          <div class="campo" style="margin-top:6px"><label class="spunta"><input type="checkbox" id="f-fatta" ${a&&a.fatta?"checked":""}> Conclusa</label></div>
+          <div class="campo" style="margin-top:4px"><label class="spunta"><input type="checkbox" id="f-annullata" ${a&&a.annullata?"checked":""}> Annullata</label></div>
+          <div class="campo" style="margin-top:4px"><label class="spunta"><input type="checkbox" id="f-sospesa" ${a&&a.sospesa?"checked":""}> Sospesa</label></div>
         </div>
 
         <div class="sc-sezione">
           <h5 class="titoletto din">Note</h5>
-          <div class="campo"><input type="text" id="f-note" value="${esc(a?a.note:"")}" aria-label="Note">
+          <div class="campo"><textarea id="f-note" rows="2" aria-label="Note">${esc(a?a.note:"")}</textarea>
             <span class="aiuto">Testo libero: vincoli, accordi, promemoria.</span></div>
         </div>
 
@@ -252,6 +253,7 @@ function apriAttivita(id, pre){
     <div class="avviso" id="f-anteprima"></div>
     <div id="f-consiglio" hidden></div>`;
   const piede = `${a?'<button class="btn pericolo sinistra" id="f-elimina">Elimina</button>':""}
+    ${a?'<button class="btn" id="f-duplica">Duplica attività</button>':""}
     <button class="btn" id="f-annulla">Annulla</button>
     <button class="btn primario" id="f-ok">${a?"Salva attività":"Aggiungi attività"}</button>`;
   finestra(a?"Modifica attività":"Nuova attività", corpo, piede)
@@ -260,7 +262,7 @@ function apriAttivita(id, pre){
   const optC = opzioniCombo(commesseSceglibili(a?a.commessaId:null));
   const pannelloNuova = document.getElementById("f-nuova");
   const combo = creaCombo("f-commessa", optC, {
-    valore: a ? a.commessaId : "",
+    valore: a ? a.commessaId : (p.commessaId || ""),
     onScegli: ()=>{ anteprima(); },
     azione: {eti:"+ Crea un nuovo progetto", fn: ()=>{
       pannelloNuova.hidden = false;
@@ -407,7 +409,7 @@ function apriAttivita(id, pre){
 
   const aggiornaLiberate = (ch, oreAlDi) => {
     const boxLib = document.getElementById("f-liberate");
-    const spuntaFine = document.getElementById("f-fatta").checked;
+    const spuntaFine = document.getElementById("f-fatta").checked || document.getElementById("f-sospesa").checked;
     document.getElementById("f-fine").disabled = !spuntaFine;
     if(!spuntaFine || !ch){ boxLib.hidden = true; }
     else {
@@ -421,10 +423,10 @@ function apriAttivita(id, pre){
         ? "<b>" + (tagliate===1 ? tr("Si libera 1 giornata") : tr("Si liberano {0} giornate", tagliate)) + "</b>"
           + tr("Circa {0} h tornano disponibili su {1} dopo il {2}. Al salvataggio ti chiedo se anticipare le attività successive.",
                arr(oreTagliate), esc(persona(val("f-persona")).nome), itData(fine))
-        : `<span class="nota">${tr("Conclusa nei tempi previsti: non si libera capacità.")}</span>`;
+        : `<span class="nota">${tr("Nessuna giornata futura da liberare.")}</span>`;
     }
   };
-  ["f-persona","f-inizio","f-al","f-ore","f-oreg","f-modo","f-fatta","f-fine","f-tipologia"].forEach(i=>{
+  ["f-persona","f-inizio","f-al","f-ore","f-oreg","f-modo","f-fatta","f-fine","f-sospesa","f-tipologia"].forEach(i=>{
     const e = document.getElementById(i);
     e.addEventListener("input", anteprima);
     e.addEventListener("change", anteprima);
@@ -437,11 +439,24 @@ function apriAttivita(id, pre){
     if(e.target.checked){
       document.getElementById("f-fatta").checked = true;
       document.getElementById("f-fine").value = iso(new Date());
+      document.getElementById("f-sospesa").checked = false;
     }
     anteprima();
   });
   document.getElementById("f-fatta").addEventListener("change", e=>{
     if(!e.target.checked) document.getElementById("f-annullata").checked = false;
+    else document.getElementById("f-sospesa").checked = false;
+    anteprima();
+  });
+  // sospesa NON implica fatta (l'attività non è conclusa, solo in pausa): mutuamente
+  // esclusiva con fatta/annullata, non le implica né ne è implicata — vedi CLAUDE.md
+  document.getElementById("f-sospesa").addEventListener("change", e=>{
+    if(e.target.checked){
+      document.getElementById("f-fatta").checked = false;
+      document.getElementById("f-annullata").checked = false;
+      document.getElementById("f-fine").value = iso(new Date());
+    }
+    anteprima();
   });
 
   document.getElementById("f-annulla").onclick = chiudi;
@@ -451,6 +466,11 @@ function apriAttivita(id, pre){
       S.assegnazioni = S.assegnazioni.filter(x=>x.id!==a.id);
       invalida(); segnaModificato(); chiudi(); rendi();
     }
+  };
+  if(a) document.getElementById("f-duplica").onclick = ()=>{
+    const pre = {personaId:a.personaId, commessaId:a.commessaId, descrizione:a.descrizione, tipologiaId:a.tipologiaId};
+    chiudi();
+    apriAttivita(null, pre);
   };
   document.getElementById("f-ok").onclick = ()=>{
     const modo = val("f-modo");
@@ -469,13 +489,16 @@ function apriAttivita(id, pre){
         return;
       }
     }
+    const fattaChk = document.getElementById("f-fatta").checked;
+    const sospesaChk = document.getElementById("f-sospesa").checked;
     const dati = {personaId:val("f-persona"), commessaId:combo.valore(), modo, dataInizio:inizio,
                   scadenza: modo === "fine" ? val("f-inizio") : modo === "finestra" ? val("f-al") : null,
                   oreTotali:numVal("f-ore"),
                   orePerGiorno: (modo === "finestra" || !val("f-oreg")) ? null : numVal("f-oreg"),
-                  fatta: document.getElementById("f-fatta").checked,
-                  dataFine: document.getElementById("f-fatta").checked ? val("f-fine") : null,
+                  fatta: fattaChk,
+                  dataFine: (fattaChk || sospesaChk) ? val("f-fine") : null,
                   annullata: document.getElementById("f-annullata").checked,
+                  sospesa: sospesaChk,
                   note:val("f-note"), descrizione: val("f-desc"),
                   tipologiaId: val("f-tipologia") || null};
     if(!dati.commessaId){ alert(tr("Scegli un progetto dall'elenco.")); return; }
@@ -487,8 +510,8 @@ function apriAttivita(id, pre){
     // backlog — annullare questa finestra prima d'ora lo lascia intatto (vedi promuoviBacklogItem)
     if(!a && p.backlogId) S.backlog = (S.backlog||[]).filter(x=>x.id!==p.backlogId);
     invalida(); segnaModificato(); chiudi(); rendi();
-    // se la chiusura anticipata ha liberato giornate, chiedo cosa farne
-    if(a && dati.fatta && dati.dataFine && primaFine && dati.dataFine < primaFine){
+    // se la chiusura anticipata (o la sospensione) ha liberato giornate, chiedo cosa farne
+    if(a && (dati.fatta || dati.sospesa) && dati.dataFine && primaFine && dati.dataFine < primaFine){
       proponiAnticipo(a.personaId, dati.dataFine, a.id);
     }
   };
@@ -922,7 +945,9 @@ function apriCommessa(id, pre){
 
       </div>
     </div>`;
+  const puoAnnullareProgetto = c && c.stato !== "chiusa" && c.stato !== "archiviata";
   const piede = `${c?'<button class="btn pericolo sinistra" id="c-elimina">Elimina</button>':""}
+    ${puoAnnullareProgetto?'<button class="btn pericolo sinistra" id="c-annulla-progetto">Annulla progetto</button>':""}
     <button class="btn" id="c-annulla">Annulla</button><button class="btn primario" id="c-ok">Salva</button>`;
   finestra(c?"Modifica progetto":"Nuovo progetto", corpo, piede);
   document.querySelector(".finestra").classList.add("enorme");
@@ -941,6 +966,25 @@ function apriCommessa(id, pre){
     S.assegnazioni = S.assegnazioni.filter(a=>a.commessaId!==c.id);
     invalida(); segnaModificato(); chiudi(); rendi();
   };
+  // Chiudere un progetto che non si concluderà mai: segna come annullata ogni attività
+  // ancora aperta (comprese quelle sospese, che tengono il troncamento già congelato dal
+  // momento della sospensione — cambia solo l'etichetta), poi chiude il progetto — vedi
+  // CLAUDE.md, "Chiudere un progetto che non si concluderà mai".
+  if(puoAnnullareProgetto) document.getElementById("c-annulla-progetto").onclick = ()=>{
+    const daAnnullare = S.assegnazioni.filter(a=>a.commessaId===c.id && !a.fatta && !a.annullata);
+    const msg = daAnnullare.length
+      ? tr("Annullare questo progetto segna come annullate le {0} attività ancora aperte (comprese le sospese) e lo chiude. Le ore già lavorate restano nello storico. Procedere?", daAnnullare.length)
+      : tr("Annullare questo progetto lo chiude, senza attività da segnare. Procedere?");
+    const consenso = S.config.proteggiAttivita ? autorizza(msg) : confirm(msg);
+    if(!consenso) return;
+    const oggi = iso(new Date());
+    daAnnullare.forEach(a=>{
+      if(!a.sospesa) a.dataFine = oggi;
+      a.fatta = true; a.annullata = true; a.sospesa = false;
+    });
+    c.stato = "chiusa"; c.chiusaIl = oggi;
+    invalida(); segnaModificato(); chiudi(); rendi();
+  };
   document.getElementById("c-ok").onclick = ()=>{
     const numero = val("c-num");
     if(!numero){ alert(tr("Serve il numero di progetto.")); return; }
@@ -955,6 +999,22 @@ function apriCommessa(id, pre){
       if(info.tot && info.fatte < info.tot){
         alert(tr("Non puoi chiudere questo progetto: {0} attività non sono ancora concluse o annullate.", info.tot - info.fatte));
         return;
+      }
+    }
+    // sospendere il progetto tronca le sue attività ancora aperte da oggi in poi (ore
+    // future liberate, storia congelata) — nuovo meccanismo (sospesa+dataFine), non
+    // implica fatta: l'attività non è conclusa, solo in pausa. Riattivarla è manuale,
+    // attività per attività (vedi CLAUDE.md, "Regola di chiusura estesa alle attività sospese")
+    if(nuovoStato === "sospesa" && c && c.stato !== "sospesa"){
+      const aperte = S.assegnazioni.filter(a=>a.commessaId===c.id && !a.fatta && !a.annullata && !a.sospesa);
+      if(aperte.length){
+        const msg = aperte.length===1
+          ? tr("Sospendendo il progetto, 1 attività ancora aperta esce dal piano da oggi in poi; le ore già lavorate restano nello storico. Procedere?")
+          : tr("Sospendendo il progetto, {0} attività ancora aperte escono dal piano da oggi in poi; le ore già lavorate restano nello storico. Procedere?", aperte.length);
+        if(!confirm(msg)) return;
+        const oggi = iso(new Date());
+        aperte.forEach(a=>{ a.sospesa = true; a.dataFine = oggi; });
+        invalida();
       }
     }
     const dati = {numero, cliente:val("c-cli"), descrizione:val("c-desc"), colore:scelto || null,

@@ -164,8 +164,10 @@ function distribuzione(a){
   const p = persona(a.personaId);
   if(!p) return mappa;
   const modo = modoAtt(a);
-  // chiusura anticipata: le ore oltre quel giorno non sono più impegnate
-  const limiteChiusura = (a.fatta && a.dataFine) ? a.dataFine : null;
+  // chiusura anticipata (fatta) o sospensione (sospesa): le ore oltre quel giorno non sono
+  // più impegnate. Stesso meccanismo di dataFine per entrambe: la sospensione non implica
+  // fatta (l'attività non è conclusa, solo in pausa) — vedi assegnazioni[].sospesa in CLAUDE.md
+  const limiteChiusura = ((a.fatta || a.sospesa) && a.dataFine) ? a.dataFine : null;
   // finestra: il monte ore si spalma in parti uguali sui giorni utili fra le due date
   if(modo === "finestra"){
     const gg = giorniUtili(a.personaId, a.dataInizio, a.scadenza);

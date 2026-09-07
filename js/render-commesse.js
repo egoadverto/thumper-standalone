@@ -55,7 +55,8 @@ function datiCommessa(c){
   return {ore, oreFatte, dichiarate, dal, al, att, gruppi, ritardo, vt,
           rischio: !!(vt && vt.sfora), oltre: vt ? vt.giorniOltre : 0,
           n:new Set(att.map(a=>a.personaId)).size,
-          fatte:att.filter(a=>a.fatta).length, tot:att.length};
+          fatte:att.filter(a=>a.fatta).length, tot:att.length,
+          sospese:att.filter(a=>a.sospesa).length};
 }
 
 function rendiCommesse(){
