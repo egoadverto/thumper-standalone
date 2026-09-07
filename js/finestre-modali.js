@@ -966,6 +966,13 @@ function apriCommessa(id, pre){
     S.assegnazioni = S.assegnazioni.filter(a=>a.commessaId!==c.id);
     invalida(); segnaModificato(); chiudi(); rendi();
   };
+  // elenco leggibile delle attività coinvolte in un'azione di massa (sospensione, annullamento):
+  // un conteggio secco ("3 attività") non dice chi/cosa/quando, non aiuta a decidere consapevolmente
+  const elencoAttivita = lista => lista.map(a=>{
+    const p = persona(a.personaId), e = estremi(a);
+    const periodo = e ? itData(e.dal)+"–"+itData(e.al) : tr("nessuna ora pianificata");
+    return "• " + (p?p.nome:"?") + (a.descrizione?" — "+a.descrizione:"") + " (" + periodo + ")";
+  }).join("\n");
   // Chiudere un progetto che non si concluderà mai: segna come annullata ogni attività
   // ancora aperta (comprese quelle sospese, che tengono il troncamento già congelato dal
   // momento della sospensione — cambia solo l'etichetta), poi chiude il progetto — vedi
@@ -973,7 +980,8 @@ function apriCommessa(id, pre){
   if(puoAnnullareProgetto) document.getElementById("c-annulla-progetto").onclick = ()=>{
     const daAnnullare = S.assegnazioni.filter(a=>a.commessaId===c.id && !a.fatta && !a.annullata);
     const msg = daAnnullare.length
-      ? tr("Annullare questo progetto segna come annullate le {0} attività ancora aperte (comprese le sospese) e lo chiude. Le ore già lavorate restano nello storico. Procedere?", daAnnullare.length)
+      ? tr("Annullare questo progetto segna come annullate queste {0} attività (comprese le sospese) e lo chiude. Le ore già lavorate restano nello storico:", daAnnullare.length)
+          + "\n\n" + elencoAttivita(daAnnullare) + "\n\n" + tr("Procedere?")
       : tr("Annullare questo progetto lo chiude, senza attività da segnare. Procedere?");
     const consenso = S.config.proteggiAttivita ? autorizza(msg) : confirm(msg);
     if(!consenso) return;
@@ -1008,9 +1016,8 @@ function apriCommessa(id, pre){
     if(nuovoStato === "sospesa" && c && c.stato !== "sospesa"){
       const aperte = S.assegnazioni.filter(a=>a.commessaId===c.id && !a.fatta && !a.annullata && !a.sospesa);
       if(aperte.length){
-        const msg = aperte.length===1
-          ? tr("Sospendendo il progetto, 1 attività ancora aperta esce dal piano da oggi in poi; le ore già lavorate restano nello storico. Procedere?")
-          : tr("Sospendendo il progetto, {0} attività ancora aperte escono dal piano da oggi in poi; le ore già lavorate restano nello storico. Procedere?", aperte.length);
+        const msg = tr("Sospendendo il progetto, queste {0} attività escono dal piano da oggi in poi (le ore già lavorate restano nello storico):", aperte.length)
+          + "\n\n" + elencoAttivita(aperte) + "\n\n" + tr("Procedere?");
         if(!confirm(msg)) return;
         const oggi = iso(new Date());
         aperte.forEach(a=>{ a.sospesa = true; a.dataFine = oggi; });
