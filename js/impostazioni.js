@@ -55,7 +55,7 @@ function rendiImpostazioni(){
   const sez = {};
   sez.calendario = `
     <div class="pannello">
-      <h2 class="din">Orario e calendario</h2>
+      <h2 class="din">Calendario e orario</h2>
       <div class="riga-campi">
         <div class="campo"><label for="cfg-efficienza">Coefficiente di efficienza (%)</label>
           <input type="number" id="cfg-efficienza" min="1" max="300" step="1" value="${Math.round((S.config.efficienza!=null?S.config.efficienza:1)*100)}">
@@ -63,6 +63,14 @@ function rendiImpostazioni(){
         <div class="campo"><label for="cfg-smart">Giorni di smart working a settimana</label>
           <input type="number" id="cfg-smart" min="0" max="7" step="1" value="${S.config.smartMaxSettimana}">
           <span class="aiuto">Limite generale. Le deroghe individuali si impostano sulla singola persona.</span></div>
+      </div>
+      <div class="riga-campi">
+        <div class="campo"><label for="cfg-overtime">Overtime massimo (%)</label>
+          <input type="number" id="cfg-overtime" min="0" max="100" step="5" value="${Math.round((S.config.overtimeMax||0)*100)}">
+          <span class="aiuto">Quanto una giornata può superare le ore ordinarie quando si sceglie l'overtime: con 25%, al massimo 10 h su 8. Con 0% l'overtime non è previsto.</span></div>
+        <div class="campo"><label for="cfg-breve">Soglia attività brevi (%)</label>
+          <input type="number" id="cfg-breve" min="0" max="100" step="5" value="${Math.round((S.config.sogliaBreve!=null?S.config.sogliaBreve:0.5)*100)}">
+          <span class="aiuto">Un'attività che in nessun giorno impegna più di questa quota della giornata ha la precedenza sulle altre nello stesso giorno: le attività lunghe si allungano.</span></div>
       </div>
       <h3>Giorni lavorativi</h3>
       <p class="nota">Le ore di ogni giorno sono la fonte: valgono per tutti. Chi in anagrafica ha un orario personale più corto (part-time) resta sul proprio; un orario personale più lungo non supera comunque il tetto del giorno.</p>
@@ -186,7 +194,7 @@ function rendiImpostazioni(){
       </tbody></table>
 
       <h3>Sviluppo interno</h3>
-      <p class="nota">${tr('Una riga per tipologia di sviluppo interno. La tipologia si assegna poi al singolo progetto, nella sua scheda.')}</p>
+      <p class="nota">${tr('Una riga per tipologia di sviluppo interno. La tipologia si assegna poi alla singola attività, nel suo editor.')}</p>
       <table class="tabella-editabile"><thead><tr><th>Descrizione</th><th class="num-cella" style="width:90px">Tempo</th><th style="width:110px">Giorni/settimane</th><th style="width:110px">Fornitura est.</th><th style="width:160px"></th></tr></thead><tbody>
       ${(S.config.leadProduzione||[]).map(v=>{
         const sbloccata = V.leadModifica.has(v.id);
@@ -218,7 +226,7 @@ function rendiImpostazioni(){
   sez.protezione = `
     <div class="pannello">
       <h2 class="din">Protezione</h2>
-      <p class="nota">${tr("Un codice richiesto prima di eliminare persone, progetti o gruppi, di togliere qualcuno dall'organico e di svuotare tutto. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.")}</p>
+      <p class="nota">${tr("Un codice richiesto prima delle azioni che cancellano dati o sostituiscono un elenco in blocco, elencate qui sotto. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.")}</p>
       <p style="margin:10px 0">
         <span class="chip ${protetto()?"attiva":"archiviata"}" style="font-size:12px;padding:4px 10px">
           ${protetto() ? tr("Protezione attiva") : tr("Protezione non attiva")}</span>
@@ -240,11 +248,14 @@ function rendiImpostazioni(){
         <tr><td>${tr("Eliminare un progetto")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Eliminare un gruppo")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Togliere una persona dall'organico")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Eliminare una singola attività")}</td><td class="num-cella">${protetto()&&S.config.proteggiAttivita?"✓":"–"}</td></tr>
+        <tr><td>${tr("Eliminare una mansione, una tipologia o una festività")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
+        <tr><td>${tr("Eliminare un elemento del backlog")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
+        <tr><td>${tr("Applicare un calendario nazionale")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
+        <tr><td>${tr("Eliminare una singola attività o annullare un progetto")}</td><td class="num-cella">${protetto()&&S.config.proteggiAttivita?"✓":"–"}</td></tr>
       </tbody></table>
       <div class="campo" style="margin-top:10px"><label class="spunta">
         <input type="checkbox" id="cfg-prot-att" ${S.config.proteggiAttivita?"checked":""} ${modificabile?"":"disabled"}>
-        ${tr("Chiedi il codice anche per eliminare una singola attività")}</label>
+        ${tr("Chiedi il codice anche per eliminare una singola attività o annullare un progetto")}</label>
         <span class="aiuto">${tr("È l'operazione più frequente: attivalo solo se serve davvero.")}</span></div>
     </div>
 `;

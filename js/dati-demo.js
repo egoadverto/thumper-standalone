@@ -34,8 +34,10 @@ const GRUPPI_BASE = [
   {id:"g4", sigla:"AP", nome:"Applications"}
 ];
 
-const TAVOLOZZA = ["#1B6E93","#2E7D6B","#4B7A2E","#8C6D0F","#A34A16","#96315C",
-                   "#6B4A96","#3D5A96","#3F8C8C","#506270","#7A5A3A","#5C6E42"];
+// solo blu, viola, azzurri e grigi: niente rossi, marroni o verdi, che chi ha il daltonismo
+// rosso-verde confonde fra loro. 8 colori invece di 12 per tenerli ben distanti (ΔE CIELAB ≥ 20
+// per ogni coppia anche simulando deuteranopia, protanopia e tritanopia), testo bianco leggibile
+const TAVOLOZZA = ["#8855AA","#5555FF","#223344","#889988","#5599AA","#446666","#CC66EE","#5533AA"];
 
 function datiDemo(){
   const oggi = new Date();

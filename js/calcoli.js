@@ -156,8 +156,10 @@ function orePerGiornoEff(a){
   }
   return a.orePerGiorno != null ? a.orePerGiorno : capacitaPersonaGiorno(persona(a.personaId), a.dataInizio);
 }
-// distribuisce le ore di un'attività sui giorni utili
-function distribuzione(a){
+// distribuisce le ore di un'attività sui giorni utili come se fosse l'unica della persona:
+// è il calcolo dello straordinario (si aggiunge alle altre senza togliere loro ore) e la base
+// della modalità finestra in simulaPersona()
+function distribuzioneIsolata(a){
   const mappa = new Map();
   const p = persona(a.personaId);
   if(!p) return mappa;
@@ -206,6 +208,185 @@ function distribuzione(a){
   }
   return mappa;
 }
+/* ----------------------------------------------------------
+   Più attività della stessa persona nello stesso giorno.
+   Le ore ordinarie di un giorno non superano mai la capacità della persona (capacitaGiorno):
+   le attività se le dividono, e quelle che restano senza ore si allungano. Tre classi:
+   - brevi (prioritaria): in nessun giorno chiedono più della soglia "attività brevi"
+     (config.sogliaBreve, default 50%) delle ore nominali del giorno — un'attività di un
+     giorno con poche ore, o un ritmo fissato basso (deroga, finestra). Prendono le loro ore
+     per prime, in ordine di partenza; se non ci stanno, il resto slitta al giorno dopo;
+   - le altre si dividono in parti uguali le ore rimaste, ciascuna senza superare il proprio
+     ritmo (deroga/finestra) né il proprio residuo; quello che a una non serve passa alle
+     altre (nessuna prevale);
+   - overtime (straordinario:true, scelto dall'utente nel banner di slittamento): viene per
+     ultimo e non toglie ore a nessuno; può superare la capacità, ma la giornata non va mai
+     oltre capacità × (1 + config.overtimeMax), default 0%: con 0% l'overtime non aggiunge
+     ore e l'attività prende solo quelle rimaste libere. Le ore che non ci stanno slittano.
+   ---------------------------------------------------------- */
+function primoGiornoUtile(personaId, dal){
+  let cur = d(dal);
+  for(let giri = 0; giri < 400; giri++){
+    const k = iso(cur);
+    if(eLavorativo(k) && !assenzaTotale(personaId, k)) return k;
+    cur = sommaGiorni(cur, 1);
+  }
+  return dal;
+}
+// soglia "attività breve" e tetto di overtime, entrambi in frazione (0.5 = 50%)
+function sogliaBreve(){
+  const v = S.config.sogliaBreve;
+  return (v != null && v >= 0) ? v : 0.5;
+}
+function overtimeMax(){
+  const v = S.config.overtimeMax;
+  return (v != null && v > 0) ? v : 0;
+}
+// ore al giorno che l'attività chiede per ritmo, se ne ha uno fissato (deroga o media della
+// finestra); null = a tempo pieno, chiede tutto quello che resta
+function ritmoFissato(a){
+  if(modoAtt(a) === "finestra") return orePerGiornoEff(a);
+  return a.orePerGiorno != null ? a.orePerGiorno : null;
+}
+// breve = in nessun giorno chiede più della soglia delle ore nominali di quel giorno
+// (ore nominali, prima dell'efficienza: "metà di una giornata da 8 h" sono 4 h)
+function prioritaria(a){
+  const k = primoGiornoUtile(a.personaId, a.dataInizio);
+  const soglia = sogliaBreve() * capacitaPersonaGiorno(persona(a.personaId), k) + 0.001;
+  const ritmo = ritmoFissato(a);
+  return ritmo != null ? ritmo <= soglia : (a.oreTotali||0) <= soglia;
+}
+// distribuzioni di tutte le attività di una persona, prese da "elenco" (di solito
+// S.assegnazioni, o una sua copia con una modifica non ancora salvata): id -> (iso -> ore)
+function simulaPersona(personaId, elenco){
+  const out = new Map();
+  const att = [];
+  const esiste = !!persona(personaId);
+  elenco.forEach(a=>{
+    if(a.personaId !== personaId) return;
+    const m = new Map();
+    out.set(a.id, m);
+    if(!esiste || !a.dataInizio) return;
+    // stessa chiusura anticipata/sospensione di distribuzioneIsolata: oltre dataFine niente ore
+    const limite = ((a.fatta || a.sospesa) && a.dataFine) ? a.dataFine : null;
+    // finestra: la ripartizione "ideale" è quella da sola; quello che non ci sta in un
+    // giorno resta come debito per i giorni successivi
+    const base = modoAtt(a) === "finestra"
+      ? distribuzioneIsolata(Object.assign({}, a, {fatta:false, sospesa:false})) : null;
+    const giorniBase = base ? Array.from(base.keys()).sort() : null;
+    const inizio = base ? giorniBase[0] : a.dataInizio;
+    if(!inizio || (limite && limite < inizio)) return;
+    const ot = !!a.straordinario;
+    att.push({a, m, inizio, limite, base, fineBase: base ? giorniBase[giorniBase.length-1] : null,
+              debito:0, resto:Math.max(0, a.oreTotali||0), ot, prior: !ot && prioritaria(a)});
+  });
+  if(!att.length) return out;
+  // ordine di precedenza (brevi e overtime): chi parte prima; a pari data, l'ordine di inserimento
+  const perPartenza = (x,y)=> x.inizio < y.inizio ? -1 : x.inizio > y.inizio ? 1 : 0;
+  const prior = att.filter(x => x.prior).sort(perPartenza);
+  const extra = att.filter(x => x.ot).sort(perPartenza);
+  const aperta = (x, k) => x.resto > 0.001 && !(x.limite && k > x.limite);
+  // quanto vuole l'attività oggi: il ritmo della finestra (con il debito dei giorni in cui non
+  // ci è stata), la deroga, oppure tutto il residuo se è a tempo pieno
+  const voglio = (x, k) => {
+    if(x.base){ x.debito += x.base.get(k) || 0; return Math.min(x.resto, k >= x.fineBase ? x.resto : x.debito); }
+    return Math.min(x.resto, x.a.orePerGiorno != null ? x.a.orePerGiorno : x.resto);
+  };
+  const assegna = (x, k, q) => {
+    if(q <= 0.001) return 0;
+    x.m.set(k, q); x.resto -= q; if(x.base) x.debito = Math.max(0, x.debito - q);
+    return q;
+  };
+  let cur = d(att.reduce((m,x)=> x.inizio < m ? x.inizio : m, att[0].inizio));
+  for(let giri = 0; giri < 5000; giri++){
+    const k = iso(cur);
+    const vive = att.filter(x => x.inizio <= k && aperta(x, k));
+    if(!vive.length){
+      const prossime = att.filter(x => x.inizio > k && aperta(x, x.inizio)).map(x => x.inizio).sort();
+      if(!prossime.length) break;
+      cur = d(prossime[0]);
+      continue;
+    }
+    if(eLavorativo(k) && !assenzaTotale(personaId, k)){
+      const cap = capacitaGiorno(personaId, k);
+      const desiderio = new Map(vive.map(x => [x, voglio(x, k)]));
+      let libere = cap;
+      prior.forEach(x=>{
+        if(desiderio.has(x)) libere -= assegna(x, k, Math.min(desiderio.get(x), libere));
+      });
+      // le altre si dividono il resto: in ordine di bisogno crescente, così chi ha bisogno di
+      // meno della propria parte lascia la differenza alle successive
+      const altre = vive.filter(x => !x.prior && !x.ot).sort((x,y)=> desiderio.get(x) - desiderio.get(y));
+      altre.forEach((x,i)=>{
+        libere -= assegna(x, k, Math.min(desiderio.get(x), libere / (altre.length - i)));
+      });
+      // overtime per ultimo: oltre la capacità, fino al tetto della giornata
+      let tetto = cap * (1 + overtimeMax()) - (cap - libere);
+      extra.forEach(x=>{
+        if(desiderio.has(x)) tetto -= assegna(x, k, Math.min(desiderio.get(x), Math.max(0, tetto)));
+      });
+    }
+    cur = sommaGiorni(cur, 1);
+  }
+  return out;
+}
+// l'elenco delle attività con "a" al posto della versione salvata (o in più, se è nuova)
+function elencoConModifica(a){
+  let trovata = false;
+  const elenco = (S.assegnazioni || []).map(x => { if(x.id === a.id){ trovata = true; return a; } return x; });
+  if(!trovata) elenco.push(a);
+  return elenco;
+}
+// distribuzione di una singola attività, tenendo conto delle altre della stessa persona.
+// "a" può essere una versione non ancora salvata (anteprima dell'editor, spostamenti di prova)
+function distribuzione(a){
+  return simulaPersona(a.personaId, elencoConModifica(a)).get(a.id) || new Map();
+}
+// vero se l'attività resta in overtime senza chiederlo di nuovo: lo era già e non cambia
+// nulla di ciò che decide le sue ore (note e descrizione si possono toccare liberamente).
+// Assente, null e false valgono uguale: un vecchio dato senza il campo non è "cambiato"
+function restaOvertime(vecchia, nuova){
+  if(!vecchia || !vecchia.straordinario) return false;
+  const norma = v => (v === undefined || v === null || v === false) ? null : v;
+  return ["personaId","dataInizio","scadenza","oreTotali","orePerGiorno","modo","fatta","sospesa","dataFine"]
+    .every(k => norma(vecchia[k]) === norma(nuova[k]));
+}
+// confronto fra versioni "1.4.0": negativo se a < b, zero se uguali, positivo se a > b
+function confrontaVersioni(a, b){
+  const pa = String(a||"0").split(".").map(Number), pb = String(b||"0").split(".").map(Number);
+  for(let i=0;i<3;i++){ const d = (pa[i]||0) - (pb[i]||0); if(d) return d; }
+  return 0;
+}
+// dalla 1.4.0 le attività della stessa persona si dividono le ore (simulaPersona): un file
+// salvato con una versione precedente può avere attività aperte che ora finiscono più tardi.
+// Le elenca confrontando con il calcolo di prima (ogni attività da sola, distribuzioneIsolata)
+const VERSIONE_RIPARTIZIONE = "1.4.0";
+function slittamentiAggiornamento(){
+  if(confrontaVersioni(S.meta && S.meta.versioneApp, VERSIONE_RIPARTIZIONE) >= 0) return [];
+  const out = [];
+  S.assegnazioni.forEach(a=>{
+    if(a.fatta || a.sospesa) return;
+    const e = estremi(a), m = distribuzioneIsolata(a);
+    const prima = m.size ? Array.from(m.keys()).sort().pop() : null;
+    if(e && prima && e.al > prima) out.push({a, prima, dopo:e.al});
+  });
+  return out.sort((u,v)=> u.prima < v.prima ? -1 : 1);
+}
+// attività aperte che, salvando "a" così, finirebbero più tardi di adesso: è quello che
+// l'utente deve accettare (o evitare con lo straordinario) prima che diventi definitivo
+function slittamentiAltre(a){
+  if(a.straordinario) return [];
+  const dist = distribuzioni();
+  const dopo = simulaPersona(a.personaId, elencoConModifica(a));
+  const out = [];
+  S.assegnazioni.forEach(x=>{
+    if(x.id === a.id || x.personaId !== a.personaId || x.fatta) return;
+    const fine = m => (m && m.size) ? Array.from(m.keys()).sort().pop() : null;
+    const prima = fine(dist.get(x.id)), poi = fine(dopo.get(x.id));
+    if(prima && poi && poi > prima) out.push({a:x, prima, dopo:poi});
+  });
+  return out.sort((u,v)=> u.prima < v.prima ? -1 : 1);
+}
 // pianificazione inversa: dalla scadenza risale al giorno di partenza
 function partenzaDaScadenza(personaId, scadenza, oreTotali, orePerGiorno){
   const p = persona(personaId);
@@ -233,7 +414,8 @@ let cacheDist = null;
 function distribuzioni(){
   if(cacheDist) return cacheDist;
   cacheDist = new Map();
-  S.assegnazioni.forEach(a => cacheDist.set(a.id, distribuzione(a)));
+  new Set(S.assegnazioni.map(a => a.personaId)).forEach(pid=>
+    simulaPersona(pid, S.assegnazioni).forEach((m, id) => cacheDist.set(id, m)));
   return cacheDist;
 }
 function invalida(){ cacheDist = null; svuotaCacheFest(); }
@@ -366,6 +548,8 @@ function applicaRiassegnazione(attivitaId, nuovaDataInizio){
   const n = diffGiorni(a.dataInizio, nuovaDataInizio);
   a.dataInizio = nuovaDataInizio;
   if(a.scadenza) a.scadenza = iso(sommaGiorni(d(a.scadenza), n));
+  // provaSpostamento propone solo giorni che non creano sovraccarico: l'overtime non serve più
+  a.straordinario = false;
   invalida(); segnaModificato(); rendi();
   brindisi(tr("Attività spostata al {0}", itData(nuovaDataInizio)));
 }
@@ -375,6 +559,8 @@ function applicaSostituzione(attivitaId, nuovaPersonaId){
   const p = persona(nuovaPersonaId);
   if(!a || !p) return;
   a.personaId = nuovaPersonaId;
+  // candidatiPersona propone solo un collega libero in quei giorni: l'overtime non serve più
+  a.straordinario = false;
   invalida(); segnaModificato(); rendi();
   brindisi(tr("Attività riassegnata a {0}", p.nome));
 }

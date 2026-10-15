@@ -99,7 +99,7 @@ function rendiCommesse(){
       <td><span class="chip ${c.stato}">${statoEti(c.stato)}</span>${attiva?' <span class="chip attiva">in corso</span>':""}${i.ritardo?` <span class="chip ritardo">⚠ ${tr("+{0} gg", i.ritardo)}</span>`:""}</td>
       <td class="num-cella mono">${i.n||"–"}</td>
       <td class="num-cella mono">${i.ore?arr(i.ore):"–"}</td>
-      <td class="num-cella mono" ${i.tot&&i.fatte===i.tot?'style="color:#0A7A34;font-weight:700"':""}>${i.tot?i.fatte+"/"+i.tot:"–"}</td>
+      <td class="num-cella mono" ${i.tot&&i.fatte===i.tot?'style="color:var(--positivo);font-weight:700"':""}>${i.tot?i.fatte+"/"+i.tot:"–"}</td>
       <td class="mono" style="white-space:nowrap">${i.dal?itData(i.dal)+" → "+itData(i.al):"–"}</td>
       <td class="mono" style="white-space:nowrap" ${i.rischio?'title="Il piano finisce oltre la data limite"':""}>${
         c.consegnaCliente ? itData(c.consegnaCliente) + (i.rischio?` <span class="chip ritardo">${tr("⚠ +{0} gg", i.oltre)}</span>`:"") : "–"}</td>

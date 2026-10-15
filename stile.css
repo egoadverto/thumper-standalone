@@ -44,9 +44,12 @@ A tool to support team management and coordination.
   /* idem per stati "secondari/archiviati" (commessa archiviata, priorità bassa del backlog) */
   --neutro:#8C9AA4;
   --neutro-tenue:#F1EEE8;
-  --carico-parz:#9FCFAE;
-  --carico-pieno:#0A7A34;
-  --carico-oltre:#E8342A;
+  /* scala di carico leggibile anche con il daltonismo rosso-verde: blu per "pieno",
+     arancio per "oltre" — mai rosso contro verde (vedi CLAUDE.md, "Colori e daltonismo") */
+  --carico-parz:#A6CEE3;
+  --carico-pieno:#1F5FA8;
+  --carico-oltre:#E69F00;
+  --positivo:#1F5FA8;           /* "tutto a posto": ✓ conclusa, contatori completati, Allineato */
   --festivo:#F3E9D6;
   --chiuso:#F6D2B8;
   --oggi:#C1701F;
@@ -152,7 +155,7 @@ button{cursor:pointer}
 .btn.piccolo{padding:5px 10px;font-size:12px;border-radius:var(--r-piccolo)}
 
 .stato{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--tenue);padding:0 4px}
-.pallino{width:10px;height:10px;border-radius:50%;background:#4B9C5E}
+.pallino{width:10px;height:10px;border-radius:50%;background:var(--positivo)}
 .pallino.modificato{background:var(--oggi)}
 .pallino.lettura{background:var(--tenue)}
 
@@ -337,7 +340,7 @@ tr:hover td{background:var(--superficie)}
 .q1{background:#E6F0F3}
 .q2{background:#CFE3E9}
 .q3{background:#B2D3DC}
-.q4{background:#F6D9DE;color:#7A1727;font-weight:700}
+.q4{background:#F5B97F;color:var(--inchiostro);font-weight:700}
 .pastiglia{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:6px}
 .commessa-link{cursor:pointer}
 .commessa-link:hover .mono{text-decoration:underline}
@@ -356,13 +359,21 @@ tr:hover td{background:var(--superficie)}
 .riga-campi{display:flex;gap:12px;flex-wrap:wrap}
 .riga-campi>*{flex:1 1 130px;min-width:0}
 .campo input,.campo select,.campo textarea{width:100%;min-width:0}
-.campo input[type=checkbox],.caselle input[type=checkbox]{width:auto;min-width:0;flex:0 0 auto}
+.campo input[type=checkbox],.campo input[type=radio],.caselle input[type=checkbox]{width:auto;min-width:0;flex:0 0 auto}
 .pannello .campo input[type=number]{max-width:120px}   /* nei pannelli di Impostazioni i numeri hanno tutti la stessa larghezza, non quella della colonna */
 .campo label.spunta{display:flex;align-items:center;gap:8px;font-size:13px;
   text-transform:none;letter-spacing:0;color:var(--inchiostro)}
 .caselle{display:flex;flex-wrap:wrap;gap:10px}
 .caselle label{display:flex;align-items:center;gap:5px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--inchiostro)}
 
+/* banner di scelta (slittamento / overtime): sopra a tutto, anche a una finestra aperta,
+   che resta com'era sotto — il velo trasparente blocca solo i clic altrove finché non si sceglie */
+.velo-banner{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}
+.banner-scelta{background:var(--carta);border:1px solid var(--avviso-bordo);border-left:4px solid var(--avviso);border-radius:var(--r);
+  box-shadow:0 12px 32px rgba(var(--inchiostro-rgb),.28);padding:14px 16px;max-width:560px;width:100%;font-size:13px}
+.banner-scelta ul{margin:8px 0;padding-left:18px}
+.banner-scelta .nota{margin:0 0 10px}
+.bs-pulsanti{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .velo{position:fixed;inset:0;background:rgba(var(--inchiostro-rgb),.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 /* dove la sfocatura non è supportata resta solo il velo scuro: nessun danno */
@@ -384,6 +395,11 @@ tr:hover td{background:var(--superficie)}
 /* ---------- campo di ricerca a discesa ---------- */
 .cerca{position:relative;display:inline-block}
 .cerca input{border:1px solid var(--linea-forte);border-radius:var(--r);padding:5px 7px;background:var(--carta);width:100%}
+/* dentro una scheda (.campo, es. "Progetto" in Nuova attività) l'input di ricerca deve
+   avere la stessa altezza, bordo e stato a fuoco di tutti gli altri campi lì dentro —
+   non quello più compatto pensato per quando .cerca vive nella barra strumenti */
+.campo .cerca input{padding:8px 10px;background:var(--superficie);border-color:var(--linea)}
+.campo .cerca input:focus{outline:none;border-color:var(--accento);background:var(--carta)}
 .cb-lista{
   position:absolute;top:calc(100% + 2px);left:0;min-width:280px;max-height:270px;overflow:auto;
   background:var(--carta);border:1px solid var(--linea-forte);border-radius:var(--r);

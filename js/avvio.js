@@ -110,6 +110,7 @@ function avvia(){
   document.getElementById("btn-apri").onclick = apriFile;
   document.getElementById("btn-cartelle").onclick = azioneCartelle;
   document.getElementById("btn-utente").onclick = ()=>chiediChiSei(false);
+  document.getElementById("btn-calendario").onclick = ()=>apriEsportaCalendario(null);
 
   // menu "altre azioni" in barra: le voci dentro restano quelle di sempre (stessi
   // pulsanti, stessi gestori), qui c'e' solo l'apri/chiudi del contenitore
@@ -336,7 +337,7 @@ function avvia(){
     else if(e.target.id==="btn-scarica") scarica(nomeFileDati(), serializza());
     else if(e.target.id==="btn-svuota"){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
-      if(!autorizza(tr("Elimina persone, progetti, attività e assenze. I gruppi e le impostazioni restano. Procedere?"))) return;
+      if(!autorizza(tr("Elimina persone, progetti, attività e assenze. Gruppi, impostazioni e backlog restano. Procedere?"))) return;
       S.persone=[]; S.commesse=[]; S.assegnazioni=[]; S.assenze=[];
       invalida(); segnaModificato(); rendi();
     }
@@ -384,6 +385,15 @@ function avvia(){
       if(!modificabile){ e.target.value = pctAttuale; return brindisi(tr("Attiva prima la modifica")); }
       const pct = Math.max(1, parseFloat(e.target.value) || 100);
       S.config.efficienza = pct/100;
+      invalida(); segnaModificato(); rendi();
+      brindisi(tr("Ricalcolate le attività a tempo pieno"));
+    }
+    else if(e.target.id==="cfg-overtime" || e.target.id==="cfg-breve"){
+      const chiave = e.target.id==="cfg-overtime" ? "overtimeMax" : "sogliaBreve";
+      const attuale = S.config[chiave] != null ? S.config[chiave] : (chiave==="sogliaBreve" ? 0.5 : 0);
+      if(!modificabile){ e.target.value = Math.round(attuale*100); return brindisi(tr("Attiva prima la modifica")); }
+      const pct = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+      S.config[chiave] = pct/100;
       invalida(); segnaModificato(); rendi();
       brindisi(tr("Ricalcolate le attività a tempo pieno"));
     }

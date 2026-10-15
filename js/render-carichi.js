@@ -54,7 +54,7 @@ function rendiCarichi(){
         if(c===0 && o===0) return `<td class="num-cella q0 mono">–</td>`;
         const r = c>0 ? o/c : 2;
         const q = r>1.001?"q4":r>=.85?"q3":r>=.5?"q2":r>0?"q1":"q0";
-        return `<td class="num-cella ${q} mono" title="${arr(o)} h su ${c} h disponibili">${o?arr(o):"·"}</td>`;
+        return `<td class="num-cella ${q} mono" title="${tr("{0} h su {1} h disponibili", arr(o), c)}">${o?arr(o):"·"}</td>`;
       }).join("");
       corpo += `<tr><td>${esc(p.nome)}</td>${celle}
         <td class="num-cella mono" ${ggOltre?'style="color:var(--allarme);font-weight:700"':'style="color:var(--tenue)"'}>${ggOltre||"–"}</td></tr>`;

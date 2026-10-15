@@ -64,10 +64,11 @@ function chiediChiSei(primoAvvio){
     chiudi();
     aggiornaBottoneUtente();
     brindisi(tr("Ciao {0}", AUTORE));
+    if(primoAvvio) avvisoAggiornamento();
   };
   document.getElementById("lg-ok").onclick = conferma;
   const salta = document.getElementById("lg-salta");
-  if(salta) salta.onclick = ()=>{ chiudi(); aggiornaBottoneUtente(); };
+  if(salta) salta.onclick = ()=>{ chiudi(); aggiornaBottoneUtente(); avvisoAggiornamento(); };
 }
 function aggiornaBottoneUtente(){
   const b = document.getElementById("btn-utente");

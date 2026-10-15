@@ -29,6 +29,9 @@ A tool to support team management and coordination.
    ========================================================== */
 function serializza(){
   S.meta.salvatoIl = new Date().toISOString();
+  // versione del programma che ha salvato: serve agli avvisi "una volta sola" dopo un
+  // aggiornamento (vedi avvisoAggiornamento), che spariscono al primo salvataggio
+  S.meta.versioneApp = VERSIONE_APP;
   return "// Dati di Thumper — Micro Planner. Non modificare a mano.\n" +
          "window.PLANNER_DATA = " + JSON.stringify(S, null, 1) + ";\n";
 }
@@ -176,6 +179,7 @@ function caricaTesto(testo){
     const n = archiviaScadute();
     invalida(); modificato = !!n; aggiornaStato(); rendi();
     brindisi(n ? tr("Dati caricati · {0} archiviate automaticamente", n) : tr("Dati caricati"));
+    avvisoAggiornamento();
     return true;
   }catch(err){
     alert(tr("Il file non è leggibile: ") + err.message);
@@ -202,6 +206,10 @@ function normalizza(x){
     s.config.oreGiorniSettimana = oreSett;
   }
   if(s.config.efficienza == null) s.config.efficienza = 1;
+  // più attività nello stesso giorno (simulaPersona): overtime spento finché qualcuno non lo
+  // imposta, attività "brevi" fino a metà giornata
+  if(s.config.overtimeMax == null) s.config.overtimeMax = 0;
+  if(s.config.sogliaBreve == null) s.config.sogliaBreve = 0.5;
   delete s.config.oreStandard;
   delete s.config.oreGiornoDefault;
   delete s.config.patrono;   // sostituito da una voce in config.chiusure

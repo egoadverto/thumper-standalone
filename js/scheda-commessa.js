@@ -52,7 +52,7 @@ function apriSchedaCommessa(id){
       <td class="num-cella">${a.annullata
         ? '<span style="color:var(--allarme);font-weight:700">✕</span>'
         : a.fatta
-        ? '<span style="color:#0A7A34;font-weight:700">✓</span>'
+        ? '<span style="color:var(--positivo);font-weight:700">✓</span>'
         : a.sospesa
         ? '<span style="color:var(--neutro);font-weight:700" title="Sospesa">⏸</span>'
         : '<span style="color:var(--linea-forte)">○</span>'}</td></tr>`;
@@ -103,7 +103,7 @@ function apriSchedaCommessa(id){
                ${Math.abs(i.dichiarate-i.ore)>0.01?`<div class="nota">su ${arr(i.dichiarate)} previste</div>`:""}</div>
              <div><div class="eti">Ore concluse</div><div class="val mono din">${arr(i.oreFatte)}</div>
                <div class="nota">${tr("{0}% delle ore", pct)}</div></div>
-             <div><div class="eti">Attività</div><div class="val mono din"${i.tot&&i.fatte===i.tot?' style="color:#0A7A34"':""}>${i.fatte}/${i.tot}</div></div>
+             <div><div class="eti">Attività</div><div class="val mono din"${i.tot&&i.fatte===i.tot?' style="color:var(--positivo)"':""}>${i.fatte}/${i.tot}</div></div>
              <div><div class="eti">Persone</div><div class="val mono din">${i.n||"–"}</div></div>
              <div><div class="eti">Periodo</div><div class="val mono" style="font-size:13px;white-space:normal;line-height:1.3">${i.dal?itData(i.dal)+" –<br>"+itData(i.al):"–"}</div></div>
            </div>

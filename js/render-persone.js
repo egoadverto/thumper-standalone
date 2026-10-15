@@ -27,6 +27,13 @@ A tool to support team management and coordination.
 /* ==========================================================
    8. RENDER — PERSONE
    ========================================================== */
+// ore da mostrare accanto a una giornata registrata: il permesso è sempre a ore, la
+// trasferta solo se non è di tutta la giornata (ore null = giornata intera, vedi trasfertaGiorno)
+function oreAssenzaTesto(a){
+  if(a.tipo === "permesso") return tr("{0} h", arr(a.ore||0));
+  if(a.tipo === "trasferta" && a.ore != null) return tr("{0} h", arr(a.ore));
+  return "";
+}
 /* ----------------------------------------------------------
    Scheda della persona: sola lettura, stesso linguaggio della
    scheda commessa. Non calcola niente di nuovo, raccoglie in
@@ -77,7 +84,7 @@ function apriSchedaPersona(id){
       <td class="num-cella">${x.a.annullata
         ? '<span style="color:var(--allarme);font-weight:700;font-size:16px">✕</span>'
         : x.a.fatta
-        ? '<span style="color:#0A7A34;font-weight:700;font-size:16px">✓</span>'
+        ? '<span style="color:var(--positivo);font-weight:700;font-size:16px">✓</span>'
         : x.a.sospesa
         ? '<span style="color:var(--neutro);font-weight:700;font-size:16px">⏸</span>'
         : '<span style="color:var(--linea-forte);font-size:16px">○</span>'}</td></tr>`;
@@ -92,7 +99,7 @@ function apriSchedaPersona(id){
         <div class="nota mono">${a.dal !== a.al ? "→ "+itData(a.al) : ""}</div>
       </div>
       <div class="testo-nota">${tr(TIPI_GIORNO[a.tipo] || a.tipo)}${
-        a.tipo==="permesso" ? ` <span class="nota">(${a.ore||0} h)</span>` : ""}${
+        oreAssenzaTesto(a) ? ` <span class="nota">(${oreAssenzaTesto(a)})</span>` : ""}${
         a.deroga ? ` <span class="chip sospesa">✦ deroga</span>` : ""}
         <div class="nota">${tr("{0} giorni", diffGiorni(a.dal, a.al)+1)}</div></div>
     </div>`).join("") || `<div class="nota">${tr("Nessuna giornata registrata.")}</div>`;
@@ -192,6 +199,7 @@ function apriSchedaPersona(id){
        </div>
      </div>`,
     `<button class="btn sinistra" id="sp-modifica">Modifica persona</button>
+     ${att.length ? `<button class="btn" id="sp-calendario">Esporta calendario</button>` : ""}
      ${att.length ? `<button class="btn" id="sp-piano">Vedi nel piano</button>` : ""}
      <button class="btn primario" id="sp-chiudi">Chiudi</button>`);
   const finestraEl = document.querySelector(".finestra");
@@ -204,6 +212,9 @@ function apriSchedaPersona(id){
     if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
     apriPersona(p.id);
   };
+  // esportare non modifica nulla: funziona anche in sola lettura
+  const bc = document.getElementById("sp-calendario");
+  if(bc) bc.onclick = ()=>apriEsportaCalendario(p.id);
   const bp = document.getElementById("sp-piano");
   if(bp) bp.onclick = ()=>{
     const prima = att.filter(x=>x.e).map(x=>x.e.dal).sort()[0];
@@ -275,7 +286,7 @@ function rendiAnagrafiche(){
     const p = persona(a.personaId);
     const et = tr(TIPI_GIORNO[a.tipo] || a.tipo);
     return `<tr><td>${p?esc(p.nome):"?"}</td>
-      <td>${et}${a.tipo==="permesso"?" ("+(a.ore||0)+" h)":""}${a.deroga?` <span class="chip sospesa">✦ deroga${a.motivo?": "+esc(a.motivo):""}</span>`:""}</td>
+      <td>${et}${oreAssenzaTesto(a)?" ("+oreAssenzaTesto(a)+")":""}${a.deroga?` <span class="chip sospesa">✦ deroga${a.motivo?": "+esc(a.motivo):""}</span>`:""}</td>
       <td class="mono">${itData(a.dal)}</td><td class="mono">${itData(a.al)}</td>
       <td class="num-cella mono">${diffGiorni(a.dal, a.al)+1}</td>
       <td style="text-align:right"><button class="btn piccolo" data-mod-assenza="${a.id}">Modifica</button></td></tr>`;

@@ -138,14 +138,25 @@ function opzioniCombo(lista){
   }));
 }
 
-function opzioniPersone(sel){
+// la persona in organico che corrisponde a chi è entrato ("Chi sei?"), se c'è: è la scelta
+// proposta negli editor di attività e assenze aperti senza una riga del calendario di partenza
+function personaAutore(){
+  if(!AUTORE) return null;
+  const n = AUTORE.trim().toLowerCase();
+  const p = S.persone.find(x => x.attivo !== false && (x.nome||"").trim().toLowerCase() === n);
+  return p ? p.id : null;
+}
+// segnaposto: aggiunge "— scegli la persona —" in testa, selezionato se non c'è una scelta.
+// Senza, un <select> senza voce selezionata mostrerebbe la prima persona dell'elenco e la
+// salverebbe senza che nessuno l'abbia scelta
+function opzioniPersone(sel, segnaposto){
   const v = personeOrdinate(true);
   // chi è uscito dall'organico DOPO essere stato scelto resta comunque in elenco, marcato:
   // altrimenti il select non troverebbe la voce, ricadrebbe sulla prima persona attiva e
   // salverebbe quella al posto sua senza dirlo (lo strumento segnala, non corregge da solo)
   const p = sel ? persona(sel) : null;
   if(p && !v.includes(p)) v.push(p);
-  return v.map(p=>
+  return (segnaposto ? `<option value="" ${sel?"":"selected"}>${tr("— scegli la persona —")}</option>` : "") + v.map(p=>
     `<option value="${p.id}" ${p.id===sel?"selected":""}>${esc(p.nome)}${p.attivo===false?` (${tr("Non attivo")})`:""}</option>`).join("");
 }
 
@@ -155,7 +166,9 @@ function apriAttivita(id, pre){
   if(S.commesse.length===0){ alert(tr("Aggiungi prima un progetto in Progetti.")); return; }
   const a = id ? S.assegnazioni.find(x=>x.id===id) : null;
   const p = pre || {};
-  const pid = a?a.personaId:(p.personaId||(S.persone[0]&&S.persone[0].id));
+  // nuova attività: la persona della riga cliccata, altrimenti chi è entrato; mai la prima
+  // dell'elenco per default, che finirebbe assegnata a qualcuno che nessuno ha scelto
+  const pid = a ? a.personaId : (p.personaId || personaAutore() || "");
   const oreG = a ? a.orePerGiorno : null;
   const modoIni = a ? modoAtt(a) : "inizio";
   const dataRif = a ? (modoIni==="fine"?a.scadenza:a.dataInizio) : (p.dataInizio||iso(new Date()));
@@ -172,7 +185,7 @@ function apriAttivita(id, pre){
         <div class="sc-sezione">
           <h5 class="titoletto din">Chi e cosa</h5>
           <div class="riga-campi">
-            <div class="campo"><label for="f-persona">Persona</label><select id="f-persona">${opzioniPersone(pid)}</select></div>
+            <div class="campo"><label for="f-persona">Persona</label><select id="f-persona">${opzioniPersone(pid, !a)}</select></div>
             <div class="campo"><label for="f-commessa">Progetto</label>
               <div class="cerca"><input type="text" id="f-commessa" placeholder="Cerca numero o riferimento" autocomplete="off"></div>
             </div>
@@ -296,7 +309,9 @@ function apriAttivita(id, pre){
     if(a && document.getElementById("f-fatta").checked) return a.dataInizio;
     return partenzaDaScadenza(val("f-persona"), val("f-inizio"), numVal("f-ore"), perGiornoForm());
   };
-  const oggettoForm = () => ({id:"x", personaId:val("f-persona"), commessaId:combo.valore(),
+  // stesso id dell'attività in modifica: distribuzione() la mette al posto di quella salvata,
+  // invece di contarla due volte insieme alla versione vecchia
+  const oggettoForm = () => ({id:a ? a.id : "nuova", personaId:val("f-persona"), commessaId:combo.valore(),
     modo:val("f-modo"), dataInizio:risolviInizio(),
     scadenza: val("f-modo") === "fine" ? val("f-inizio") : val("f-modo") === "finestra" ? val("f-al") : null,
     oreTotali:numVal("f-ore"), orePerGiorno:perGiornoForm()});
@@ -349,6 +364,11 @@ function apriAttivita(id, pre){
     document.getElementById("f-oreg").placeholder =
       tr("vuoto = {0} h come da organico", capacitaPersonaGiorno(persona(val("f-persona")), val("f-inizio") || iso(new Date())));
     const box = document.getElementById("f-anteprima");
+    if(!val("f-persona")){
+      box.className = "avviso";
+      box.innerHTML = "<b>"+tr("Scegli la persona")+"</b>"+tr("Indica chi farà questa attività.");
+      consiglio(); aggiornaLiberate(null); return;
+    }
     const perG = perGiornoForm();
     const inizio = risolviInizio();
 
@@ -365,6 +385,11 @@ function apriAttivita(id, pre){
     }
 
     const finto = oggettoForm();
+    // lo stato (conclusa/sospesa) conta per decidere se resta in overtime, ma non entra
+    // nell'anteprima: le giornate liberate dalla chiusura le calcola aggiornaLiberate
+    const fattaOra = document.getElementById("f-fatta").checked, sospOra = document.getElementById("f-sospesa").checked;
+    finto.straordinario = restaOvertime(a, Object.assign({}, finto,
+      {fatta:fattaOra, sospesa:sospOra, dataFine:(fattaOra || sospOra) ? val("f-fine") : null}));
     const m = distribuzione(finto);
     const ch = Array.from(m.keys()).sort();
     box.className = "avviso";
@@ -374,7 +399,10 @@ function apriAttivita(id, pre){
                                : tr("Controlla monte ore e giorno di partenza."));
       consiglio(); aggiornaLiberate(null); return;
     }
-    const oreAlDi = modo === "finestra" ? orePerGiornoEff(finto) : (perG != null ? perG : capacitaPersonaGiorno(persona(val("f-persona")), ch[0]));
+    // a tempo pieno il ritmo è il massimo davvero assegnato in un giorno: per un'attività breve
+    // o divisa con altre è meno delle ore della persona
+    const oreAlDi = modo === "finestra" ? orePerGiornoEff(finto)
+      : (perG != null ? perG : Math.min(capacitaPersonaGiorno(persona(val("f-persona")), ch[0]), Math.max(...m.values())));
     const cap = capacitaPersonaGiorno(persona(val("f-persona")), ch[0]);
     const passato = ch[0] < iso(new Date());
     const slitta = modo === "inizio" && ch[0] !== val("f-inizio");
@@ -397,10 +425,18 @@ function apriAttivita(id, pre){
       box.innerHTML = `<b>${modo === "fine" ? tr("Deve partire il {0}", itData(ch[0])) : gior}</b>`
         + tr("Dal {0} al {1}, {2} h al giorno", itData(ch[0]), itData(ch[ch.length-1]), arr(oreAlDi))
         + (perG == null ? tr(" a tempo pieno.") : ".")
+        + (!finto.straordinario && new Set(ch.slice(0, -1).map(k => Math.round(m.get(k)*100))).size > 1
+            ? " " + tr("Nei giorni già occupati da altre attività usa solo le ore rimaste libere.") : "")
         + (slitta ? tr(" Il {0} non è un giorno utile, la partenza slitta al primo disponibile.", itData(val("f-inizio")))
                   : tr(" Weekend, festività e assenze sono già saltati."))
         + (passato ? `<br><b style="color:var(--allarme)">${tr("⚠ La partenza cade nel passato.")}</b>` : "");
     }
+    const sl = slittamentiAltre(finto);
+    if(finto.straordinario) box.innerHTML += `<br>${tr("In overtime: le sue ore si aggiungono a quelle delle altre attività, senza spostarle.")}`;
+    else if(sl.length) box.innerHTML += `<br><b style="color:var(--allarme)">${tr("⚠ Salvando, finiscono più tardi:")}</b> `
+      + sl.map(x => esc(testoSlittamento(x))).join("; ") + ". "
+      + (overtimeMax() > 0 ? tr("Al salvataggio potrai scegliere se accettare lo slittamento o fare overtime.")
+                           : tr("Al salvataggio ti verrà chiesto se accettare lo slittamento."));
     consiglio();
     aggiornaLiberate(ch, oreAlDi);
   };
@@ -470,7 +506,7 @@ function apriAttivita(id, pre){
     chiudi();
     apriAttivita(null, pre);
   };
-  document.getElementById("f-ok").onclick = ()=>{
+  document.getElementById("f-ok").onclick = async ()=>{
     const modo = val("f-modo");
     const inizio = risolviInizio();
     if(modo === "fine" && !inizio){
@@ -499,8 +535,14 @@ function apriAttivita(id, pre){
                   sospesa: sospesaChk,
                   note:val("f-note"), descrizione: val("f-desc"),
                   tipologiaId: val("f-tipologia") || null};
+    if(!dati.personaId){ alert(tr("Scegli la persona che farà questa attività.")); return; }
     if(!dati.commessaId){ alert(tr("Scegli un progetto dall'elenco.")); return; }
     if(!dati.dataInizio || dati.oreTotali<=0){ alert(tr("Servono una data e un monte ore maggiore di zero.")); return; }
+    // le altre attività della persona che slitterebbero: l'utente accetta lo slittamento,
+    // sceglie l'overtime o torna all'editor — mai uno spostamento silenzioso
+    const scelta = await decidiSlittamento(a, Object.assign({id:a ? a.id : "nuova"}, dati));
+    if(scelta === null) return;
+    dati.straordinario = scelta;
     const primaFine = a ? (estremi(a) || {}).al : null;
     if(a) Object.assign(a, dati);
     else S.assegnazioni.push(Object.assign({id:nuovoId("a")}, dati));
@@ -528,11 +570,82 @@ function anteprimaAttivita(id){
       <tr><th>Periodo</th><td class="mono">${e?itData(e.dal)+" → "+itData(e.al):"–"}</td></tr>
       <tr><th>Vincolo</th><td>${modoAtt(a)==="fine"?tr("Consegna entro il {0}", itData(a.scadenza)):modoAtt(a)==="finestra"?tr("Finestra dal {0} al {1}, carico ripartito", itData(a.dataInizio), itData(a.scadenza)):tr("Parte il {0}", itData(a.dataInizio))}</td></tr>
       ${a.annullata?`<tr><th>Stato</th><td style="color:var(--allarme)"><b>✕ Annullata</b></td></tr>`
-        :a.fatta?`<tr><th>Stato</th><td style="color:#0A7A34"><b>✓ Conclusa</b></td></tr>`:""}
+        :a.fatta?`<tr><th>Stato</th><td style="color:var(--positivo)"><b>✓ Conclusa</b></td></tr>`:""}
       ${a.note?`<tr><th>Note</th><td>${esc(a.note)}</td></tr>`:""}
     </tbody></table>
     <p class="nota" style="margin-top:12px">Attiva la modifica in alto a destra per cambiare questa attività.</p>`,
     `<button class="btn" onclick="document.getElementById('velo').remove()">Chiudi</button>`);
+}
+
+// avviso "una volta sola" dopo l'aggiornamento alla ripartizione delle ore fra attività dello
+// stesso giorno: compare finché il file dati non viene salvato con la versione nuova (meta.
+// versioneApp, scritto da serializza), e solo se qualche attività aperta finisce davvero più
+// tardi. Senza un file dati vero (demo) non c'è nulla da avvisare.
+function avvisoAggiornamento(){
+  if(!window.PLANNER_DATA && !manico && !salvatoIlConosciuto) return;
+  const sl = slittamentiAggiornamento();
+  if(!sl.length) return;
+  finestra(tr("Nuove regole per le attività nello stesso giorno"),
+    `<p style="margin:0 0 10px">${tr("Da questa versione una giornata non supera più le ore disponibili: le attività della stessa persona che si sovrappongono si dividono le ore, e alcune finiscono più tardi di prima. Le date salvate non cambiano, cambia il calcolo.")}</p>
+     <p style="margin:0 0 6px"><b>${sl.length === 1 ? tr("1 attività finisce più tardi:") : tr("{0} attività finiscono più tardi:", sl.length)}</b></p>
+     <table><thead><tr><th>${tr("Persona")}</th><th>${tr("Progetto")}</th></tr></thead><tbody>
+     ${sl.map(x => { const p = persona(x.a.personaId); return `<tr><td>${esc(p ? p.nome : "?")}</td><td>${esc(testoSlittamento(x))}</td></tr>`; }).join("")}
+     </tbody></table>
+     <p class="nota" style="margin:10px 0 0">${tr("Questo avviso compare finché il piano non viene salvato con la nuova versione.")}</p>`,
+    `<button class="btn primario" id="ag-ok">${tr("Ho capito")}</button>`);
+  document.querySelector(".finestra").classList.add("larga");
+  document.getElementById("ag-ok").onclick = chiudi;
+}
+// "25-0412 · Cliente: fine 15/10 → 16/10" — una riga per attività che slitta
+function testoSlittamento(x){
+  const c = commessa(x.a.commessaId);
+  return tr("{0}: fine {1} → {2}", (c ? c.numero + (c.cliente ? " · " + c.cliente : "") : "?")
+    + (x.a.descrizione ? " (" + x.a.descrizione + ")" : ""), itData(x.prima), itData(x.dopo));
+}
+// decide come salvare "nuova" (versione non ancora salvata di un'attività): se farebbe finire
+// più tardi altre attività della stessa persona, chiede con un banner. Restituisce il valore
+// di straordinario da salvare (true = overtime), oppure null se l'utente annulla
+async function decidiSlittamento(vecchia, nuova){
+  if(restaOvertime(vecchia, nuova)) return true;
+  const sl = slittamentiAltre(Object.assign({}, nuova, {straordinario:false}));
+  if(!sl.length) return false;
+  // con l'overtime le altre restano dove sono, ma questa attività può finire più tardi se il
+  // tetto della giornata (config.overtimeMax) non basta: il banner lo dice prima della scelta
+  let fineOvertime = null;
+  if(overtimeMax() > 0){
+    const ot = Object.assign({}, nuova, {straordinario:true});
+    const m = simulaPersona(ot.personaId, elencoConModifica(ot)).get(ot.id);
+    fineOvertime = m && m.size ? Array.from(m.keys()).sort().pop() : null;
+  }
+  const r = await bannerSlittamento(nuova.personaId, sl, fineOvertime);
+  return r === "overtime" ? true : r === "slitta" ? false : null;
+}
+// banner sopra a tutto (anche all'editor aperto, che resta com'è): slittamento, overtime o annulla
+function bannerSlittamento(personaId, sl, fineOvertime){
+  return new Promise(risolvi => {
+    const p = persona(personaId);
+    const v = document.createElement("div");
+    v.className = "velo-banner";
+    v.innerHTML = `<div class="banner-scelta" role="alertdialog" aria-modal="true" aria-labelledby="bs-titolo">
+      <b id="bs-titolo">${tr("Altre attività di {0} finirebbero più tardi", esc(p ? p.nome : ""))}</b>
+      <ul>${sl.map(x => `<li>${esc(testoSlittamento(x))}</li>`).join("")}</ul>
+      <p class="nota">${overtimeMax() > 0
+        ? tr("Con l'overtime le altre restano dove sono e le giornate arrivano al massimo al {0}% delle ore ordinarie.", Math.round(100 + overtimeMax()*100))
+          + (fineOvertime ? " " + tr("Questa attività finirebbe il {0}.", itData(fineOvertime)) : "")
+        : tr("L'overtime non è previsto: si attiva in Impostazioni → Calendario e orario → Overtime massimo.")}</p>
+      <div class="bs-pulsanti">
+        <button class="btn" data-r="annulla">${tr("Annulla")}</button>
+        ${overtimeMax() > 0 ? `<button class="btn" data-r="overtime">${tr("Overtime")}</button>` : ""}
+        <button class="btn primario" data-r="slitta">${tr("Accetta lo slittamento")}</button>
+      </div></div>`;
+    const fine = r => { window.removeEventListener("keydown", esc_, true); v.remove(); risolvi(r); };
+    // Esc chiude solo il banner, non l'editor sotto: intercettato prima di escChiudi
+    const esc_ = e => { if(e.key === "Escape"){ e.stopImmediatePropagation(); e.preventDefault(); fine("annulla"); } };
+    window.addEventListener("keydown", esc_, true);
+    v.querySelectorAll("[data-r]").forEach(b => b.onclick = () => fine(b.dataset.r));
+    document.body.appendChild(v);
+    v.querySelector('[data-r="slitta"]').focus();
+  });
 }
 
 // dopo una chiusura anticipata: propone di spostare avanti le attività successive
@@ -837,9 +950,9 @@ function apriPersona(id){
     </div>
     <div class="campo"><label>Anche operativo in</label><div class="caselle">
       ${S.gruppi.map(g=>`<label><input type="checkbox" data-extra="${g.id}" ${p&&(p.gruppiExtra||[]).includes(g.id)?"checked":""}> ${esc(g.nome)}</label>`).join("")}
-    </div><span class="aiuto">Etichetta informativa: la persona resta su una sola riga, quella del gruppo principale.</span></div>
+    </div><span class="aiuto">La persona resta su una sola riga, quella del gruppo principale, ma in Verifiche può essere proposta come sostituto anche in questi gruppi.</span></div>
     <div class="campo"><label for="p-smart">Deroga al limite di smart working</label>
-      <input type="number" id="p-smart" min="0" max="7" step="1" placeholder="${S.config.smartMaxSettimana} giorni a settimana" value="${p&&p.smartMax!=null?p.smartMax:""}">
+      <input type="number" id="p-smart" min="0" max="7" step="1" placeholder="${tr("{0} giorni a settimana", S.config.smartMaxSettimana)}" value="${p&&p.smartMax!=null?p.smartMax:""}">
       <span class="aiuto">Vuoto = limite generale. Compila solo per chi ha un'autorizzazione diversa.</span></div>
     <div class="campo"><label class="spunta"><input type="checkbox" id="p-attivo" ${!p||p.attivo!==false?"checked":""}> In organico</label></div>`;
   const piede = `${p?'<button class="btn pericolo sinistra" id="p-elimina">Elimina</button>':""}
@@ -1037,7 +1150,7 @@ function apriAssenza(id){
   if(!modificabile) return;
   const a = id ? S.assenze.find(x=>x.id===id) : null;
   const corpo = `
-    <div class="campo"><label for="s-persona">Persona</label><select id="s-persona">${opzioniPersone(a?a.personaId:"")}</select></div>
+    <div class="campo"><label for="s-persona">Persona</label><select id="s-persona">${opzioniPersone(a ? a.personaId : (personaAutore() || ""), !a)}</select></div>
     <div class="riga-campi">
       <div class="campo"><label for="s-tipo">Tipo</label><select id="s-tipo">
         ${Object.keys(TIPI_GIORNO).map(k=>`<option value="${k}" ${a&&a.tipo===k?"selected":""}>${tr(TIPI_GIORNO[k])}</option>`).join("")}
@@ -1106,6 +1219,7 @@ function apriAssenza(id){
     invalida(); segnaModificato(); chiudi(); rendi();
   };
   document.getElementById("s-ok").onclick = ()=>{
+    if(!val("s-persona")){ alert(tr("Scegli la persona.")); return; }
     const dal = val("s-dal"), al = val("s-al");
     if(!dal || !al || al < dal){ alert(tr("Controlla le date: la fine non può precedere l'inizio.")); return; }
     const tipo = val("s-tipo");

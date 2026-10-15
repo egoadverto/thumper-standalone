@@ -49,7 +49,7 @@ function rendiPiano(){
 
   if(S.persone.filter(p=>p.attivo!==false).length === 0){
     pagina.innerHTML = `<div class="vuoto-messaggio"><b>${tr("Nessuna persona in elenco")}</b>`
-      + tr("Aggiungi le persone dell'ufficio nella scheda Anagrafiche per iniziare a pianificare.") + `</div>`;
+      + tr("Aggiungi le persone dell'ufficio nella scheda Organico per iniziare a pianificare.") + `</div>`;
     return;
   }
 
@@ -69,7 +69,7 @@ function rendiPiano(){
   for(let i=1;i<=gg.length;i++){
     if(i===gg.length || gg[i].dt.getMonth() !== gg[m0].dt.getMonth()){
       const larg = (i-m0)*C;
-      mesi += `<div class="mese" style="left:${m0*C}px;width:${larg}px">${MESI[gg[m0].dt.getMonth()]} ${gg[m0].dt.getFullYear()}</div>`;
+      mesi += `<div class="mese" style="left:${m0*C}px;width:${larg}px">${tr(MESI[gg[m0].dt.getMonth()])} ${gg[m0].dt.getFullYear()}</div>`;
       m0 = i;
     }
   }
@@ -118,9 +118,9 @@ function rendiPiano(){
         const gDist = dist.get(x.a.id);
         const perG = arr(orePerGiornoEff(x.a));
         const tardi = sforaConsegna(x.a);
-        const vincolo = modoAtt(x.a)==="fine" ? "&#10;Consegna entro il "+itData(x.a.scadenza)+(tardi?" ⚠ NON RISPETTATA":"")
-                      : modoAtt(x.a)==="finestra" ? "&#10;Finestra: carico ripartito" : "";
-        blocchi += `<div class="blocco ${tardi?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${arr(x.e.ore)} h totali · ${perG} h/giorno&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ Annullata":x.a.fatta?"&#10;✓ Conclusa":x.a.sospesa?"&#10;⏸ Sospesa":""}"
+        const vincolo = modoAtt(x.a)==="fine" ? "&#10;"+tr("Consegna entro il {0}", itData(x.a.scadenza))+(tardi?" "+tr("⚠ NON RISPETTATA"):"")
+                      : modoAtt(x.a)==="finestra" ? "&#10;"+tr("Finestra: carico ripartito") : "";
+        blocchi += `<div class="blocco ${tardi?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${tr("{0} h totali · {1} h/giorno", arr(x.e.ore), perG)}&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ "+tr("Annullata"):x.a.fatta?"&#10;✓ "+tr("Conclusa"):x.a.sospesa?"&#10;⏸ "+tr("Sospesa"):""}${x.a.straordinario?"&#10;Overtime":""}"
           style="left:${left}px;width:${wid}px;top:${x.corsia*26+3}px;background:${coloreCommessa(c)}">
           ${x.a.annullata?'<span class="segno" title="Annullata">✕</span>':x.a.fatta?'<span class="segno" title="Conclusa">✓</span>':x.a.sospesa?'<span class="segno" title="Sospesa">⏸</span>':""}<span class="num mono">${esc(c.numero)}</span>
           <span class="cli">${esc(c.cliente)}</span>
@@ -156,8 +156,8 @@ function rendiPiano(){
         const larg = (fine-corsa+1)*C - 3;
         const voce = (S.assenze||[]).find(x=>x.id===vid);
         const eti = (stato==="d" ? "✦ " : "") + tr(SIGLE_GIORNO[tipo]);
-        const coda = stato==="o" ? "&#10;⚠ Oltre il limite di "+limiteSmart(p)+" giorni a settimana"
-                   : stato==="d" ? "&#10;✦ Deroga eccezionale" + (voce&&voce.motivo ? ": "+esc(voce.motivo) : "") : "";
+        const coda = stato==="o" ? "&#10;"+tr("⚠ Oltre il limite di {0} giorni a settimana", limiteSmart(p))
+                   : stato==="d" ? "&#10;✦ "+tr("Deroga eccezionale") + (voce&&voce.motivo ? ": "+esc(voce.motivo) : "") : "";
         fuori += `<div class="fs-fascia ${tipo} ${stato==="o"?"oltre":stato==="d"?"deroga":""}" data-assenza="${vid}"
           title="${esc(p.nome)} · ${TIPI_GIORNO[tipo]}&#10;${itData(gg[corsa].k)} → ${itData(gg[fine].k)}${coda}"
           style="left:${corsa*C+1}px;width:${larg}px;bottom:13px">${larg>40?eti:""}</div>`;
@@ -182,7 +182,7 @@ function rendiPiano(){
           const r = ore/cap;
           const alt = Math.min(1, r) * 9;
           const cls = r > 1.001 ? "oltre" : (r > 0.999 ? "pieno" : "");
-          nastro += `<div class="n-carico ${cls}" title="${esc(p.nome)} · ${itData(g.k)}&#10;${arr(ore)} h su ${cap} h" style="left:${i*C}px;width:${C-1}px;height:${r>1.001?9:alt}px"></div>`;
+          nastro += `<div class="n-carico ${cls}" title="${esc(p.nome)} · ${itData(g.k)}&#10;${tr("{0} h su {1} h", arr(ore), cap)}" style="left:${i*C}px;width:${C-1}px;height:${r>1.001?9:alt}px"></div>`;
         } else if(ore > 0 && cap === 0){
           nastro += `<div class="n-carico oltre" title="Ore pianificate in un giorno non disponibile" style="left:${i*C}px;width:${C-1}px;height:9px"></div>`;
         }
@@ -200,7 +200,7 @@ function rendiPiano(){
       righe += `<div class="riga" data-persona="${p.id}">
         <div class="cella-nomi">
           <div class="persona-nome"><b>${esc(p.nome)}</b>${extra}</div>
-          <div class="persona-sub mono">${tr("{0} h/giorno", oreP)}${ggAssenza?` · <span style="color:#0A7A34;font-weight:700">${tr("{0} gg assenza", ggAssenza)}</span>`:""}${ggSmart?` · <span style="color:#438A8C;font-weight:700">${tr("{0} smart", ggSmart)}</span>`:""}${ggTrasf?` · <span style="color:#343A40;font-weight:700">${tr("{0} trasf.", ggTrasf)}</span>`:""}${ggOltre?` · <span style="color:var(--allarme);font-weight:700">${tr("⚠ {0} oltre limite", ggOltre)}</span>`:""}</div>
+          <div class="persona-sub mono">${tr("{0} h/giorno", oreP)}${ggAssenza?` · <span style="color:var(--positivo);font-weight:700">${tr("{0} gg assenza", ggAssenza)}</span>`:""}${ggSmart?` · <span style="color:#438A8C;font-weight:700">${tr("{0} smart", ggSmart)}</span>`:""}${ggTrasf?` · <span style="color:#343A40;font-weight:700">${tr("{0} trasf.", ggTrasf)}</span>`:""}${ggOltre?` · <span style="color:var(--allarme);font-weight:700">${tr("⚠ {0} oltre limite", ggOltre)}</span>`:""}</div>
         </div>
         <div class="pista" style="width:${W}px;height:${h}px" data-pista="${p.id}">
           ${blocchi}${fuori}${assenze}
@@ -272,11 +272,17 @@ function agganciaPiano(tab, gg, C){
       spostato = Math.round((e.clientX - x0)/C);
       b.style.left = (left0 + spostato*C) + "px";
     };
-    const molla = () => {
+    const molla = async () => {
       document.removeEventListener("mousemove", muovi);
       document.removeEventListener("mouseup", molla);
       b.classList.remove("trascino");
       if(spostato !== 0){
+        // il rilascio del mouse genera anche un "click": senza questo blocco, mentre il banner
+        // di slittamento aspetta la scelta (il calendario non è ancora ridisegnato) quel click
+        // cadrebbe sulla casella sotto il puntatore e aprirebbe una "Nuova attività" vuota
+        const ignoraClick = e => { e.stopPropagation(); e.preventDefault(); };
+        window.addEventListener("click", ignoraClick, {capture:true, once:true});
+        setTimeout(() => window.removeEventListener("click", ignoraClick, {capture:true}), 0);
         const a = S.assegnazioni.find(z=>z.id===b.dataset.att);
         if(a){
           // il blocco e' disegnato dal primo/ultimo giorno EFFETTIVO con ore (estremi,
@@ -285,13 +291,22 @@ function agganciaPiano(tab, gg, C){
           // blocco, altrimenti sbaglia esattamente dei giorni di weekend saltati
           const e = estremi(a);
           const rifInizio = (e && e.dal) || a.dataInizio;
-          a.dataInizio = iso(sommaGiorni(d(rifInizio), spostato));
+          const nuova = Object.assign({}, a, {dataInizio: iso(sommaGiorni(d(rifInizio), spostato))});
           // se e' ancorata alla consegna, trascinare sposta tutto il blocco, scadenza compresa
           if(a.scadenza){
             const rifFine = (modoAtt(a) === "finestra" && e && e.al) ? e.al : a.scadenza;
-            a.scadenza = iso(sommaGiorni(d(rifFine), spostato));
+            nuova.scadenza = iso(sommaGiorni(d(rifFine), spostato));
           }
-          invalida(); segnaModificato(); rendi();
+          // se il blocco nella nuova posizione fa slittare altre attività, si chiede prima:
+          // slittamento, overtime o annulla (il blocco torna dov'era)
+          const scelta = await decidiSlittamento(a, nuova);
+          if(scelta !== null){
+            a.dataInizio = nuova.dataInizio;
+            if(a.scadenza) a.scadenza = nuova.scadenza;
+            a.straordinario = scelta;
+            invalida(); segnaModificato();
+          }
+          rendi();
         }
       } else { b.style.left = left0+"px"; }
     };

@@ -103,6 +103,10 @@ function giornoVoceFestivita(v, anno){
   }
   return new Date(anno, v.mese-1, v.giorno, 12);
 }
+// 1°, 2°… in italiano; 1st, 2nd, 3rd, 4th in inglese (non basta un "th" fisso)
+function ordinale(n){ return lingua === "it" ? n + "°" : n + (["st","nd","rd"][n-1] || "th"); }
+// in italiano mesi e giorni della settimana dentro una frase vanno minuscoli, in inglese no
+function nomeCalendario(nome){ return lingua === "it" ? nome.toLowerCase() : nome; }
 // descrizione leggibile di una voce, per l'elenco in Impostazioni (non lega il giorno a un anno preciso)
 function testoVoceFestivita(v){
   if(v.tipo === "pasqua"){
@@ -110,10 +114,10 @@ function testoVoceFestivita(v){
     return tr(v.offset > 0 ? "Pasqua + {0} gg" : "Pasqua − {0} gg", Math.abs(v.offset));
   }
   if(v.tipo === "settimana"){
-    const occ = v.occorrenza === -1 ? tr("ultimo") : tr("{0}°", v.occorrenza);
-    return tr("{0} {1} di {2}", occ, tr(NOMI_GG_SETT[v.giornoSettimana]).toLowerCase(), tr(MESI[v.mese-1]).toLowerCase());
+    const occ = v.occorrenza === -1 ? tr("ultimo") : ordinale(v.occorrenza);
+    return tr("{0} {1} di {2}", occ, nomeCalendario(tr(NOMI_GG_SETT[v.giornoSettimana])), nomeCalendario(tr(MESI[v.mese-1])));
   }
-  return v.giorno + " " + tr(MESI[v.mese-1]).toLowerCase();
+  return v.giorno + " " + nomeCalendario(tr(MESI[v.mese-1]));
 }
 // preset di partenza per l'elenco personalizzabile config.festivitaNazionali — vedi CLAUDE.md.
 // Solo festività nazionali (non regionali/cantonali): l'utente parte da qui e poi modifica.

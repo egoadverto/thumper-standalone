@@ -189,7 +189,7 @@ function reportCsv(){
     const g = gruppo(r.p.gruppoId);
     return [r.p.nome, g ? g.sigla : "", num(r.disp), num(r.pian),
             r.disp > 0 ? Math.round(r.sat*100) : "", r.oltre || 0,
-            r.primoOltre ? itData(r.primoOltre) : ""];
+            r.primoOltre || ""];   // ISO, come in plan.csv: il file è uguale in ogni lingua
   });
   const virgolette = v => `"${String(v).replace(/"/g, '""')}"`;
   const testo = "\uFEFF" + [testa, ...corpo].map(r=>r.map(virgolette).join(";")).join("\r\n");
