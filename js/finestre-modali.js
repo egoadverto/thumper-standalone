@@ -350,7 +350,7 @@ function apriAttivita(id, pre){
   const anteprima = () => {
     const modo = val("f-modo");
     document.getElementById("f-lab-data").textContent =
-      modo === "fine" ? "Data di consegna" : modo === "finestra" ? "Dal" : "Giorno di partenza";
+      tr(modo === "fine" ? "Data di consegna" : modo === "finestra" ? "Dal" : "Giorno di partenza");
     /* i campi non spariscono: restano al loro posto disattivati, cosi' la
        finestra non cambia forma mentre si compila */
     const fin = modo === "finestra";

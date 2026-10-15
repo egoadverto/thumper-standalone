@@ -18,6 +18,7 @@
 | <img src="assets/Screenshot-Project.png" width="420"><br>Elenco progetti / Project list | <img src="assets/Screenshot-Checks.png" width="420"><br>Carico di lavoro e sovraccarichi / Workload & overloaded days |
 | <img src="assets/Screenshot-Backlog.png" width="420"><br>Backlog Kanban | <img src="assets/Screenshot-Staff.png" width="420"><br>Organico e gruppi / Staff & groups |
 | <img src="assets/Screenshot-Setting.png" width="420"><br>Impostazioni / Settings | <img src="assets/Screenshot-Login.png" width="420"><br>"Chi sei?" all'avvio / "Who are you?" on launch |
+| <img src="assets/Screenshot-Activity.png" width="420"><br>Editor di un'attività / Activity editor | <img src="assets/Screenshot-Overtime.png" width="420"><br>Avviso di slittamento e overtime / Delay notice and overtime |
 
 </details>
 
@@ -50,7 +51,7 @@ Thumper affronta lo stesso problema con lo stesso vincolo di partenza (una carte
 
 - una vista di pianificazione pensata per essere letta a colpo d'occhio;
 - controlli automatici su sovraccarichi e scadenze, invece di scoprirli a consuntivo;
-- una sola fonte di verità (`dati.js`), con backup automatici e protezione dai salvataggi concorrenti.
+- una sola fonte di verità (un unico file dati), con backup automatici e protezione dai salvataggi concorrenti.
 
 Non è pensato per grandi organizzazioni con PMO strutturati: è deliberatamente uno strumento leggero, per team che oggi non hanno nulla di meglio di un Excel condiviso.
 
@@ -58,11 +59,15 @@ Non è pensato per grandi organizzazioni con PMO strutturati: è deliberatamente
 
 - **Pianificazione a calendario** — vista Gantt-like per persona, raggruppata per gruppo/reparto, con scorrimento temporale e filtro per progetto.
 - **Tre modalità di pianificazione per attività**: data di inizio con calcolo automatico della fine, scadenza di consegna con calcolo a ritroso della data di inizio, oppure carico ripartito su un intervallo.
-- **Rilevamento sovraccarichi** basato su statistiche robuste (mediana e MAD, non media) invece di soglie fisse.
+- **Più attività nello stesso giorno senza sforare**: una giornata non supera mai le ore disponibili della persona. Le attività brevi hanno la precedenza, le altre si dividono le ore e si allungano; se un'attività ne fa slittare altre, un avviso chiede se accettare lo slittamento o usare l'**overtime** (con un massimo per giorno impostabile).
+- **Verifiche su sovraccarichi e scadenze**: ore assegnate contro ore disponibili, giorno per giorno, con proposte di spostamento o di riassegnazione a un collega libero — sempre da confermare, mai applicate da sole.
+- **Statistiche sui tempi dei progetti chiusi** basate su mediana e scarto mediano, non sulla media, per non farsi spostare da un caso isolato.
 - **Gestione assenze e smart working**, con permessi parziali che riducono la capacità giornaliera senza bloccarla.
 - **Backlog in stile Kanban** per il lavoro non ancora pianificato (nessuna data, nessun progetto assegnato), con promozione a vera attività quando è il momento.
 - **Gestore documenti e note per progetto**, in Markdown.
-- **Report di carico di lavoro** con esportazione CSV.
+- **Report di carico di lavoro** con esportazione CSV (sempre in inglese, uguale per tutti).
+- **Esportazione del calendario** in formato .ics, per vedere le proprie attività in Outlook o sul telefono.
+- **Colori leggibili anche da chi è daltonico**: nessuna informazione affidata al contrasto rosso/verde.
 - **Sistema di lead time e scadenze di consegna**, per capire in anticipo se una data è realistica.
 - **Interfaccia bilingue** italiano/inglese.
 - **Sola lettura di default**: modifica esplicita da attivare, per evitare modifiche accidentali con un clic distratto.
@@ -74,18 +79,18 @@ Nessuna installazione, nessun `npm install`.
 1. Clona o scarica il repository.
 2. Apri `Thumper.html` con un doppio clic (browser consigliati: **Chrome** o **Edge**, per il supporto alla File System Access API).
 3. Al primo avvio ti verrà chiesto chi sei — non è un login, serve solo a firmare le note e i salvataggi.
-4. L'app parte già popolata con dati dimostrativi (`dati.js` non è incluso nel repository: è lo stato applicativo, non sorgente).
+4. L'app parte già popolata con dati dimostrativi (il file dati non è incluso nel repository: è lo stato applicativo, non sorgente).
 
 Per usarlo in team, basta mettere la cartella su una condivisione di rete Windows: ogni collega apre lo stesso `Thumper.html` dal proprio browser.
 
 ### Come funziona la persistenza dei dati
 
-Non c'è un database e non c'è un backend. Tutto il piano vive in un unico file, `dati.js`, accanto a `Thumper.html`.
+Non c'è un database e non c'è un backend. Tutto il piano vive in un unico file dati accanto a `Thumper.html`: `data.js` (le installazioni più vecchie continuano a usare `dati.js`, senza fare nulla).
 
-- Il salvataggio usa la **File System Access API** del browser: la prima volta chiede dove si trova `dati.js`, poi scrive direttamente senza altre richieste.
+- Il salvataggio usa la **File System Access API** del browser: al primo salvataggio di ogni sessione chiede la cartella del file dati, poi scrive direttamente senza altre richieste fino alla chiusura della pagina.
 - Ogni salvataggio mette da parte la versione precedente in `backup/`, tenendo le ultime cinque.
 - Se un collega ha salvato nel frattempo, il salvataggio si **ferma** con un avviso invece di sovrascrivere silenziosamente: un solo scrittore alla volta, niente merge automatico.
-- Sui browser senza supporto alla File System Access API, il salvataggio scarica `dati.js` nella cartella Download, da spostare a mano nella cartella di rete.
+- Sui browser senza supporto alla File System Access API, il salvataggio scarica il file dati nella cartella Download, da spostare a mano nella cartella di rete.
 
 ### Stack tecnico e vincoli di progetto
 
@@ -102,7 +107,7 @@ Thumper è costruito attorno a un vincolo preciso, non aggirabile: deve girare d
 Thumper.html            — markup dell'app (schede, barra, contenitori)
 stile.css                — foglio di stile principale (variabili CSS per temi/colori)
 dizionario.js            — stringhe di interfaccia IT→EN
-dati.js                   — stato applicativo corrente (non tracciato in git)
+data.js (o dati.js)       — stato applicativo corrente (non tracciato in git)
 manuale.html              — manuale utente, pagina statica bilingue
 js/                        — tutta la logica applicativa, un file per area
 LICENSE                    — AGPL-3.0
@@ -163,7 +168,7 @@ Thumper tackles the same problem under the same starting constraints (a network 
 
 - a planning view designed to be read at a glance;
 - automatic overload and deadline checks, instead of finding out after the fact;
-- a single source of truth (`dati.js`), with automatic backups and protection against concurrent saves.
+- a single source of truth (one data file), with automatic backups and protection against concurrent saves.
 
 It isn't built for large organizations with a structured PMO: it's deliberately a lightweight tool, for teams that today have nothing better than a shared spreadsheet.
 
@@ -171,11 +176,15 @@ It isn't built for large organizations with a structured PMO: it's deliberately 
 
 - **Calendar-based planning** — a Gantt-like view per person, grouped by team/department, with time scrolling and project filtering.
 - **Three scheduling modes per activity**: a start date with automatic end-date calculation, a delivery deadline with backward calculation of the start date, or a workload spread evenly across a date range.
-- **Overload detection** based on robust statistics (median and MAD, not the mean) instead of fixed thresholds.
+- **Several activities on the same day without overbooking**: a day never goes over the person's available hours. Short activities take precedence, the others split the hours and stretch out; if an activity would push others back, a notice asks whether to accept the delay or use **overtime** (with a configurable daily maximum).
+- **Overload and deadline checks**: assigned hours against available hours, day by day, with proposals to move the work or hand it to a free colleague — always to be confirmed, never applied on their own.
+- **Timing statistics on closed projects** based on the median and median deviation, not the mean, so a single odd case doesn't skew them.
 - **Absence and remote-work management**, with partial leave that reduces daily capacity without blocking it.
 - **Kanban-style backlog** for work that hasn't been scheduled yet (no date, no project assigned), promoted to a real activity when the time comes.
 - **Document and note manager per project**, in Markdown.
-- **Workload reports** with CSV export.
+- **Workload reports** with CSV export (always in English, the same for everyone).
+- **Calendar export** as an .ics file, to see your activities in Outlook or on your phone.
+- **Colours readable for colour-blind people**: no information relies on red/green contrast.
 - **Lead time and delivery-deadline system**, to spot early whether a date is realistic.
 - **Bilingual interface**, Italian/English.
 - **Read-only by default**: editing must be turned on explicitly, to avoid accidentally moving something with a stray click.
@@ -187,18 +196,18 @@ No installation, no `npm install`.
 1. Clone or download the repository.
 2. Open `Thumper.html` with a double click (recommended browsers: **Chrome** or **Edge**, for File System Access API support).
 3. On first launch you'll be asked who you are — it's not a login, it's just used to sign notes and saves.
-4. The app starts pre-loaded with demo data (`dati.js` isn't included in the repository: it's application state, not source code).
+4. The app starts pre-loaded with demo data (the data file isn't included in the repository: it's application state, not source code).
 
 To use it as a team, just put the folder on a Windows network share: each colleague opens the same `Thumper.html` from their own browser.
 
 ### How data persistence works
 
-There's no database and no backend. The whole plan lives in a single file, `dati.js`, next to `Thumper.html`.
+There's no database and no backend. The whole plan lives in a single data file next to `Thumper.html`: `data.js` (older installations keep using `dati.js`, with nothing to do).
 
-- Saving uses the browser's **File System Access API**: the first time, it asks where `dati.js` is located, then writes to it directly with no further prompts.
+- Saving uses the browser's **File System Access API**: on the first save of each session it asks for the data file's folder, then writes to it directly with no further prompts until the page is closed.
 - Every save moves the previous version into a `backup/` folder, keeping the last five.
 - If a colleague has saved in the meantime, your save **stops** with a warning instead of silently overwriting: one writer at a time, no automatic merging.
-- On browsers without File System Access API support, saving downloads `dati.js` to the Downloads folder, to be moved by hand into the network folder.
+- On browsers without File System Access API support, saving downloads the data file to the Downloads folder, to be moved by hand into the network folder.
 
 ### Tech stack and design constraints
 
@@ -215,7 +224,7 @@ Thumper is built around one hard constraint: it has to run from a network folder
 Thumper.html            — app markup (tabs, toolbar, containers)
 stile.css                — main stylesheet (CSS custom properties for themes/colors)
 dizionario.js            — UI strings, IT→EN
-dati.js                   — current application state (not tracked in git)
+data.js (or dati.js)      — current application state (not tracked in git)
 manuale.html              — user manual, static bilingual page
 js/                        — all application logic, one file per area
 LICENSE                    — AGPL-3.0

@@ -47,6 +47,11 @@ function spezzaInSettimane(gg){
 }
 // gg/mm/aaaa in italiano; in inglese ISO aaaa-mm-gg invece di mm/dd/aaaa — quest'ultimo
 // e' ambiguo fuori dagli USA, l'ISO non lo e' per nessuno
+// giorno e mese senza anno, per le intestazioni strette: 31/08 in italiano, 08-31 in inglese
+// (stesso ordine della data completa di itData, di cui è la parte finale/iniziale)
+function dataBreve(x){ const t = itData(x); return lingua === "en" ? t.slice(5) : t.slice(0,5); }
+// iniziale del giorno della settimana (0 = domenica) nella lingua dell'interfaccia
+function inizialeGiorno(gs){ return (lingua === "en" ? GG_EN : GG)[gs]; }
 function itData(x){
   const t=d(x), gg=String(t.getDate()).padStart(2,"0"), mm=String(t.getMonth()+1).padStart(2,"0"), aaaa=t.getFullYear();
   return lingua === "en" ? aaaa+"-"+mm+"-"+gg : gg+"/"+mm+"/"+aaaa;
@@ -77,6 +82,7 @@ const PRESET_PERIODO = {
 };
 const MESI=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const GG=["D","L","M","M","G","V","S"];
+const GG_EN=["S","M","T","W","T","F","S"];   // iniziali dei giorni nell'interfaccia inglese
 const NOMI_GG_SETT=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
 
 function pasqua(anno){ // algoritmo di Meeus/Butcher

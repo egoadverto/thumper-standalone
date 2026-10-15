@@ -377,7 +377,7 @@ function rendiAnagrafiche(){
       ${sfori.length ? sfori.map(x=>`<tr><td class="mono">${itData(x.lun)}</td><td>${esc(x.p.nome)}</td>
         <td class="num-cella mono" style="color:var(--allarme)"><b>${x.n}</b></td>
         <td class="num-cella mono">${x.lim}</td>
-        <td class="mono">${x.giorni.map(k=>itData(k).slice(0,5)).join("  ")}</td></tr>`).join("")
+        <td class="mono">${x.giorni.map(k=>dataBreve(k)).join("  ")}</td></tr>`).join("")
         : '<tr><td colspan="5" style="color:var(--tenue);padding:14px">Nessuno sforamento registrato.</td></tr>'}
       </tbody></table>
     </div>

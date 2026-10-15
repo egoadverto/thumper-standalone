@@ -79,7 +79,7 @@ function rendiPiano(){
     if(g.fest) cls.push("fest"); else if(!g.lav) cls.push("nonlav");
     if(g.k===oggiK) cls.push("oggi");
     const tit = g.fest ? ` title="${nomeFestivita(g.k)}"` : "";
-    testaGiorni += `<div class="${cls.join(" ")}" style="left:${i*C}px"${tit}><b class="mono">${g.dt.getDate()}</b><span>${GG[g.gs]}</span></div>`;
+    testaGiorni += `<div class="${cls.join(" ")}" style="left:${i*C}px"${tit}><b class="mono">${g.dt.getDate()}</b><span>${inizialeGiorno(g.gs)}</span></div>`;
   });
 
   const carichi = caricoPersone();

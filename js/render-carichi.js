@@ -35,7 +35,7 @@ function rendiCarichi(){
   // settimane
   const sett = spezzaInSettimane(gg);
 
-  let intest = sett.map(s=>`<th class="num-cella">${itData(s[0].k).slice(0,5)}</th>`).join("");
+  let intest = sett.map(s=>`<th class="num-cella">${dataBreve(s[0].k)}</th>`).join("");
   let corpo = "";
   S.gruppi.forEach(gr=>{
     const membri = persone.filter(p=>p.gruppoId===gr.id);
