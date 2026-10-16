@@ -39,12 +39,27 @@ function iso(dt){
 function sommaGiorni(dt,n){ const r=new Date(dt); r.setDate(r.getDate()+n); r.setHours(12,0,0,0); return r; }
 function diffGiorni(a,b){ return Math.round((d(b)-d(a))/86400000); }
 function inizioSettimana(dt){ const r=d(dt); const g=(r.getDay()+6)%7; return sommaGiorni(r,-g); }
-// spezza un elenco di giorni consecutivi in blocchi da 7, per le tabelle "per settimana"
+// spezza un elenco di giorni consecutivi nelle settimane del calendario (da lunedì a domenica),
+// per le tabelle "per settimana": la prima e l'ultima possono essere parziali (un periodo a mese
+// solare parte il giorno 1). Allineate al lunedì, così il numero di settimana ISO è giusto
 function spezzaInSettimane(gg){
   const sett = [];
-  for(let i=0;i<gg.length;i+=7) sett.push(gg.slice(i,i+7));
+  gg.forEach(g => {
+    if(!sett.length || d(g.k).getDay() === 1) sett.push([]);
+    sett[sett.length-1].push(g);
+  });
   return sett;
 }
+// numero di settimana ISO 8601 (lunedì-domenica; la settimana 1 è quella che contiene il primo
+// giovedì dell'anno): {anno, n}. A cavallo di capodanno l'anno ISO può essere quello vicino
+function settimanaIso(x){
+  const g = d(x);
+  const gio = sommaGiorni(g, 3 - (g.getDay() + 6) % 7);          // il giovedì della stessa settimana
+  const anno = gio.getFullYear();
+  return {anno, n: 1 + Math.floor(diffGiorni(iso(new Date(anno, 0, 1, 12)), iso(gio)) / 7)};
+}
+// "W42": il riferimento di settimana usato in ufficio, uguale in italiano e in inglese
+function etichettaSettimana(x){ return "W" + String(settimanaIso(x).n).padStart(2, "0"); }
 // gg/mm/aaaa in italiano; in inglese ISO aaaa-mm-gg invece di mm/dd/aaaa — quest'ultimo
 // e' ambiguo fuori dagli USA, l'ISO non lo e' per nessuno
 // giorno e mese senza anno, per le intestazioni strette: 31/08 in italiano, 08-31 in inglese

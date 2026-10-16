@@ -19,6 +19,8 @@
 | <img src="assets/Screenshot-Backlog.png" width="420"><br>Backlog Kanban | <img src="assets/Screenshot-Staff.png" width="420"><br>Organico e gruppi / Staff & groups |
 | <img src="assets/Screenshot-Setting.png" width="420"><br>Impostazioni / Settings | <img src="assets/Screenshot-Login.png" width="420"><br>"Chi sei?" all'avvio / "Who are you?" on launch |
 | <img src="assets/Screenshot-Activity.png" width="420"><br>Editor di un'attività / Activity editor | <img src="assets/Screenshot-Overtime.png" width="420"><br>Avviso di slittamento e overtime / Delay notice and overtime |
+| <img src="assets/Screenshot-Dependency.png" width="420"><br>Attività bloccata fuori sequenza / Out-of-sequence activity blocked | <img src="assets/Screenshot-Sequence.png" width="420"><br>Attività collegate nella scheda progetto / Linked activities on the project sheet |
+| <img src="assets/Screenshot-Timing.png" width="420"><br>Attività fuori sequenza in Verifiche / Out-of-sequence activities in Checks | |
 
 </details>
 
@@ -60,6 +62,8 @@ Non è pensato per grandi organizzazioni con PMO strutturati: è deliberatamente
 - **Pianificazione a calendario** — vista Gantt-like per persona, raggruppata per gruppo/reparto, con scorrimento temporale e filtro per progetto.
 - **Tre modalità di pianificazione per attività**: data di inizio con calcolo automatico della fine, scadenza di consegna con calcolo a ritroso della data di inizio, oppure carico ripartito su un intervallo.
 - **Più attività nello stesso giorno senza sforare**: una giornata non supera mai le ore disponibili della persona. Le attività brevi hanno la precedenza, le altre si dividono le ore e si allungano; se un'attività ne fa slittare altre, un avviso chiede se accettare lo slittamento o usare l'**overtime** (con un massimo per giorno impostabile).
+- **Attività collegate**: un'attività può partire dopo altre dello stesso progetto (es. calcoli prima della progettazione). Non si salva se parte prima che finiscano, la scheda progetto mostra la sequenza e la data limite tiene conto della catena a valle; se un'attività a monte slitta, quelle a valle vengono segnalate.
+- **Numero di settimana ISO** (W42) nel calendario e nei report di carico.
 - **Verifiche su sovraccarichi e scadenze**: ore assegnate contro ore disponibili, giorno per giorno, con proposte di spostamento o di riassegnazione a un collega libero — sempre da confermare, mai applicate da sole.
 - **Statistiche sui tempi dei progetti chiusi** basate su mediana e scarto mediano, non sulla media, per non farsi spostare da un caso isolato.
 - **Gestione assenze e smart working**, con permessi parziali che riducono la capacità giornaliera senza bloccarla.
@@ -177,6 +181,8 @@ It isn't built for large organizations with a structured PMO: it's deliberately 
 - **Calendar-based planning** — a Gantt-like view per person, grouped by team/department, with time scrolling and project filtering.
 - **Three scheduling modes per activity**: a start date with automatic end-date calculation, a delivery deadline with backward calculation of the start date, or a workload spread evenly across a date range.
 - **Several activities on the same day without overbooking**: a day never goes over the person's available hours. Short activities take precedence, the others split the hours and stretch out; if an activity would push others back, a notice asks whether to accept the delay or use **overtime** (with a configurable daily maximum).
+- **Linked activities**: an activity can start after others in the same project (e.g. calculations before design). It can't be saved if it starts before they finish, the project sheet shows the sequence and deadlines account for the chain downstream; if an upstream activity slips, the ones that depend on it are flagged.
+- **ISO week number** (W42) in the calendar and in the workload reports.
 - **Overload and deadline checks**: assigned hours against available hours, day by day, with proposals to move the work or hand it to a free colleague — always to be confirmed, never applied on their own.
 - **Timing statistics on closed projects** based on the median and median deviation, not the mean, so a single odd case doesn't skew them.
 - **Absence and remote-work management**, with partial leave that reduces daily capacity without blocking it.

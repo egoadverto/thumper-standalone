@@ -35,7 +35,7 @@ function rendiCarichi(){
   // settimane
   const sett = spezzaInSettimane(gg);
 
-  let intest = sett.map(s=>`<th class="num-cella">${dataBreve(s[0].k)}</th>`).join("");
+  let intest = sett.map(s=>`<th class="num-cella">${etichettaSettimana(s[0].k)}<div class="nota mono">${dataBreve(s[0].k)}</div></th>`).join("");
   let corpo = "";
   S.gruppi.forEach(gr=>{
     const membri = persone.filter(p=>p.gruppoId===gr.id);
@@ -147,6 +147,13 @@ function rendiCarichi(){
     // sono i più urgenti da sistemare (una scadenza concordata e ancora nulla in piano)
     .sort((x,y) => (x.v.lim?x.v.lim.fineUfficio:"") < (y.v.lim?y.v.lim.fineUfficio:"") ? -1 : 1);
 
+  // dipendenze: attività aperte che partono prima che finisca una da cui dipendono, o che
+  // aspettano un'attività sospesa — già ⚠ nel piano, qui tutte insieme dalla più vicina
+  const fuoriSeq = [];
+  S.commesse.filter(c => c.stato !== "chiusa" && c.stato !== "archiviata")
+    .forEach(c => sequenzeViolateCommessa(c).forEach(v => fuoriSeq.push(Object.assign({c}, v))));
+  fuoriSeq.sort((x,y) => x.dal < y.dal ? -1 : 1);
+
   // consegne che non rientrano piu'
   const tardive = S.assegnazioni.filter(a=>{
     if(!sforaConsegna(a) || a.fatta) return false;
@@ -211,6 +218,22 @@ function rendiCarichi(){
         <td class="mono" ${x.v.sfora?'style="color:var(--allarme)"':""}><b>${x.v.finePiano?itData(x.v.finePiano):tr("non pianificata")}</b></td>
         <td class="num-cella mono" style="color:var(--allarme)"><b>${x.v.finePiano?tr("+{0} gg", x.v.giorniOltre):"–"}</b></td></tr>`).join("")
         : '<tr><td colspan="6" style="color:var(--tenue);padding:14px">Tutte le consegne concordate rientrano nei tempi.</td></tr>'}
+      </tbody></table>
+    </div>
+    <div class="pannello">
+      <h2 class="din">Attività fuori sequenza</h2>
+      <p class="nota">Attività aperte che partono prima che sia finita un'attività da cui dipendono, o che aspettano un'attività
+      sospesa. Sono già segnate ⚠ nel piano; qui sono tutte insieme, dalla più vicina. Un clic sull'attività la apre per rimetterla in ordine.</p>
+      <table><thead><tr><th>Progetto</th><th>Chi e cosa</th><th>Parte il</th><th>Dipende da</th><th>Che finisce il</th>
+        <th class="num-cella">Sovrapposizione</th></tr></thead><tbody>
+      ${fuoriSeq.length ? fuoriSeq.map(x=>`<tr>
+        <td><span class="commessa-link" data-scheda="${x.c.id}"><span class="pastiglia" style="background:${coloreCommessa(x.c)}"></span><span class="mono">${esc(x.c.numero)}</span></span></td>
+        <td><span class="attivita-link" data-apri-att="${x.a.id}">${esc(nomeAttivita(x.a))}</span></td>
+        <td class="mono">${itData(x.dal)}</td>
+        <td>${esc(nomeAttivita(x.p))}</td>
+        <td class="mono" style="color:var(--allarme)"><b>${x.sospesa ? "⏸ " + tr("sospesa") : itData(x.fine)}</b></td>
+        <td class="num-cella mono" style="color:var(--allarme)"><b>${x.sospesa ? "–" : tr("+{0} gg", diffGiorni(x.dal, x.fine) + 1)}</b></td></tr>`).join("")
+        : `<tr><td colspan="6" style="color:var(--tenue);padding:14px">${tr("Tutte le attività rispettano la sequenza.")}</td></tr>`}
       </tbody></table>
     </div>
     <div class="pannello">

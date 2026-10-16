@@ -182,6 +182,8 @@ function avvia(){
       applicaSostituzione(as.dataset.applicaSostituzione, as.dataset.nuovaPersona);
       return;
     }
+    const aa = e.target.closest("[data-apri-att]");
+    if(aa){ apriAttivita(aa.dataset.apriAtt); return; }
     const bs = e.target.closest("[data-scheda]");
     if(bs){ apriSchedaCommessa(bs.dataset.scheda); return; }
     if(e.target.closest("[data-nuova-cerca]")){

@@ -205,6 +205,10 @@ button{cursor:pointer}
   text-transform:uppercase;letter-spacing:.08em;color:var(--tenue);font-weight:600;
   overflow:hidden;white-space:nowrap;
 }
+/* settimane ISO (W42) fra mesi e giorni: banda da lunedì a domenica, separata come le colonne del lunedì */
+.settimane-test{position:relative;height:16px}
+.sett-testa{position:absolute;top:0;height:16px;padding:1px 5px;font-size:9.5px;color:var(--tenue);
+  border-left:1px solid var(--linea);overflow:hidden;white-space:nowrap}
 .giorni-test{position:relative;height:34px}
 .gt{
   position:absolute;top:0;height:34px;width:var(--col);text-align:center;
@@ -258,6 +262,8 @@ button{cursor:pointer}
 .blocco.fatta{opacity:.55}
 .blocco.fatta .cli{text-decoration:line-through}
 .blocco .segno{font-size:11px;font-weight:700;position:relative;z-index:1}
+/* dipendenza: un'unica icona neutra, uguale per chi viene prima e chi viene dopo */
+.blocco .segno.dip{font-weight:400;opacity:.9}
 .blocco .num,.blocco .cli,.blocco .ore{position:relative;z-index:1}
 .blocco.trascino{cursor:grabbing;opacity:.85;z-index:9}
 .blocco .num{font-weight:700}
@@ -344,6 +350,8 @@ tr:hover td{background:var(--superficie)}
 .pastiglia{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:6px}
 .commessa-link{cursor:pointer}
 .commessa-link:hover .mono{text-decoration:underline}
+.attivita-link{cursor:pointer}
+.attivita-link:hover{text-decoration:underline}
 .opz-commessa[data-scheda]{cursor:pointer}
 .opz-commessa[data-scheda]:hover b{text-decoration:underline}
 
@@ -374,10 +382,13 @@ tr:hover td{background:var(--superficie)}
 .banner-scelta ul{margin:8px 0;padding-left:18px}
 .banner-scelta .nota{margin:0 0 10px}
 .bs-pulsanti{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.velo{position:fixed;inset:0;background:rgba(var(--inchiostro-rgb),.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;
+/* banner con un elenco di attività da spuntare (annullare/sospendere la catena a valle) */
+.bs-elenco{margin:8px 0 10px;max-height:40vh;overflow:auto}
+.bs-voce{display:flex;gap:8px;align-items:flex-start;margin:4px 0;font-size:13px}
+.velo{position:fixed;inset:0;background:rgba(var(--inchiostro-rgb),.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;overflow:auto;
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 /* dove la sfocatura non è supportata resta solo il velo scuro: nessun danno */
-.finestra{background:var(--carta);border-radius:14px;width:100%;max-width:520px;}
+.finestra{background:var(--carta);border-radius:14px;width:100%;max-width:520px;margin:auto}   /* margin:auto: centrata, ma se è più alta del velo parte dall'alto invece di essere tagliata sopra */
 .finestra.larga{max-width:660px}
 .finestra{max-height:90vh;overflow:auto;box-shadow:0 24px 50px rgba(0,0,0,.4)}
 .finestra header{padding:18px 20px 14px;display:flex;align-items:center}
@@ -410,7 +421,11 @@ tr:hover td{background:var(--superficie)}
 .cb-voce .cb-sotto{color:var(--tenue);font-size:11px;overflow:hidden;text-overflow:ellipsis}
 .cb-vuoto{padding:9px;color:var(--tenue);font-size:12px}
 .cb-azione{border-top:1px solid var(--linea);color:var(--accento-scuro);font-weight:600}
-.finestra.con-lista{overflow:visible}
+/* con un campo di ricerca il menu a discesa non deve essere tagliato dal bordo: niente
+   scorrimento interno, quindi nemmeno un'altezza massima — altrimenti il contenuto più alto
+   dello schermo esce dallo sfondo bianco e i pulsanti finiscono fuori dalla finestra. Se è
+   più alta dello schermo scorre il velo, con la finestra intera dentro. */
+.finestra.con-lista{overflow:visible;max-height:none}
 .finestra.con-lista .corpo-f{overflow:visible}
 
 .chip{display:inline-block;font-size:10px;letter-spacing:.02em;font-weight:600;
@@ -456,6 +471,18 @@ tr.spenta td{opacity:.55}
 .sc-avviso{display:flex;gap:8px;align-items:flex-start;background:var(--avviso-tenue);
   border:1px solid var(--avviso-bordo);border-left:3px solid var(--oggi);border-radius:var(--r);
   padding:10px 12px;margin-bottom:6px;font-size:12px}
+/* editor attività, "Parte dopo": le attività scelte come etichette rimovibili sopra la ricerca */
+.dip-scelte{display:flex;flex-wrap:wrap;gap:6px}
+.dip-scelte:not(:empty){margin-bottom:6px}
+.dip-etichetta{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 4px 3px 8px;
+  border:1px solid var(--linea);border-radius:var(--r-piccolo);background:var(--superficie-tinta)}
+.dip-togli{border:0;background:none;cursor:pointer;color:var(--tenue);font-size:14px;line-height:1;padding:0 4px}
+.dip-togli:hover{color:var(--inchiostro)}
+.dip-cerca{display:block}
+/* sequenza delle attività nella tabella della scheda progetto: rientro con └/├ sotto
+   l'attività da cui si dipende */
+.seq-cella{display:flex;gap:6px;align-items:flex-start}
+.seq-rami{white-space:pre;color:var(--tenue)}
 .albero{font-size:12px}
 .alb-radice{padding:6px 0;border-bottom:1px solid var(--linea);margin-bottom:4px;font-weight:600}
 .alb-riga{display:flex;align-items:center;gap:8px;padding:3px 0;min-width:0}
@@ -572,7 +599,7 @@ tr.riga-opzioni td{padding:0;border-bottom:1px solid var(--linea-forte)}
 }
 /* l'attributo hidden deve vincere sul display dei campi, altrimenti
    i campi che il modulo nasconde restano visibili e modificabili */
-.campo[hidden], .riga-campi[hidden]{display:none !important}
+.campo[hidden], .riga-campi[hidden], .avviso[hidden]{display:none !important}
 /* campi disattivati: restano al loro posto ma si vede che non sono in gioco */
 .campo input:disabled, .campo select:disabled{background:var(--superficie-fredda);color:var(--tenue);cursor:not-allowed}
 .campo input:disabled + .aiuto{color:var(--tenue)}

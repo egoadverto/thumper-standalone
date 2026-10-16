@@ -34,19 +34,22 @@ function esportaCsv(){
   const MODI = {inizio:"Starts on", fine:"Due by", finestra:"Spread load"};
   const num = v => String(v).replace(".", ",");   // virgola decimale, come il CSV del report (Excel in italiano)
   const righe = [["Person","Group","Project","Reference","Type","Description","From","To","Constraint","Due by",
-                  "Activity","Total hours","Hours/day","In-house development","Delivery","Office deadline","Latest viable start","Notes"]];
+                  "Activity","Total hours","Hours/day","In-house development","Delivery","Office deadline","Latest viable start",
+                  "Starts after","Notes"]];
   S.assegnazioni.forEach(a=>{
     const p = persona(a.personaId), c = commessa(a.commessaId), e = estremi(a);
     if(!p||!c) return;
     const g = gruppo(p.gruppoId);
     const lim = limiteAttivita(c, a);                 // la scadenza della SUA tipologia
-    const ult = lim ? ultimoInizio(a, lim.fineUfficio) : null;
+    const ult = (lim && !lim.impossibile) ? ultimoInizio(a, lim.fineUfficio) : null;
     const tp = a.tipologiaId === "nessuna" ? "No internal development"
              : (tipologiaProdotto(tipologiaAttivita(a)) || {}).nome || "";
     righe.push([p.nome, g?g.nome:"", c.numero, c.cliente, c.natura&&natura(c.natura)?natura(c.natura).nome:"", c.descrizione||"",
       e?e.dal:"", e?e.al:"", MODI[modoAtt(a)], a.scadenza||"",
       a.descrizione||"", num(a.oreTotali), num(arr(orePerGiornoEff(a))), tp,
       c.consegnaCliente||"", lim?lim.fineUfficio:"", ult||"",
+      // dipendenze: le attività che devono finire prima che questa parta ("Parte dopo")
+      predecessori(a).map(nomeAttivita).join(", "),
       a.note||""]);
   });
   const csv = "\uFEFF" + righe.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");

@@ -542,26 +542,36 @@ function provaSpostamento(a, mappaAttuale, margine){
 }
 // applica uno spostamento già trovato da provaSpostamento: stesso meccanismo del trascinamento
 // del blocco nel calendario (sposta dataInizio e, se c'è, la scadenza di conseguenza)
-function applicaRiassegnazione(attivitaId, nuovaDataInizio){
+// dipendenze: spostare in avanti un'attività a monte può farla finire dopo la partenza di
+// quelle che dipendono da lei — prima di applicare si chiede, come nell'editor e nel Gantt
+// (controllaSuccessive). Spostarla in avanti non può invece violare le sue precedenti.
+async function applicaRiassegnazione(attivitaId, nuovaDataInizio){
   const a = S.assegnazioni.find(x=>x.id===attivitaId);
   if(!a) return;
   const n = diffGiorni(a.dataInizio, nuovaDataInizio);
-  a.dataInizio = nuovaDataInizio;
-  if(a.scadenza) a.scadenza = iso(sommaGiorni(d(a.scadenza), n));
   // provaSpostamento propone solo giorni che non creano sovraccarico: l'overtime non serve più
+  const nuova = Object.assign({}, a, {dataInizio:nuovaDataInizio, straordinario:false},
+    a.scadenza ? {scadenza: iso(sommaGiorni(d(a.scadenza), n))} : {});
+  const successive = await controllaSuccessive(nuova, true);
+  if(successive === null) return;
+  a.dataInizio = nuova.dataInizio;
+  if(a.scadenza) a.scadenza = nuova.scadenza;
   a.straordinario = false;
-  invalida(); segnaModificato(); rendi();
+  invalida(); spostaSuccessive(successive); segnaModificato(); rendi();
   brindisi(tr("Attività spostata al {0}", itData(nuovaDataInizio)));
 }
 // sostituisce chi fa l'attività, stesse date: nessun altro campo cambia
-function applicaSostituzione(attivitaId, nuovaPersonaId){
+// stesse date, ma il calendario del collega può farla finire più tardi: stesso controllo
+async function applicaSostituzione(attivitaId, nuovaPersonaId){
   const a = S.assegnazioni.find(x=>x.id===attivitaId);
   const p = persona(nuovaPersonaId);
   if(!a || !p) return;
-  a.personaId = nuovaPersonaId;
   // candidatiPersona propone solo un collega libero in quei giorni: l'overtime non serve più
+  const successive = await controllaSuccessive(Object.assign({}, a, {personaId:nuovaPersonaId, straordinario:false}), true);
+  if(successive === null) return;
+  a.personaId = nuovaPersonaId;
   a.straordinario = false;
-  invalida(); segnaModificato(); rendi();
+  invalida(); spostaSuccessive(successive); segnaModificato(); rendi();
   brindisi(tr("Attività riassegnata a {0}", p.nome));
 }
 // vero se la lavorazione finisce oltre la data di consegna registrata
@@ -631,8 +641,237 @@ function dateLimite(c){
 function tipologiaAttivita(a){
   return a ? a.tipologiaId : null;
 }
-function limiteAttivita(c, a){
-  return dateLimite({consegnaCliente:c.consegnaCliente, tipologiaId:tipologiaAttivita(a)});
+/* Data limite di un'attività: quella della SUA tipologia, ristretta dalla catena di
+   dipendenze a valle (vedi "Dipendenze fine-inizio" più sotto). Un'attività da cui ne
+   dipende un'altra deve finire il giorno lavorativo prima dell'ultimo giorno utile per far
+   partire quella successiva — altrimenti mostrerebbe una scadenza "falsa tranquilla" che non
+   lascia il tempo alla catena. Solo calcolo: nessuna data salvata viene mai spostata.
+   Campi in più rispetto a dateLimite(), solo se la catena stringe davvero:
+   fineUfficioPropria (la data della sola tipologia), vincoloDa (l'attività successiva che
+   detta la data), impossibile (quella successiva non rientra più nella sua data limite). */
+function limiteAttivita(c, a, visti){
+  const propria = dateLimite({consegnaCliente:c.consegnaCliente, tipologiaId:tipologiaAttivita(a)});
+  if(!propria || !a) return propria;
+  visti = new Set(visti || []);
+  visti.add(a.id);
+  let fine = propria.fineUfficio, vincoloDa = null, impossibile = false;
+  successori(a).filter(b => !b.fatta && !b.sospesa && !visti.has(b.id)).forEach(b => {
+    const lb = limiteAttivita(c, b, visti);
+    if(!lb) return;
+    const ub = lb.impossibile ? null : ultimoInizio(b, lb.fineUfficio);
+    if(!ub){ if(!impossibile){ impossibile = true; vincoloDa = b; } return; }
+    const entro = ultimoLavorativo(iso(sommaGiorni(d(ub), -1)));
+    if(entro < fine){ fine = entro; if(!impossibile) vincoloDa = b; }
+  });
+  if(!vincoloDa) return propria;
+  return Object.assign({}, propria, {fineUfficio:fine, fineUfficioPropria:propria.fineUfficio, vincoloDa, impossibile});
+}
+
+/* ----------------------------------------------------------
+   Dipendenze fine-inizio fra attività (assegnazioni[].dipendeDa: id delle attività che
+   devono essere finite prima che questa parta). Solo fra attività dello stesso progetto,
+   niente cicli. Lo strumento segnala, non sposta: una sequenza violata produce solo un
+   avviso, mai uno spostamento automatico dell'attività successiva (vedi CLAUDE.md).
+   ---------------------------------------------------------- */
+// le attività da cui "a" dipende: solo quelle che esistono ancora e stanno nel suo progetto
+function predecessori(a, elenco){
+  const tutte = elenco || S.assegnazioni;
+  return ((a && a.dipendeDa) || []).map(id => tutte.find(x => x.id === id))
+    .filter(x => x && x.id !== a.id && x.commessaId === a.commessaId);
+}
+// le attività che dipendono direttamente da "a"
+function successori(a, elenco){
+  return (elenco || S.assegnazioni).filter(x => x.id !== a.id && x.commessaId === a.commessaId
+    && (x.dipendeDa || []).includes(a.id));
+}
+// id di tutte le attività coinvolte in almeno una dipendenza (icona nel Gantt)
+function idsCollegati(){
+  const s = new Set();
+  S.assegnazioni.forEach(a => predecessori(a).forEach(p => { s.add(a.id); s.add(p.id); }));
+  return s;
+}
+// tutte le attività che dipendono da quella con questo id, direttamente o lungo la catena
+function discendenti(id, elenco){
+  const tutte = elenco || S.assegnazioni;
+  const visti = new Set(), coda = [id];
+  while(coda.length){
+    const cur = coda.shift();
+    tutte.forEach(x => { if((x.dipendeDa || []).includes(cur) && !visti.has(x.id)){ visti.add(x.id); coda.push(x.id); } });
+  }
+  return visti;
+}
+// vero se far dipendere "id" da "predId" chiuderebbe un cerchio (A dopo B dopo A)
+function creaCiclo(id, predId, elenco){
+  return predId === id || discendenti(id, elenco).has(predId);
+}
+/* Riporta in ordine dipendeDa su tutte le attività: toglie id inesistenti, doppioni, sé
+   stessa, attività di altri progetti (es. dopo un cambio di progetto) e i legami che
+   chiuderebbero un ciclo (un dati.js scritto a mano). Un campo vuoto viene tolto, così un
+   file senza dipendenze resta identico a prima. Modifica l'elenco ricevuto. */
+function dipendenzeValide(elenco){
+  const perId = new Map(elenco.map(a => [a.id, a]));
+  const accettati = elenco.map(a => ({id:a.id, dipendeDa:[]}));
+  elenco.forEach((a, i) => {
+    (Array.isArray(a.dipendeDa) ? a.dipendeDa : []).forEach(pid => {
+      const p = perId.get(pid);
+      if(!p || p.id === a.id || p.commessaId !== a.commessaId) return;
+      if(accettati[i].dipendeDa.includes(pid)) return;
+      if(creaCiclo(a.id, pid, accettati)) return;
+      accettati[i].dipendeDa.push(pid);
+    });
+  });
+  elenco.forEach((a, i) => {
+    if(accettati[i].dipendeDa.length) a.dipendeDa = accettati[i].dipendeDa;
+    else delete a.dipendeDa;
+  });
+  return elenco;
+}
+/* Problemi di sequenza di un'attività che partirebbe il giorno "dal": le attività da cui
+   dipende e che a quel punto non sono ancora finite. Un'attività annullata non si farà più e
+   non blocca nessuno; una sospesa non è finita, quindi blocca sempre (le sue ore si fermano
+   alla sospensione, la sua fine apparente non vuol dire che il lavoro sia fatto). */
+function sequenzaViolata(a, dal){
+  if(!a || !dal || a.fatta) return [];
+  return predecessori(a).filter(p => !p.annullata).map(p => {
+    if(p.sospesa) return {p, sospesa:true};
+    const e = estremi(p);
+    return (e && e.al >= dal) ? {p, fine:e.al} : null;
+  }).filter(Boolean);
+}
+// tutte le sequenze violate di un progetto, una riga per coppia (attività, predecessore)
+function sequenzeViolateCommessa(c){
+  const out = [];
+  S.assegnazioni.filter(a => a.commessaId === c.id).forEach(a => {
+    const e = estremi(a);
+    if(!e) return;
+    sequenzaViolata(a, e.dal).forEach(v => out.push(Object.assign({a, dal:e.dal}, v)));
+  });
+  return out;
+}
+/* Controlli al salvataggio (editor, trascinamento nel Gantt, anticipo dopo una chiusura).
+   "nuova" è la versione non ancora salvata di un'attività (stesso id di quella salvata, come
+   per distribuzione()): le date di tutte le attività coinvolte si calcolano come se fosse già
+   salvata, perché con la stessa persona la ripartizione delle ore sposta anche le altre. */
+// estremi di x se "nuova" prendesse il posto della versione salvata
+function estremiConModifica(x, nuova){
+  const m = simulaPersona(x.personaId, elencoConModifica(nuova)).get(x.id);
+  if(!m || !m.size) return null;
+  const ch = Array.from(m.keys()).sort();
+  return {dal:ch[0], al:ch[ch.length-1]};
+}
+/* Le attività da cui "nuova" dipende che non le permettono di partire quando partirebbe:
+   finiscono il giorno della sua partenza o dopo, oppure sono sospese (non finite). Una
+   annullata non blocca nessuno. Un'attività conclusa o sospesa non viene controllata: non
+   ha più una partenza da pianificare. Non vuoto = il salvataggio va bloccato. */
+function blocchiSequenza(nuova){
+  if(!nuova || nuova.fatta || nuova.sospesa) return [];
+  const e = estremiConModifica(nuova, nuova);
+  if(!e) return [];
+  return predecessori(nuova).filter(p => !p.annullata).map(p => {
+    if(p.sospesa) return {p, sospesa:true, dal:e.dal};
+    const ep = estremiConModifica(p, nuova);
+    return (ep && ep.al >= e.dal) ? {p, fine:ep.al, dal:e.dal} : null;
+  }).filter(Boolean);
+}
+/* La stessa attività spostata in avanti al primo giorno utile dopo la fine di tutte quelle
+   da cui dipende — è la proposta del pulsante "Parti il …", mai applicata da sola.
+   "Parte il" sposta la partenza, il carico ripartito sposta la finestra intera; con
+   "consegna entro il" la partenza la decide la consegna, quindi nessuna proposta (null),
+   e nessuna nemmeno se una di quelle da cui dipende è sospesa (non ha una fine). */
+function partenzaInSequenza(nuova){
+  let cur = nuova;
+  for(let giri = 0; giri < 10; giri++){
+    const b = blocchiSequenza(cur);
+    if(!b.length) return cur === nuova ? null : cur;
+    if(b.some(x => x.sospesa) || modoAtt(cur) === "fine") return null;
+    const fine = b.map(x => x.fine).sort().pop();
+    const parti = giornoUtile(cur.personaId, fine);
+    if(modoAtt(cur) === "finestra"){
+      // la finestra si sposta intera, stessa durata: dal suo primo giorno con ore a "parti"
+      const e = estremiConModifica(cur, cur);
+      const delta = diffGiorni(e ? e.dal : cur.dataInizio, parti);
+      cur = Object.assign({}, cur, {dataInizio: iso(sommaGiorni(d(cur.dataInizio), delta)),
+                                    scadenza: iso(sommaGiorni(d(cur.scadenza), delta))});
+    } else cur = Object.assign({}, cur, {dataInizio: parti});   // "Parte il": il giorno proposto, tale e quale
+  }
+  return null;
+}
+/* Le attività che dipendono da "nuova" e che, salvandola, partirebbero prima della sua
+   nuova fine — solo quelle che oggi sono in regola: lo slittamento di un'attività a monte
+   non si può vietare (è la realtà), ma va detto. Quelle già fuori sequenza prima della
+   modifica sono già segnalate nel Gantt. */
+function successoriScavalcati(nuova){
+  const e = estremiConModifica(nuova, nuova);
+  if(!e) return [];
+  const prima = estremi(S.assegnazioni.find(x => x.id === nuova.id) || {id:null});
+  return successori(nuova).filter(s => !s.fatta && !s.sospesa).map(s => {
+    const es = estremiConModifica(s, nuova);
+    if(!es || es.dal > e.al) return null;
+    const ePrima = estremi(s);
+    if(prima && ePrima && ePrima.dal <= prima.al) return null;   // era già fuori sequenza
+    return {s, dal:es.dal, fine:e.al};
+  }).filter(Boolean);
+}
+/* Annullare o sospendere un'attività da cui ne dipendono altre: tutta la catena a valle
+   (direttamente o lungo la catena) ancora da fare, da proporre nel banner. Per l'annullamento
+   contano anche le sospese (come "Annulla progetto"), per la sospensione no: sono già ferme.
+   "piena" = dipende solo da "a", da altre attività della catena o da attività già risolte:
+   proposta spuntata. Altrimenti "altri" elenca le attività aperte fuori dalla catena da cui
+   dipende anche (va avanti per conto suo?): proposta a parte, non spuntata. */
+function catenaAValle(a, perSospendere){
+  const disc = discendenti(a.id);
+  const risolta = p => p.fatta || (perSospendere && p.sospesa);
+  const tutte = S.assegnazioni.filter(x => disc.has(x.id) && !risolta(x));
+  const piene = new Set([a.id]);
+  for(let cambiato = true; cambiato; ){
+    cambiato = false;
+    tutte.forEach(x => {
+      if(!piene.has(x.id) && predecessori(x).every(p => risolta(p) || piene.has(p.id))){ piene.add(x.id); cambiato = true; }
+    });
+  }
+  const inizio = x => (estremi(x) || {}).dal || "9999";
+  return tutte.sort((x, y) => inizio(x) < inizio(y) ? -1 : 1).map(x => ({x, piena:piene.has(x.id),
+    altri: predecessori(x).filter(p => !risolta(p) && !piene.has(p.id))}));
+}
+/* Dopo l'annullamento di "a" (già salvato), per ogni attività che dipendeva direttamente da
+   lei: la partenza più anticipata possibile (primo giorno utile da oggi, e dopo la fine delle
+   altre attività da cui dipende ancora) e "sl", le altre attività della stessa persona che
+   finirebbero più tardi — cioè se il suo calendario è davvero libero. Solo proposte: si
+   applicano con una spunta. "motivo" spiega perché una non si può anticipare. */
+function proposteAnticipo(a){
+  const oggi = iso(new Date());
+  return successori(a).filter(x => !x.fatta && !x.sospesa).map(x => {
+    const e = estremi(x);
+    if(!e) return null;
+    if(modoAtt(x) === "fine") return {x, e, motivo:"consegna"};
+    const altre = predecessori(x).filter(p => !p.annullata);
+    const sospesa = altre.find(p => p.sospesa);
+    if(sospesa) return {x, e, motivo:"sospesa", da:sospesa};
+    const fineAltre = altre.map(p => (estremi(p) || {}).al).filter(Boolean).sort().pop();
+    let dal = primoGiornoUtile(x.personaId, oggi);
+    if(fineAltre && fineAltre >= dal) dal = giornoUtile(x.personaId, fineAltre);
+    if(dal >= e.dal) return null;   // non si guadagna niente
+    const delta = diffGiorni(e.dal, dal);
+    const nuova = modoAtt(x) === "finestra"
+      ? Object.assign({}, x, {dataInizio: iso(sommaGiorni(d(x.dataInizio), delta)), scadenza: iso(sommaGiorni(d(x.scadenza), delta))})
+      : Object.assign({}, x, {dataInizio: dal});
+    return {x, e, nuova, dal, sl: slittamentiAltre(nuova)};
+  }).filter(Boolean);
+}
+// id delle attività fuori sequenza oggi: partono prima che finisca una da cui dipendono (⚠ nel Gantt)
+function idsFuoriSequenza(){
+  const s = new Set();
+  S.assegnazioni.forEach(a => {
+    if(!a.dipendeDa) return;
+    const e = estremi(a);
+    if(e && sequenzaViolata(a, e.dal).length) s.add(a.id);
+  });
+  return s;
+}
+// "Rossi Marco · calcoli dimensionali": come si chiama un'attività negli avvisi
+function nomeAttivita(a){
+  const p = persona(a.personaId);
+  return (p ? p.nome : "?") + (a.descrizione ? " · " + a.descrizione : "");
 }
 
 // ultimo giorno in cui l'attività può partire mantenendo il ritmo pianificato
@@ -652,7 +891,7 @@ function verificaTempi(c){
   const righe = S.assegnazioni.filter(a => a.commessaId === c.id).map(a=>{
     const e = estremi(a);
     const lA = limiteAttivita(c, a);
-    const ultimo = lA ? ultimoInizio(a, lA.fineUfficio) : null;
+    const ultimo = (lA && !lA.impossibile) ? ultimoInizio(a, lA.fineUfficio) : null;
     return {a, e, lim:lA, ultimo,
             ritardo: (e && ultimo) ? diffGiorni(ultimo, e.dal) : null,
             oltre: (e && lA) ? Math.max(0, diffGiorni(lA.fineUfficio, e.al)) : 0};

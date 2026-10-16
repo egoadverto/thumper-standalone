@@ -28,25 +28,58 @@ A tool to support team management and coordination.
    8septies. SCHEDA COMMESSA
    ========================================================== */
 
+/* Ordine delle righe nella tabella attività della scheda progetto: le attività che non
+   dipendono da nessuna in ordine di partenza, e sotto ciascuna, rientrate con └/├, quelle che
+   possono partire solo quando è finita (stessa logica ricorsiva dell'albero cartelle del
+   Gestore documenti). Ogni attività compare una volta sola: se dipende da più attività sta
+   sotto quella che finisce per ultima (è lei che decide quando può partire), le altre sono
+   elencate in "altri". La sequenza vive nella tabella, non in una seconda vista. */
+function righeInSequenza(att){
+  const inizio = a => (estremi(a) || {}).dal || "9999";
+  const fine = a => (estremi(a) || {}).al || "";
+  const perInizio = (x, y) => inizio(x) < inizio(y) ? -1 : 1;
+  const ids = new Set(att.map(a => a.id));
+  // l'attività sotto cui compare: fra quelle da cui dipende, quella che finisce per ultima
+  const genitore = new Map();
+  att.forEach(a => {
+    const pr = predecessori(a).filter(p => ids.has(p.id));
+    if(pr.length) genitore.set(a.id, pr.reduce((m, p) => fine(p) > fine(m) ? p : m).id);
+  });
+  const figli = a => att.filter(x => genitore.get(x.id) === a.id).sort(perInizio);
+  const out = [], visti = new Set();
+  const visita = (a, livello, ultimo) => {
+    if(visti.has(a.id)) return;
+    visti.add(a.id);
+    out.push({a, livello, ultimo, altri: predecessori(a).filter(p => p.id !== genitore.get(a.id))});
+    const f = figli(a);
+    f.forEach((x, i) => visita(x, livello + 1, i === f.length - 1));
+  };
+  att.filter(a => !genitore.has(a.id)).sort(perInizio).forEach(a => visita(a, 0, true));
+  att.filter(a => !visti.has(a.id)).sort(perInizio).forEach(a => visita(a, 0, true));   // solo per sicurezza
+  return out;
+}
+
 function apriSchedaCommessa(id){
   const c = commessa(id); if(!c) return;
   const i = datiCommessa(c);
   const pct = i.ore ? Math.round(i.oreFatte / i.ore * 100) : 0;
 
-  const righe = i.att.slice().sort((x,y)=>{
-    const ex = estremi(x), ey = estremi(y);
-    return (ex ? ex.dal : "") < (ey ? ey.dal : "") ? -1 : 1;
-  }).map(a=>{
+  const righe = righeInSequenza(i.att).map(({a, livello, ultimo, altri})=>{
     const p = persona(a.personaId), e = estremi(a);
     const g = p ? gruppo(p.gruppoId) : null;
     const tardi = !a.fatta && sforaConsegna(a);
     const date = e ? itData(e.dal) + " – " + itData(e.al) : "–";
+    const fuoriSequenza = e && sequenzaViolata(a, e.dal).length;
     return `<tr>
-      <td>${p?esc(p.nome):"?"}${a.descrizione?`<div>${esc(a.descrizione)}</div>`:""}${
-        a.note?`<div class="nota">${esc(a.note)}</div>`:""}</td>
+      <td><div class="seq-cella" style="padding-left:${livello ? (livello-1)*18 : 0}px">${
+        livello ? `<span class="seq-rami mono" title="${tr("Può partire solo quando è finita l'attività sopra")}">${ultimo ? "└─" : "├─"}</span>` : ""}<div>${
+        p?esc(p.nome):"?"}${a.descrizione?`<div>${esc(a.descrizione)}</div>`:""}${
+        altri.length?`<div class="nota">${tr("dopo anche: {0}", altri.map(x=>esc(nomeAttivita(x))).join("; "))}</div>`:""}${
+        a.note?`<div class="nota">${esc(a.note)}</div>`:""}</div></div></td>
       <td>${g?`<span class="tag din">${esc(g.sigla)}</span>`:""}</td>
       <td class="mono" style="white-space:nowrap${tardi?";color:var(--allarme);font-weight:700":""}">${date}${
-        a.scadenza?`<div class="nota">${tr("entro {0}", itData(a.scadenza))}${tardi?" ⚠":""}</div>`:""}</td>
+        a.scadenza?`<div class="nota">${tr("entro {0}", itData(a.scadenza))}${tardi?" ⚠":""}</div>`:""}${
+        fuoriSequenza?`<div class="nota" style="color:var(--allarme);font-weight:700" title="${tr("Parte prima che finisca un'attività da cui dipende")}">${tr("⚠ fuori sequenza")}</div>`:""}</td>
       <td class="num-cella mono">${e?arr(e.ore):0}${
         e&&Math.abs(e.ore-(a.oreTotali||0))>0.01?`<div class="nota">${tr("di {0}", a.oreTotali)}</div>`:""}</td>
       <td class="num-cella">${a.annullata
@@ -72,6 +105,9 @@ function apriSchedaCommessa(id){
     avvisi.push(i.sospese===1
       ? tr("1 attività sospesa: riprendila con una nuova data o pianifica il resto con “Duplica attività”.")
       : tr("{0} attività sospese: riprendile con una nuova data o pianifica il resto con “Duplica attività”.", i.sospese));
+  sequenzeViolateCommessa(c).forEach(v => avvisi.push(v.sospesa
+    ? tr("“{0}” dipende da “{1}”, che è sospesa.", esc(nomeAttivita(v.a)), esc(nomeAttivita(v.p)))
+    : tr("“{0}” parte il {1}, prima che finisca “{2}” ({3}).", esc(nomeAttivita(v.a)), itData(v.dal), esc(nomeAttivita(v.p)), itData(v.fine))));
   const boxAvvisi = avvisi.length
     ? avvisi.map(t=>`<div class="sc-avviso"><span>⚠</span><span>${t}</span></div>`).join("")
     : `<div class="nota">${tr("Nessuna segnalazione.")}</div>`;
@@ -229,7 +265,9 @@ function apriSchedaCommessa(id){
         <td>${pz?esc(pz.nome):"?"}<div class="nota">${g?esc(g.sigla):""}</div></td>
         <td class="num-cella mono">${r.a.oreTotali}</td>
         <td>${typeof tp === "string" ? tp : (tp ? esc(tp.nome) : `<span class="nota">${tr("non indicata")}</span>`)}
-          <div class="nota mono">${tr("entro {0}", itData(r.lim.fineUfficio))}</div></td>
+          <div class="nota mono">${tr("entro {0}", itData(r.lim.fineUfficio))}</div>${
+          r.lim.impossibile ? `<div class="nota" style="color:var(--allarme)">${tr("⚠ “{0}”, che dipende da questa, non rientra più nella data limite.", esc(nomeAttivita(r.lim.vincoloDa)))}</div>`
+          : r.lim.vincoloDa ? `<div class="nota">${tr("per lasciare il tempo a “{0}”", esc(nomeAttivita(r.lim.vincoloDa)))}</div>` : ""}</td>
         <td class="mono">${r.e?itData(r.e.dal):"–"}</td>
         <td class="mono"${tardi?' style="color:var(--allarme);font-weight:700"':""}>${r.ultimo?itData(r.ultimo):tr("non ci sta")}</td>
         <td class="num-cella mono"${tardi?' style="color:var(--allarme);font-weight:700"':""}>${
@@ -244,12 +282,13 @@ function apriSchedaCommessa(id){
         <tr><th>${tr("Sviluppo interno")}</th><td class="mono">${tr("− {0} gg", L.gProd)}${L.tip?" · "+esc(L.tip.nome):' · <span style="color:var(--allarme)">'+tr("tipologia non indicata")+"</span>"}</td></tr>
         <tr><th>${tr("Fornitura esterna (lead time maggiore)")}</th><td class="mono">${tr("− {0} gg", L.gForn)}${L.forn?" · "+esc(L.forn.nome):' · <span style="color:var(--allarme)">'+tr("tabella vuota")+"</span>"}</td></tr>
         ${L.marg?`<tr><th>${tr("Margine di sicurezza")}</th><td class="mono">${tr("− {0} gg lavorativi", L.marg)}</td></tr>`:""}
+        ${L.vincoloDa?`<tr><th>${tr("Attività collegate a valle")}</th><td>${tr("entro il {0} per lasciare il tempo a “{1}”", `<span class="mono">${itData(L.fineUfficio)}</span>`, esc(nomeAttivita(L.vincoloDa)))}</td></tr>`:""}
         <tr><th>${tr("Fine ufficio entro")}</th><td class="mono"><b>${itData(L.fineUfficio)}</b></td></tr>
       </tbody></table>
       <table><thead><tr><th>Persona</th><th class="num-cella">Ore</th><th>${tr("Sviluppo interno")}</th>
         <th>${tr("Inizio pianificato")}</th>
         <th>${tr("Ultimo inizio utile")}</th><th class="num-cella">${tr("Scarto")}</th></tr></thead><tbody>${rig}</tbody></table>
-      <p class="nota" style="margin-top:10px">${tr("Ogni attività è valutata da sola, al ritmo con cui è pianificata. Se le lavorazioni devono seguirsi una dopo l'altra, l'inizio reale va anticipato di conseguenza.")}</p>
+      <p class="nota" style="margin-top:10px">${tr("Ogni attività è valutata al ritmo con cui è pianificata. Per quelle da cui ne dipendono altre, la data limite lascia il tempo a tutta la catena che segue.")}</p>
       ${v.sfora ? `<p style="margin:8px 0 0;color:var(--allarme)"><b>${tr("⚠ Il piano attuale finisce il {0}, ovvero {1} giorni oltre la data limite.", itData(v.finePiano), v.giorniOltre)}</b></p>` : ""}`;
     applicaLingua();
   };

@@ -172,8 +172,9 @@ function apriAttivita(id, pre){
   const oreG = a ? a.orePerGiorno : null;
   const modoIni = a ? modoAtt(a) : "inizio";
   const dataRif = a ? (modoIni==="fine"?a.scadenza:a.dataInizio) : (p.dataInizio||iso(new Date()));
-  // "Duplica attività" (pre) passa persona/commessa/descrizione/tipologia ma non date/ore:
-  // vanno ricompilate da capo, coerente con la Roadmap in CLAUDE.md
+  // "Duplica attività" (pre) passa solo persona e progetto: tutto il resto (descrizione, ore,
+  // date, tipologia, dipendenze) si compila da capo, per non trascinarsi dietro per copia e
+  // incolla scelte che nessuno ha riguardato (vedi CLAUDE.md)
   const tipoIni = a ? a.tipologiaId : (p.tipologiaId || "");
   /* Stessa impaginazione della scheda commessa: a sinistra chi fa cosa e
      quando, a destra prodotto e stato. In fondo, a tutta larghezza, i
@@ -227,6 +228,10 @@ function apriAttivita(id, pre){
                 placeholder="${tr("vuoto = {0} h come da organico", capacitaPersonaGiorno(persona(pid), dataRif))}" value="${oreG!=null?oreG:""}">
               <span class="aiuto" id="f-aiuto-oreg">${modoIni==="finestra"?"Col carico ripartito il ritmo lo decide la finestra.":"Sovrascrive le ore giornaliere della persona, solo qui."}</span></div>
           </div>
+          <div class="campo" style="margin-top:10px"><label for="f-dopo">Parte dopo</label>
+            <div class="dip-scelte" id="f-dip-scelte"></div>
+            <div class="cerca dip-cerca"><input type="text" id="f-dopo" placeholder="Cerca un'attività del progetto…" autocomplete="off"></div>
+          </div>
         </div>
 
       </div>
@@ -274,7 +279,7 @@ function apriAttivita(id, pre){
   const pannelloNuova = document.getElementById("f-nuova");
   const combo = creaCombo("f-commessa", optC, {
     valore: a ? a.commessaId : (p.commessaId || ""),
-    onScegli: ()=>{ anteprima(); },
+    onScegli: ()=>{ disegnaDipendenze(); anteprima(); },
     azione: {eti:"+ Crea un nuovo progetto", fn: ()=>{
       pannelloNuova.hidden = false;
       document.getElementById("n-num").focus();
@@ -293,10 +298,57 @@ function apriAttivita(id, pre){
     optC.length = 0;
     opzioniCombo(commesseSceglibili()).forEach(o=>optC.push(o));
     combo.imposta(nuova.id, true);
+    disegnaDipendenze();
     pannelloNuova.hidden = true;
     segnaModificato();
     anteprima();
     brindisi(tr("Progetto {0} creato", numero));
+  };
+
+  /* "Parte dopo": le attività dello stesso progetto che devono finire prima che questa
+     parta. Si aggiungono una alla volta dal campo di ricerca e restano come etichette
+     rimovibili. Il campo propone solo le attività ammesse: dello stesso progetto, non già
+     scelte, non annullate e che non chiuderebbero un ciclo (cioè non già dipendenti, anche
+     indirettamente, da questa). Cambiando progetto le scelte dell'altro non si salvano. */
+  const sceltePred = new Set(a && a.dipendeDa ? a.dipendeDa : []);
+  const idAtt = a ? a.id : "nuova";
+  const optDopo = [];
+  const comboDopo = creaCombo("f-dopo", optDopo, {
+    consentiVuoto: true,
+    onScegli: id => {
+      if(!id) return;
+      sceltePred.add(id);
+      comboDopo.imposta("", true);
+      disegnaDipendenze(); anteprima();
+    }
+  });
+  const disegnaDipendenze = () => {
+    const cid = combo.valore();
+    const box = document.getElementById("f-dip-scelte");
+    const scelte = predScelti().map(pid => S.assegnazioni.find(x => x.id === pid));
+    box.innerHTML = scelte.map(x => `<span class="dip-etichetta">${esc(nomeAttivita(x))}
+      <button type="button" class="dip-togli" data-togli="${x.id}" title="${tr("Togli")}" aria-label="${tr("Togli")}">×</button></span>`).join("");
+    box.querySelectorAll("[data-togli]").forEach(b => b.onclick = () => {
+      sceltePred.delete(b.dataset.togli); disegnaDipendenze(); anteprima();
+    });
+    optDopo.length = 0;
+    S.assegnazioni.filter(x => cid && x.commessaId === cid && x.id !== idAtt && !x.annullata
+        && !sceltePred.has(x.id) && !creaCiclo(idAtt, x.id))
+      .sort((x, y) => ((estremi(x)||{}).dal||"9999") < ((estremi(y)||{}).dal||"9999") ? -1 : 1)
+      .forEach(x => { const e = estremi(x); optDopo.push({id:x.id, eti:nomeAttivita(x),
+        sotto: e ? itData(e.dal) + " – " + itData(e.al) : ""}); });
+    const inp = document.getElementById("f-dopo");
+    inp.disabled = !cid || !optDopo.length;
+    inp.placeholder = !cid ? tr("Scegli prima il progetto.")
+      : optDopo.length ? tr("Cerca un'attività del progetto…") : tr("Nessuna attività del progetto da cui possa dipendere.");
+  };
+  // le scelte valide per il progetto selezionato ora, da salvare
+  const predScelti = () => {
+    const cid = combo.valore();
+    return Array.from(sceltePred).filter(pid => {
+      const x = S.assegnazioni.find(y => y.id === pid);
+      return x && x.commessaId === cid && !creaCiclo(idAtt, pid);
+    });
   };
 
   const perGiornoForm = () => (val("f-modo") === "finestra") ? null : (val("f-oreg") ? numVal("f-oreg") : null);
@@ -314,7 +366,26 @@ function apriAttivita(id, pre){
   const oggettoForm = () => ({id:a ? a.id : "nuova", personaId:val("f-persona"), commessaId:combo.valore(),
     modo:val("f-modo"), dataInizio:risolviInizio(),
     scadenza: val("f-modo") === "fine" ? val("f-inizio") : val("f-modo") === "finestra" ? val("f-al") : null,
-    oreTotali:numVal("f-ore"), orePerGiorno:perGiornoForm()});
+    oreTotali:numVal("f-ore"), orePerGiorno:perGiornoForm(), dipendeDa:predScelti()});
+
+  // avvisi di sequenza per la versione in modifica che va dal primo all'ultimo giorno di "ch":
+  // parte prima che finisca un'attività da cui dipende, o finisce dopo la partenza di una
+  // che dipende da lei. Solo segnalazione: niente viene spostato
+  const avvisiSequenza = (ch) => {
+    if(!ch || !ch.length || document.getElementById("f-fatta").checked) return "";
+    const dal = ch[0], al = ch[ch.length - 1], out = [];
+    predScelti().map(pid => S.assegnazioni.find(x => x.id === pid)).filter(p => p && !p.annullata).forEach(p => {
+      if(p.sospesa){ out.push(tr("⚠ Dipende da “{0}”, che è sospesa.", esc(nomeAttivita(p)))); return; }
+      const e = estremi(p);
+      if(e && e.al >= dal) out.push(tr("⚠ Parte il {0}, prima che finisca “{1}” ({2}).", itData(dal), esc(nomeAttivita(p)), itData(e.al)));
+    });
+    if(a && combo.valore() === a.commessaId) successori(a).filter(x => !x.fatta).forEach(x => {
+      const e = estremi(x);
+      if(e && e.dal <= al) out.push(tr("⚠ Finisce il {0}, dopo la partenza di “{1}” ({2}), che dipende da questa.", itData(al), esc(nomeAttivita(x)), itData(e.dal)));
+    });
+    // nessun <br>: dentro .avviso il <b> è già un blocco a sé
+    return out.map(t => `<b style="color:var(--allarme);margin:3px 0 0">${t}</b>`).join("");
+  };
 
   // consiglio sull'ultimo giorno di partenza, se la commessa ha una consegna concordata.
   // Usa la tipologia scelta QUI per l'attività (non più un default di progetto, rimosso):
@@ -322,21 +393,26 @@ function apriAttivita(id, pre){
   const consiglio = () => {
     const box = document.getElementById("f-consiglio");
     const c = commessa(combo.valore());
-    const lim = c ? dateLimite({consegnaCliente:c.consegnaCliente, tipologiaId:val("f-tipologia") || null}) : null;
+    // stessa data limite di Verifiche: quella della tipologia scelta qui, ristretta dalle
+    // attività che dipendono da questa (limiteAttivita)
+    const lim = c ? limiteAttivita(c, Object.assign(oggettoForm(), {tipologiaId:val("f-tipologia") || null})) : null;
     if(!lim){ box.hidden = true; box.innerHTML = ""; return; }
-    const ultimo = ultimoInizio(oggettoForm(), lim.fineUfficio);
+    const ultimo = lim.impossibile ? null : ultimoInizio(oggettoForm(), lim.fineUfficio);
     const inizioPrev = (distribuzione(oggettoForm()).size ? Array.from(distribuzione(oggettoForm()).keys()).sort()[0] : null);
     const tardi = !!(ultimo && inizioPrev && inizioPrev > ultimo);
     box.hidden = false;
     box.className = "avviso";
     box.innerHTML = `<b>${tr("Consegna: {0}", itData(lim.consegna))}</b>`
       + tr("Tolti {0} gg di fornitura esterna e {1} gg di sviluppo interno{2}, l'ufficio deve chiudere entro il {3}.",
-           lim.gForn, lim.gProd, lim.marg ? tr(" più {0} gg lavorativi di margine", lim.marg) : "", itData(lim.fineUfficio))
+           lim.gForn, lim.gProd, lim.marg ? tr(" più {0} gg lavorativi di margine", lim.marg) : "", itData(lim.fineUfficioPropria || lim.fineUfficio))
+      + (lim.impossibile ? `<br><b style="color:var(--allarme)">${tr("⚠ “{0}”, che dipende da questa, non rientra più nella data limite.", esc(nomeAttivita(lim.vincoloDa)))}</b>`
+        : lim.vincoloDa ? `<br>${tr("Per lasciare il tempo a “{0}”, che dipende da questa, deve finire entro il {1}.", esc(nomeAttivita(lim.vincoloDa)), itData(lim.fineUfficio))}` : "")
       + (lim.mancaForn ? `<br><span class="nota">${tr("Nessun lead time di fornitura esterna in tabella: il calcolo lo considera zero (si imposta in Impostazioni).")}</span>` : "")
       + (lim.mancaTip ? `<br><span class="nota">${tr("Tipologia di sviluppo interno non indicata qui sopra: il calcolo la considera zero.")}</span>` : "")
       + (ultimo
           ? `<br><b${tardi?' style="color:var(--allarme)"':""}>${tr("Ultimo giorno utile per partire: {0}", itData(ultimo))}</b>`
             + (tardi ? " " + tr("⚠ Con la partenza attuale si arriva in ritardo.") : "")
+          : lim.impossibile ? ""
           : `<br><b style="color:var(--allarme)">${tr("⚠ Con questo monte ore non si rientra più nella data limite.")}</b>`)
       + ` <button type="button" class="btn piccolo" id="f-usa-limite">${tr("Vincola alla data limite")}</button>`;
     const bu = document.getElementById("f-usa-limite");
@@ -364,6 +440,7 @@ function apriAttivita(id, pre){
     document.getElementById("f-oreg").placeholder =
       tr("vuoto = {0} h come da organico", capacitaPersonaGiorno(persona(val("f-persona")), val("f-inizio") || iso(new Date())));
     const box = document.getElementById("f-anteprima");
+    box.hidden = false;   // i messaggi bloccanti qui sotto lo mostrano sempre; in fondo sparisce se vuoto
     if(!val("f-persona")){
       box.className = "avviso";
       box.innerHTML = "<b>"+tr("Scegli la persona")+"</b>"+tr("Indica chi farà questa attività.");
@@ -406,37 +483,23 @@ function apriAttivita(id, pre){
     const cap = capacitaPersonaGiorno(persona(val("f-persona")), ch[0]);
     const passato = ch[0] < iso(new Date());
     const slitta = modo === "inizio" && ch[0] !== val("f-inizio");
-    const gior = ch.length === 1 ? tr("1 giornata di lavoro") : tr("{0} giornate di lavoro", ch.length);
-
-    if(modo === "finestra"){
-      const uniformi = new Set(Array.from(m.values()).map(v=>Math.round(v*100))).size === 1;
-      box.innerHTML = `<b>${uniformi ? tr("{0} h al giorno su {1} giornate utili", arr(oreAlDi), ch.length)
-                                     : tr("in media {0} h al giorno su {1} giornate utili", arr(oreAlDi), ch.length)}</b>`
-        + (uniformi
-            ? tr("Dal {0} al {1}: il monte ore è diviso in parti uguali fra i giorni lavorabili, weekend, festività e assenze esclusi.",
-                 itData(ch[0]), itData(ch[ch.length-1]))
-            : tr("Dal {0} al {1}: il monte ore è ripartito in proporzione alle ore disponibili, perché non tutti i giorni ne hanno altrettante.",
-                 itData(ch[0]), itData(ch[ch.length-1])))
-        + (oreAlDi > cap + 0.001
-            ? `<br><b style="color:var(--allarme)">${tr("⚠ Servono più ore di quelle disponibili ({0} h al giorno): la finestra è troppo stretta.", cap)}</b>`
-            : "")
-        + (passato ? `<br><b style="color:var(--allarme)">${tr("⚠ La partenza cade nel passato.")}</b>` : "");
-    } else {
-      box.innerHTML = `<b>${modo === "fine" ? tr("Deve partire il {0}", itData(ch[0])) : gior}</b>`
-        + tr("Dal {0} al {1}, {2} h al giorno", itData(ch[0]), itData(ch[ch.length-1]), arr(oreAlDi))
-        + (perG == null ? tr(" a tempo pieno.") : ".")
-        + (!finto.straordinario && new Set(ch.slice(0, -1).map(k => Math.round(m.get(k)*100))).size > 1
-            ? " " + tr("Nei giorni già occupati da altre attività usa solo le ore rimaste libere.") : "")
-        + (slitta ? tr(" Il {0} non è un giorno utile, la partenza slitta al primo disponibile.", itData(val("f-inizio")))
-                  : tr(" Weekend, festività e assenze sono già saltati."))
-        + (passato ? `<br><b style="color:var(--allarme)">${tr("⚠ La partenza cade nel passato.")}</b>` : "");
-    }
+    /* Il riquadro mostra solo ciò che chiede attenzione: il riepilogo di date e ore al
+       giorno ripeteva quello che si legge già nei campi e nel piano, ed è stato tolto. Senza
+       nulla da segnalare il riquadro sparisce. */
+    const righe = [];
+    const allarme = t => `<b style="color:var(--allarme)">${t}</b>`;
+    if(modo === "finestra" && oreAlDi > cap + 0.001)
+      righe.push(allarme(tr("⚠ Servono più ore di quelle disponibili ({0} h al giorno): la finestra è troppo stretta.", cap)));
+    if(passato) righe.push(allarme(tr("⚠ La partenza cade nel passato.")));
+    if(slitta) righe.push(tr("Il {0} non è un giorno utile, la partenza slitta al primo disponibile.", itData(val("f-inizio"))));
     const sl = slittamentiAltre(finto);
-    if(finto.straordinario) box.innerHTML += `<br>${tr("In overtime: le sue ore si aggiungono a quelle delle altre attività, senza spostarle.")}`;
-    else if(sl.length) box.innerHTML += `<br><b style="color:var(--allarme)">${tr("⚠ Salvando, finiscono più tardi:")}</b> `
+    if(finto.straordinario) righe.push(tr("In overtime: le sue ore si aggiungono a quelle delle altre attività, senza spostarle."));
+    else if(sl.length) righe.push(allarme(tr("⚠ Salvando, finiscono più tardi:")) + " "
       + sl.map(x => esc(testoSlittamento(x))).join("; ") + ". "
       + (overtimeMax() > 0 ? tr("Al salvataggio potrai scegliere se accettare lo slittamento o fare overtime.")
-                           : tr("Al salvataggio ti verrà chiesto se accettare lo slittamento."));
+                           : tr("Al salvataggio ti verrà chiesto se accettare lo slittamento.")));
+    box.innerHTML = righe.map(t => `<div>${t}</div>`).join("") + avvisiSequenza(ch);
+    box.hidden = !box.innerHTML;
     consiglio();
     aggiornaLiberate(ch, oreAlDi);
   };
@@ -465,6 +528,7 @@ function apriAttivita(id, pre){
     e.addEventListener("input", anteprima);
     e.addEventListener("change", anteprima);
   });
+  disegnaDipendenze();
   anteprima();
   // annullata implica sempre fatta: un'attività annullata è comunque risolta, non ha
   // più bisogno di attenzione. Il collegamento vive solo qui nell'editor, non come
@@ -498,11 +562,12 @@ function apriAttivita(id, pre){
     const consenso = S.config.proteggiAttivita ? autorizza(tr("Eliminare questa attività?")) : confirm(tr("Eliminare questa attività?"));
     if(consenso){
       S.assegnazioni = S.assegnazioni.filter(x=>x.id!==a.id);
+      dipendenzeValide(S.assegnazioni);   // chi dipendeva da lei non ne dipende più
       invalida(); segnaModificato(); chiudi(); rendi();
     }
   };
   if(a) document.getElementById("f-duplica").onclick = ()=>{
-    const pre = {personaId:a.personaId, commessaId:a.commessaId, descrizione:a.descrizione, tipologiaId:a.tipologiaId};
+    const pre = {personaId:a.personaId, commessaId:a.commessaId};
     chiudi();
     apriAttivita(null, pre);
   };
@@ -534,26 +599,62 @@ function apriAttivita(id, pre){
                   annullata: document.getElementById("f-annullata").checked,
                   sospesa: sospesaChk,
                   note:val("f-note"), descrizione: val("f-desc"),
-                  tipologiaId: val("f-tipologia") || null};
+                  tipologiaId: val("f-tipologia") || null,
+                  dipendeDa: predScelti()};
     if(!dati.personaId){ alert(tr("Scegli la persona che farà questa attività.")); return; }
     if(!dati.commessaId){ alert(tr("Scegli un progetto dall'elenco.")); return; }
     if(!dati.dataInizio || dati.oreTotali<=0){ alert(tr("Servono una data e un monte ore maggiore di zero.")); return; }
+    // cambio di progetto su un'attività già collegata: le dipendenze valgono solo dentro lo
+    // stesso progetto, quindi si perdono — lo si dice prima, mai in silenzio
+    if(a && dati.commessaId !== a.commessaId){
+      const persi = [...predecessori(a), ...successori(a)];
+      if(persi.length){
+        const r = await bannerScelta(tr("Spostandola su un altro progetto perde i collegamenti"),
+          `<ul>${persi.map(x => `<li>${esc(nomeAttivita(x))}</li>`).join("")}</ul>
+           <p class="nota">${tr("Le dipendenze valgono solo fra attività dello stesso progetto.")}</p>`,
+          [{r:"annulla", eti:tr("Torna all'editor")}, {r:"sposta", eti:tr("Sposta e togli i collegamenti")}]);
+        if(r !== "sposta") return;
+      }
+    }
+    // annullandola o sospendendola ora: cosa fare delle attività che dipendono da lei
+    const tipoCatena = !a ? null : (dati.annullata && !a.annullata) ? "annulla" : (dati.sospesa && !a.sospesa) ? "sospendi" : null;
+    const catena = tipoCatena ? await chiediCatena(a, tipoCatena) : null;
+    if(tipoCatena && catena === null) return;
+    // dipendenze: non si salva se parte prima che finiscano quelle da cui dipende; la data
+    // proposta finisce nei campi dell'editor, da rivedere e salvare di nuovo
+    const seq = await controllaPrecedenti(Object.assign({id:a ? a.id : "nuova"}, dati));
+    if(seq === null) return;
+    if(seq !== "ok"){
+      if(modo === "finestra") document.getElementById("f-al").value = seq.scadenza;
+      document.getElementById("f-inizio").value = seq.dataInizio;
+      anteprima();
+      return;
+    }
     // le altre attività della persona che slitterebbero: l'utente accetta lo slittamento,
     // sceglie l'overtime o torna all'editor — mai uno spostamento silenzioso
     const scelta = await decidiSlittamento(a, Object.assign({id:a ? a.id : "nuova"}, dati));
     if(scelta === null) return;
     dati.straordinario = scelta;
+    const successive = await controllaSuccessive(Object.assign({id:a ? a.id : "nuova"}, dati));
+    if(successive === null) return;
     const primaFine = a ? (estremi(a) || {}).al : null;
     if(a) Object.assign(a, dati);
     else S.assegnazioni.push(Object.assign({id:nuovoId("a")}, dati));
     // promozione da backlog: solo ora che l'attività è davvero salvata l'item esce dal
     // backlog — annullare questa finestra prima d'ora lo lascia intatto (vedi promuoviBacklogItem)
     if(!a && p.backlogId) S.backlog = (S.backlog||[]).filter(x=>x.id!==p.backlogId);
-    invalida(); segnaModificato(); chiudi(); rendi();
+    // cambiando progetto, le attività del vecchio che dipendevano da questa perdono il legame
+    dipendenzeValide(S.assegnazioni);
+    invalida();
+    spostaSuccessive(successive);
+    applicaCatena(catena, tipoCatena, dati.dataFine); segnaModificato(); chiudi(); rendi();
     // se la chiusura anticipata (o la sospensione) ha liberato giornate, chiedo cosa farne
-    if(a && (dati.fatta || dati.sospesa) && dati.dataFine && primaFine && dati.dataFine < primaFine){
-      proponiAnticipo(a.personaId, dati.dataFine, a.id);
-    }
+    const proponi = () => {
+      if(a && (dati.fatta || dati.sospesa) && dati.dataFine && primaFine && dati.dataFine < primaFine)
+        proponiAnticipo(a.personaId, dati.dataFine, a.id);
+    };
+    // annullata lasciando le successive: prima la proposta di anticiparle, poi quella sopra
+    if(!(catena && catena.r === "anticipa" && apriAnticipoSuccessive(a, proponi))) proponi();
   };
 }
 function anteprimaAttivita(id){
@@ -571,6 +672,8 @@ function anteprimaAttivita(id){
       <tr><th>Vincolo</th><td>${modoAtt(a)==="fine"?tr("Consegna entro il {0}", itData(a.scadenza)):modoAtt(a)==="finestra"?tr("Finestra dal {0} al {1}, carico ripartito", itData(a.dataInizio), itData(a.scadenza)):tr("Parte il {0}", itData(a.dataInizio))}</td></tr>
       ${a.annullata?`<tr><th>Stato</th><td style="color:var(--allarme)"><b>✕ Annullata</b></td></tr>`
         :a.fatta?`<tr><th>Stato</th><td style="color:var(--positivo)"><b>✓ Conclusa</b></td></tr>`:""}
+      ${predecessori(a).length?`<tr><th>Parte dopo</th><td>${predecessori(a).map(x=>esc(nomeAttivita(x))).join("<br>")}</td></tr>`:""}
+      ${successori(a).length?`<tr><th>${tr("Dipendono da questa")}</th><td>${successori(a).map(x=>esc(nomeAttivita(x))).join("<br>")}</td></tr>`:""}
       ${a.note?`<tr><th>Note</th><td>${esc(a.note)}</td></tr>`:""}
     </tbody></table>
     <p class="nota" style="margin-top:12px">Attiva la modifica in alto a destra per cambiare questa attività.</p>`,
@@ -622,30 +725,172 @@ async function decidiSlittamento(vecchia, nuova){
 }
 // banner sopra a tutto (anche all'editor aperto, che resta com'è): slittamento, overtime o annulla
 function bannerSlittamento(personaId, sl, fineOvertime){
+  const p = persona(personaId);
+  return bannerScelta(tr("Altre attività di {0} finirebbero più tardi", esc(p ? p.nome : "")),
+    `<ul>${sl.map(x => `<li>${esc(testoSlittamento(x))}</li>`).join("")}</ul>
+     <p class="nota">${overtimeMax() > 0
+       ? tr("Con l'overtime le altre restano dove sono e le giornate arrivano al massimo al {0}% delle ore ordinarie.", Math.round(100 + overtimeMax()*100))
+         + (fineOvertime ? " " + tr("Questa attività finirebbe il {0}.", itData(fineOvertime)) : "")
+       : tr("L'overtime non è previsto: si attiva in Impostazioni → Calendario e orario → Overtime massimo.")}</p>`,
+    [{r:"annulla", eti:tr("Annulla")},
+     ...(overtimeMax() > 0 ? [{r:"overtime", eti:tr("Overtime")}] : []),
+     {r:"slitta", eti:tr("Accetta lo slittamento"), primario:true}]);
+}
+/* Banner di scelta generico, sopra a tutto (anche all'editor aperto, che resta com'è).
+   pulsanti = [{r, eti, primario}]: risolve con la "r" del pulsante premuto; Esc chiude solo
+   il banner, non l'editor sotto, e vale "annulla". Il fuoco va sul pulsante primario.
+   Con "leggi" (funzione che riceve il banner) risolve con {r, dati: leggi(banner)}, per
+   raccogliere le spunte prima che il banner sparisca. */
+function bannerScelta(titolo, corpo, pulsanti, leggi){
   return new Promise(risolvi => {
-    const p = persona(personaId);
     const v = document.createElement("div");
     v.className = "velo-banner";
     v.innerHTML = `<div class="banner-scelta" role="alertdialog" aria-modal="true" aria-labelledby="bs-titolo">
-      <b id="bs-titolo">${tr("Altre attività di {0} finirebbero più tardi", esc(p ? p.nome : ""))}</b>
-      <ul>${sl.map(x => `<li>${esc(testoSlittamento(x))}</li>`).join("")}</ul>
-      <p class="nota">${overtimeMax() > 0
-        ? tr("Con l'overtime le altre restano dove sono e le giornate arrivano al massimo al {0}% delle ore ordinarie.", Math.round(100 + overtimeMax()*100))
-          + (fineOvertime ? " " + tr("Questa attività finirebbe il {0}.", itData(fineOvertime)) : "")
-        : tr("L'overtime non è previsto: si attiva in Impostazioni → Calendario e orario → Overtime massimo.")}</p>
-      <div class="bs-pulsanti">
-        <button class="btn" data-r="annulla">${tr("Annulla")}</button>
-        ${overtimeMax() > 0 ? `<button class="btn" data-r="overtime">${tr("Overtime")}</button>` : ""}
-        <button class="btn primario" data-r="slitta">${tr("Accetta lo slittamento")}</button>
-      </div></div>`;
-    const fine = r => { window.removeEventListener("keydown", esc_, true); v.remove(); risolvi(r); };
+      <b id="bs-titolo">${titolo}</b>
+      ${corpo}
+      <div class="bs-pulsanti">${pulsanti.map(b =>
+        `<button class="btn${b.primario ? " primario" : ""}" data-r="${b.r}">${b.eti}</button>`).join("")}</div></div>`;
+    const fine = r => { window.removeEventListener("keydown", esc_, true);
+      const dati = leggi ? leggi(v) : null; v.remove(); risolvi(leggi ? {r, dati} : r); };
     // Esc chiude solo il banner, non l'editor sotto: intercettato prima di escChiudi
     const esc_ = e => { if(e.key === "Escape"){ e.stopImmediatePropagation(); e.preventDefault(); fine("annulla"); } };
     window.addEventListener("keydown", esc_, true);
     v.querySelectorAll("[data-r]").forEach(b => b.onclick = () => fine(b.dataset.r));
     document.body.appendChild(v);
-    v.querySelector('[data-r="slitta"]').focus();
+    (v.querySelector(".bs-pulsanti .primario") || v.querySelector(".bs-pulsanti [data-r]")).focus();
   });
+}
+
+/* Dipendenze fine-inizio al salvataggio. Un'attività non si salva se parte prima che sia
+   finita una da cui dipende: niente "salva comunque" — per partire prima bisogna togliere la
+   dipendenza, cioè dichiarare apertamente che non c'è. Il banner propone la prima partenza
+   utile (partenzaInSequenza), che l'utente applica con un clic: nulla si sposta da solo.
+   Restituisce la versione proposta se l'utente la sceglie, null se annulla, "ok" se non c'è
+   nessun blocco. */
+async function controllaPrecedenti(nuova){
+  const b = blocchiSequenza(nuova);
+  if(!b.length) return "ok";
+  const prop = partenzaInSequenza(nuova);
+  const eProp = prop ? estremiConModifica(prop, prop) : null;
+  const r = await bannerScelta(tr("Non può partire prima che finiscano le attività da cui dipende"),
+    `<ul>${b.map(x => `<li>${x.sospesa
+        ? tr("“{0}” è sospesa: non è finita.", esc(nomeAttivita(x.p)))
+        : tr("“{0}” finisce il {1}.", esc(nomeAttivita(x.p)), itData(x.fine))}</li>`).join("")}</ul>
+     <p class="nota">${eProp ? tr("Partirebbe il {0}.", itData(b[0].dal))
+       : b.some(x => x.sospesa) ? tr("Un'attività sospesa non ha una fine: riprendila o togli la dipendenza.")
+       : tr("Con “Consegna entro il” la partenza la decide la consegna: spostala più avanti.")}
+       ${tr("Se non dipende davvero da queste, toglile da “Parte dopo”.")}</p>`,
+    [{r:"annulla", eti:tr("Annulla")},
+     ...(eProp ? [{r:"proposta", eti:tr("Parti il {0}", itData(eProp.dal)), primario:true}] : [])]);
+  return r === "proposta" ? prop : null;
+}
+/* Le attività che dipendono da "nuova" e che, salvandola, partirebbero prima della sua nuova
+   fine: lo slittamento di un'attività a monte non si vieta (è la realtà), si dice. Risolve con
+   [] se non c'è nulla da chiedere, con l'elenco da spostare dopo il salvataggio se l'utente
+   sceglie di spostarle, con false se salva lasciandole dove sono, con null se annulla.
+   "applica": i pulsanti dicono "Applica" invece di "Salva" (riassegnazioni suggerite). */
+async function controllaSuccessive(nuova, applica){
+  const sc = successoriScavalcati(nuova);
+  if(!sc.length) return [];
+  const r = await bannerScelta(tr("Finirebbe dopo la partenza di attività che dipendono da questa"),
+    `<ul>${sc.map(x => `<li>${tr("“{0}” parte il {1}, la nuova fine di questa è il {2}.",
+        esc(nomeAttivita(x.s)), itData(x.dal), itData(x.fine))}</li>`).join("")}</ul>
+     <p class="nota">${tr("Se le lasci dove sono restano segnate ⚠ fuori sequenza nel piano finché qualcuno non le sposta.")}</p>`,
+    [{r:"annulla", eti:tr("Annulla")},
+     {r:"lascia", eti:applica ? tr("Applica e lasciale dove sono") : tr("Salva e lasciale dove sono")},
+     {r:"sposta", eti:applica ? tr("Applica e spostale dopo") : tr("Salva e spostale dopo"), primario:true}]);
+  return r === "sposta" ? sc.map(x => x.s) : r === "lascia" ? false : null;
+}
+// dopo il salvataggio: sposta in avanti le attività scelte nel banner, ciascuna alla sua prima
+// partenza utile; quelle che non si possono spostare (consegna fissa) restano segnalate
+function spostaSuccessive(elenco){
+  if(!elenco || !elenco.length) return;
+  const ferme = [];
+  elenco.forEach(x => {
+    const prop = partenzaInSequenza(x);
+    if(!prop){ if(blocchiSequenza(x).length) ferme.push(x); return; }
+    x.dataInizio = prop.dataInizio;
+    if(modoAtt(x) === "finestra") x.scadenza = prop.scadenza;
+    invalida();
+  });
+  if(ferme.length) brindisi(tr("Non spostate (consegna fissa o attività sospesa): {0}", ferme.map(nomeAttivita).join("; ")));
+}
+
+/* Annullare o sospendere un'attività da cui ne dipendono altre: banner con tutta la catena a
+   valle (catenaAValle). Spuntate di default quelle che dipendono solo da questa catena; a
+   parte, senza spunta, quelle che dipendono anche da un'altra attività ancora aperta.
+   Annullando: annulla anche le spuntate / lasciale e anticipale / lasciale dove sono.
+   Sospendendo: sospendi anche le spuntate / lasciale dove sono. "Torna all'editor" non salva
+   nulla. Risolve con null (torna all'editor), oppure {r, ids}. Nessuna catena: {r:"lascia"}. */
+async function chiediCatena(a, tipo){
+  const sosp = tipo === "sospendi";
+  const cat = catenaAValle(a, sosp);
+  if(!cat.length) return {r:"lascia", ids:[]};
+  const voce = c => { const e = estremi(c.x);
+    return `<label class="spunta bs-voce"><input type="checkbox" data-spunta="${c.x.id}" ${c.piena ? "checked" : ""}>
+      <span>${esc(nomeAttivita(c.x))} <span class="nota mono">${e ? itData(e.dal) + " – " + itData(e.al) : "–"}</span>${
+      c.altri.length ? `<span class="nota"> · ${tr("dipende anche da {0}", c.altri.map(p => "“" + esc(nomeAttivita(p)) + "”").join(", "))}</span>` : ""}</span></label>`; };
+  const piene = cat.filter(c => c.piena), parte = cat.filter(c => !c.piena);
+  const r = await bannerScelta(sosp
+      ? tr("Sospendere anche le attività che dipendono da questa?")
+      : tr("Annullare anche le attività che dipendono da questa?"),
+    `<div class="bs-elenco">${piene.map(voce).join("")}
+     ${parte.length ? `<p class="nota" style="margin:8px 0 2px">${tr("Dipendono anche da altre attività ancora aperte:")}</p>${parte.map(voce).join("")}` : ""}</div>
+     <p class="nota">${sosp
+       ? tr("Se le lasci dove sono, restano ⚠ fuori sequenza: aspettano un'attività ferma. Riprenderle resta sempre manuale.")
+       : tr("Se questa attività non serve più perché il lavoro è già stato fatto o c'è una strada più veloce, quelle che dipendono da lei possono partire prima.")}</p>`,
+    [{r:"annulla", eti:tr("Torna all'editor")}, {r:"lascia", eti:tr("Lasciale dove sono")},
+     ...(sosp ? [] : [{r:"anticipa", eti:tr("Lasciale e anticipale")}]),
+     {r:"tutte", eti:sosp ? tr("Sospendi anche le spuntate") : tr("Annulla anche le spuntate")}],
+    v => Array.from(v.querySelectorAll("[data-spunta]:checked")).map(c => c.dataset.spunta));
+  return r.r === "annulla" ? null : {r:r.r, ids:r.dati};
+}
+// applica la scelta del banner, dopo il salvataggio dell'attività: stessa data di fine/sospensione
+function applicaCatena(scelta, tipo, dataFine){
+  if(!scelta || scelta.r !== "tutte") return;
+  scelta.ids.map(id => S.assegnazioni.find(x => x.id === id)).filter(Boolean).forEach(x => {
+    if(tipo === "sospendi"){ x.sospesa = true; x.dataFine = dataFine; }
+    else {
+      // come "Annulla progetto": una sospesa tiene il troncamento già congelato
+      if(!x.sospesa) x.dataFine = dataFine;
+      x.fatta = true; x.annullata = true; x.sospesa = false;
+    }
+  });
+  invalida();
+}
+/* Dopo l'annullamento: finestra con le attività che dipendevano direttamente da questa, la
+   partenza attuale, quella proposta e se il calendario della persona è libero. Spuntate di
+   default solo quelle che non fanno finire più tardi altro. "poi" viene chiamata alla
+   chiusura (la proposta di anticipo delle attività della stessa persona). Falso se non c'è
+   niente da proporre. */
+function apriAnticipoSuccessive(a, poi){
+  const pr = proposteAnticipo(a);
+  if(!pr.length){ brindisi(tr("Nessuna attività da anticipare")); return false; }
+  finestra(tr("Anticipare le attività che dipendevano da questa?"),
+    `<table><thead><tr><th style="width:30px"></th><th>${tr("Chi e cosa")}</th><th>${tr("Ora")}</th><th>${tr("Proposta")}</th><th>${tr("Calendario")}</th></tr></thead><tbody>
+     ${pr.map(z => `<tr><td>${z.nuova ? `<input type="checkbox" data-anticipa="${z.x.id}" ${z.sl.length ? "" : "checked"}>` : ""}</td>
+       <td>${esc(nomeAttivita(z.x))}</td><td class="mono">${itData(z.e.dal)}</td>
+       <td class="mono">${z.nuova ? itData(z.dal) : "–"}</td>
+       <td>${z.motivo === "consegna" ? `<span class="nota">${tr("Consegna fissa: la partenza la decide la consegna.")}</span>`
+           : z.motivo === "sospesa" ? `<span class="nota">${tr("Dipende anche da “{0}”, che è sospesa.", esc(nomeAttivita(z.da)))}</span>`
+           : z.sl.length ? `<span style="color:var(--allarme)">${tr("⚠ Non libero, finiscono più tardi:")}</span> ${z.sl.map(q => esc(testoSlittamento(q))).join("; ")}`
+           : tr("Libero")}</td></tr>`).join("")}
+     </tbody></table>`,
+    `<button class="btn" id="as-no">${tr("Non anticipare")}</button>
+     <button class="btn primario" id="as-ok">${tr("Anticipa le selezionate")}</button>`);
+  document.querySelector(".finestra").classList.add("larga");
+  const fine = () => { chiudi(); rendi(); if(poi) poi(); };
+  document.getElementById("as-no").onclick = fine;
+  document.getElementById("as-ok").onclick = () => {
+    const ids = Array.from(document.querySelectorAll("[data-anticipa]:checked")).map(c => c.dataset.anticipa);
+    pr.filter(z => z.nuova && ids.includes(z.x.id)).forEach(z => {
+      z.x.dataInizio = z.nuova.dataInizio;
+      if(modoAtt(z.x) === "finestra") z.x.scadenza = z.nuova.scadenza;
+    });
+    if(ids.length){ invalida(); segnaModificato(); brindisi(tr(ids.length === 1 ? "{0} attività anticipata" : "{0} attività anticipate", ids.length)); }
+    fine();
+  };
+  return true;
 }
 
 // dopo una chiusura anticipata: propone di spostare avanti le attività successive
@@ -685,6 +930,18 @@ function proponiAnticipo(personaId, dopoIl, escludiId){
     const dataScelta = val("an-data");
     const prima = scelte.map(x=>estremi(x)).filter(Boolean).map(e=>e.dal).sort()[0];
     const delta = diffGiorni(prima, dataScelta);
+    // dipendenze: nessuna può partire prima che finisca un'attività da cui dipende
+    const bloccate = scelte.map(x => ({x, b:blocchiSequenza(Object.assign({}, x,
+      {dataInizio: iso(sommaGiorni(d(x.dataInizio), delta))},
+      x.scadenza ? {scadenza: iso(sommaGiorni(d(x.scadenza), delta))} : {}))}))
+      .filter(z => z.b.length);
+    if(bloccate.length){
+      alert(tr("Non si può anticipare così:") + "\n" + bloccate.map(z => "• " + nomeAttivita(z.x) + " — "
+        + z.b.map(q => q.sospesa ? tr("“{0}” è sospesa: non è finita.", nomeAttivita(q.p))
+                                 : tr("“{0}” finisce il {1}.", nomeAttivita(q.p), itData(q.fine))).join(" ")).join("\n")
+        + "\n" + tr("Scegli una data più avanti o non selezionarle."));
+      return;
+    }
     scelte.forEach(x=>{
       x.dataInizio = iso(sommaGiorni(d(x.dataInizio), delta));
       if(x.scadenza) x.scadenza = iso(sommaGiorni(d(x.scadenza), delta));

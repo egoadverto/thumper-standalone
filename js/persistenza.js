@@ -273,6 +273,9 @@ function normalizza(x){
     if(!q.modo) q.modo = q.scadenza ? "fine" : "inizio";
     return q;
   });
+  // dipendenze: un file senza dipendeDa resta com'è; legami verso attività sparite, di altri
+  // progetti o che chiudono un ciclo vengono tolti
+  dipendenzeValide(s.assegnazioni);
   s.assenze = x.assenze || [];
   // backlog: elenco separato, non entra mai nel piano finché non viene promosso in
   // un'assegnazione (vedi apriAttivita/promuoviBacklogItem) — default per ogni campo,

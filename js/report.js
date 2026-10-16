@@ -162,10 +162,11 @@ function sezioneReport(){
         <th>Primo giorno critico</th></tr></thead><tbody>${corpoPersone}</tbody></table>
 
       <h3 class="din titoletto" style="margin-top:20px">${tr("Per settimana")}</h3>
-      <table><thead><tr><th>Settimana dal</th>
+      <table><thead><tr><th>Settimana</th><th>Dal</th>
         <th class="num-cella">Disponibili</th><th class="num-cella">Pianificate</th>
         <th class="num-cella">Saturazione</th></tr></thead><tbody>
         ${perSett.map(s=>`<tr>
+          <td class="mono"><b>${etichettaSettimana(s.dal)}</b></td>
           <td class="mono">${itData(s.dal)}</td>
           <td class="num-cella mono">${arr(s.disp)}</td>
           <td class="num-cella mono">${arr(s.pian)}</td>

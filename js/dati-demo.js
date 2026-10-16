@@ -65,20 +65,27 @@ function datiDemo(){
       {id:"p2", nome:"Bianchi Elena", gruppoId:"g1", gruppiExtra:["g4"], oreGiorno:null, smartMax:null, attivo:true},
       {id:"p3", nome:"Conti Davide", gruppoId:"g2", gruppiExtra:[], oreGiorno:null, attivo:true},
       {id:"p4", nome:"Ferrari Luca", gruppoId:"g3", gruppiExtra:["g1"], oreGiorno:6, attivo:true},
-      {id:"p5", nome:"Greco Sara", gruppoId:"g4", gruppiExtra:[], oreGiorno:null, attivo:true}
+      {id:"p5", nome:"Greco Sara", gruppoId:"g4", gruppiExtra:[], oreGiorno:null, attivo:true},
+      {id:"p6", nome:"Marino Andrea", gruppoId:"g1", gruppiExtra:[], oreGiorno:null, attivo:true}
     ],
     commesse:[
-      {id:"c1", numero:"25-0412", cliente:"Frimeccanica", descrizione:"Linea produttiva A", colore:null, stato:"attiva", apertura:g(-20)},
+      {id:"c1", numero:"25-0412", cliente:"Frimeccanica", descrizione:"Linea produttiva A", colore:null, stato:"attiva", apertura:g(-20), consegnaCliente:g(30)},
       {id:"c2", numero:"25-0455", cliente:"Termonova", descrizione:"", colore:null, stato:"attiva", apertura:g(-5)},
-      {id:"c3", numero:"25-0470", cliente:"Glacia Industrie", descrizione:"Revamping centrale", colore:null, stato:"attiva", apertura:g(0)}
+      {id:"c3", numero:"25-0470", cliente:"Glacia Industrie", descrizione:"Revamping centrale", colore:null, stato:"attiva", apertura:g(0), consegnaCliente:g(35)}
     ],
     assegnazioni:[
-      {id:"a1", personaId:"p1", commessaId:"c1", dataInizio:g(0), oreTotali:56, orePerGiorno:8, note:""},
+      {id:"a1", personaId:"p1", commessaId:"c1", dataInizio:g(0), oreTotali:56, orePerGiorno:8, note:"", descrizione:"Calcoli dimensionali"},
       {id:"a2", personaId:"p1", commessaId:"c2", dataInizio:g(3), oreTotali:24, orePerGiorno:4, note:""},
-      {id:"a3", personaId:"p2", commessaId:"c1", dataInizio:g(2), oreTotali:40, orePerGiorno:8, note:""},
-      {id:"a4", personaId:"p3", commessaId:"c3", dataInizio:g(0), oreTotali:30, orePerGiorno:6, note:""},
-      {id:"a5", personaId:"p4", commessaId:"c1", dataInizio:g(7), oreTotali:36, orePerGiorno:6, note:""},
-      {id:"a6", personaId:"p5", commessaId:"c2", dataInizio:g(1), oreTotali:16, orePerGiorno:8, note:""}
+      {id:"a3", personaId:"p2", commessaId:"c1", dataInizio:g(2), oreTotali:40, orePerGiorno:8, note:"", descrizione:"Progettazione meccanica", dipendeDa:["a1"]},
+      {id:"a4", personaId:"p3", commessaId:"c3", dataInizio:g(0), oreTotali:30, orePerGiorno:6, note:"", descrizione:"Selezione componenti e posizioni"},
+      {id:"a5", personaId:"p4", commessaId:"c1", dataInizio:g(7), oreTotali:36, orePerGiorno:6, note:"", descrizione:"Schemi elettrici", dipendeDa:["a3"]},
+      {id:"a6", personaId:"p5", commessaId:"c2", dataInizio:g(1), oreTotali:16, orePerGiorno:8, note:""},
+      /* 25-0412 (sopra) è fuori sequenza apposta, per far vedere avvisi e ⚠; 25-0470 è invece
+         una catena in regola, con l'elettrico diviso in due come si fa per una dipendenza
+         parziale: la meccanica parte appena i componenti sono scelti, non a quadro finito */
+      {id:"a7", personaId:"p6", commessaId:"c3", dataInizio:g(7), oreTotali:24, orePerGiorno:null, note:"", descrizione:"Staffaggio componenti fuori quadro", dipendeDa:["a4"]},
+      {id:"a8", personaId:"p3", commessaId:"c3", dataInizio:g(7), oreTotali:40, orePerGiorno:null, note:"", descrizione:"Cavi, layout e quadro", dipendeDa:["a4"]},
+      {id:"a9", personaId:"p5", commessaId:"c3", dataInizio:g(14), oreTotali:16, orePerGiorno:null, note:"", descrizione:"Documentazione", dipendeDa:["a7", "a8"]}
     ],
     assenze:[
       {id:"s1", personaId:"p2", dal:g(8), al:g(12), tipo:"ferie", ore:0}

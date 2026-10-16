@@ -204,10 +204,15 @@ A tool to support team management and coordination.
         <span>✓ Conclusa</span>
         <span>✕ Annullata</span>
         <span>⏸ Sospesa</span>
+        <span>⛓ Collegata</span>
+        <span>⚠ Fuori sequenza</span>
       </div>
       <p>Il colore di un blocco identifica sempre il progetto, con lo stesso colore ovunque quel
       progetto compaia nel programma. Un blocco concluso è sbiadito, con il nome barrato; un blocco
-      con il <b>bordo rosso</b> è un'attività che finisce oltre la sua consegna. Passando con il
+      con il <b>bordo rosso</b> è un'attività che finisce oltre la sua consegna, oppure, con il
+      segno <b>⚠</b>, un'attività <b>fuori sequenza</b>: parte prima che sia finita un'attività da
+      cui dipende. Il segno <b>⛓</b> indica un'attività collegata ad altre dello stesso progetto
+      (vedi "Attività collegate" più sotto). Passando con il
       mouse su un blocco vedi ore totali, ore al giorno, periodo, vincolo ed eventuale overtime.</p>
       <p>Le giornate particolari della persona si vedono sulla sua riga: ferie e malattia sono
       riquadri tratteggiati che coprono tutta la riga, il permesso è una fascia tratteggiata in
@@ -219,6 +224,9 @@ A tool to support team management and coordination.
       <b>azzurra</b> se la giornata è parzialmente occupata, <b>blu</b> se è piena, <b>arancione</b>
       se va oltre le ore disponibili (succede solo con l'overtime). I colori sono scelti per
       restare distinguibili anche da chi è daltonico.</p>
+      <p>In testa al calendario, sotto il mese, ogni settimana è indicata con il suo numero
+      nell'anno (<b>W42</b>, standard ISO: da lunedì a domenica), come nelle tabelle di Verifiche e
+      nel Report carico.</p>
       <h3>Muoversi nel calendario</h3>
       <p>I pulsanti ◀ e ▶ spostano la finestra di una settimana; <b>Oggi</b> torna alla settimana
       corrente; nel campo <b>Dal</b> puoi scrivere una data di partenza. Il menu <b>Periodo</b>
@@ -250,6 +258,9 @@ A tool to support team management and coordination.
         <li><b>Monte ore</b> e, se serve, <b>ore al giorno in deroga</b>, per lavorare a un ritmo
         diverso da quello normale della persona solo su questa attività. Con il carico ripartito
         la deroga non si usa: il ritmo lo decide la finestra.</li>
+        <li><b>Parte dopo</b>: le attività dello stesso progetto che devono essere finite prima
+        che questa possa partire. Cerca l'attività e sceglila: resta come etichetta, che togli con
+        la ×. Vedi "Attività collegate" più sotto.</li>
         <li><b>Sviluppo interno</b>: la tipologia di sviluppo interno di questa attività — determina
         la sua data limite di inizio (le tipologie disponibili si gestiscono in Impostazioni →
         Lead time). Lasciala non indicata se questo lavoro non ha un tempo di sviluppo interno da
@@ -265,15 +276,16 @@ A tool to support team management and coordination.
       </ul>
       <p>Se il progetto ha una consegna concordata, un riquadro mostra la consegna, entro quando
       l'ufficio deve chiudere e l'<b>ultimo giorno utile per partire</b>; il pulsante <b>Vincola
-      alla data limite</b> imposta l'attività per finire proprio entro quella data. In fondo, un
-      riepilogo dice in una frase cosa hai impostato (quante giornate, da quando a quando, quante
-      ore al giorno) e avvisa se la partenza cade nel passato, se la finestra è troppo stretta per
-      le ore indicate o se, salvando, altre attività della persona finiranno più tardi. Leggilo
-      prima di confermare.</p>
+      alla data limite</b> imposta l'attività per finire proprio entro quella data; se da questa
+      attività ne dipendono altre, il riquadro dice anche entro quando deve finire per lasciare
+      loro il tempo. In fondo, un riquadro di avvisi compare solo quando c'è qualcosa da
+      segnalare: la partenza nel passato o su un giorno non lavorativo, una finestra troppo
+      stretta per le ore indicate, altre attività della persona che salvando finirebbero più
+      tardi, una sequenza non rispettata. Se non compare, non c'è niente da segnalare.</p>
       <p>Nell'editor di un'attività già esistente, <b>Duplica attività</b> apre una nuova attività
-      con la stessa persona, lo stesso progetto, la stessa descrizione e la stessa tipologia di
-      sviluppo interno; ore e date sono da compilare da capo (utile per pianificare il resto di
-      un'attività sospesa). <b>Elimina</b> la cancella, chiedendo il codice se la protezione delle
+      con la stessa persona e lo stesso progetto; tutto il resto (descrizione, ore, date, tipologia
+      di sviluppo interno, "Parte dopo") è da compilare da capo, di proposito (utile per
+      pianificare il resto di un'attività sospesa). <b>Elimina</b> la cancella, chiedendo il codice se la protezione delle
       attività è attiva.</p>
       <h3>Più attività nello stesso giorno</h3>
       <p>Una giornata non supera mai le ore della persona. Un'attività <b>breve</b>, cioè che in
@@ -286,6 +298,46 @@ A tool to support team management and coordination.
       nulla, fino al massimo impostato in Impostazioni (quei giorni risultano oltre il limite e
       restano segnalati in Verifiche); oppure <b>Annulla</b>, che lascia tutto com'era. Se
       l'overtime massimo è 0%, la scelta Overtime non compare.</p>
+      <h3>Attività collegate</h3>
+      <p>Quando un lavoro può partire solo dopo un altro — per esempio la progettazione dopo i
+      calcoli dimensionali di un collega — si collegano con <b>Parte dopo</b> nell'editor della
+      seconda attività. Si collegano solo attività dello stesso progetto, e solo nel senso
+      "questa parte quando quella è finita".</p>
+      <ul>
+        <li><b>Non si può partire prima.</b> Se salvi, trascini o anticipi un'attività in modo
+        che parta prima che sia finita una da cui dipende, il salvataggio è bloccato: una finestra
+        dice quale attività la blocca e quando finisce, e propone <b>Parti il …</b>, il primo
+        giorno utile dopo. Non c'è un "salva comunque": se davvero non dipende più da
+        quell'attività, toglila da Parte dopo. Vale anche per un'attività già fuori sequenza che
+        apri solo per cambiare una nota: chi la tocca la rimette in ordine.</li>
+        <li><b>Se è l'attività a monte a slittare</b> (più ore, un'altra data, una riassegnazione
+        suggerita), il programma non lo vieta, ma prima di salvare elenca le attività che
+        dipendono da lei e partirebbero troppo presto, con tre scelte: <b>Annulla</b>, <b>lasciale
+        dove sono</b> (restano segnate ⚠) o <b>spostale dopo</b> (al primo giorno utile dopo la
+        nuova fine). Si spostano solo quelle collegate direttamente.</li>
+        <li><b>Annullare o sospendere</b> un'attività da cui ne dipendono altre: una finestra
+        elenca tutte le attività che vengono dopo, anche più in basso nella catena. Sono spuntate
+        quelle che dipendono solo da questa catena; quelle che dipendono anche da un'altra attività
+        ancora aperta sono elencate a parte, senza spunta. Annullando puoi annullare anche le
+        spuntate, lasciarle dove sono, oppure <b>lasciarle e anticiparle</b> — per esempio se il
+        lavoro l'ha già fatto qualcun altro: una seconda finestra mostra per ciascuna la partenza
+        proposta e se il calendario della persona è libero. Sospendendo puoi sospendere anche le
+        spuntate o lasciarle dove sono; riprenderle si fa sempre a mano, una per una.</li>
+        <li><b>Eliminare</b> un'attività elimina solo lei: le attività che dipendevano da lei
+        restano e perdono quel collegamento. <b>Spostarla su un altro progetto</b> fa perdere i
+        suoi collegamenti: prima di salvare una finestra li elenca e chiede conferma.</li>
+        <li><b>Date limite.</b> Se il progetto ha una consegna, la data limite di un'attività
+        tiene conto anche di quelle che dipendono da lei: deve finire in tempo per lasciare loro
+        lo spazio. Ore e date pianificate non cambiano mai da sole; se il piano non ci sta, lo
+        segnalano la scheda del progetto e Verifiche.</li>
+      </ul>
+      <p><b>Quando un'attività dipende solo da una parte di un'altra</b>, dividi quella a monte in
+      due. Esempio: la meccanica può partire appena l'elettrico ha scelto i componenti fuori dal
+      quadro e concordato dove vanno, non quando ha finito cavi e quadro. Pianifica l'elettrico
+      come due attività — "Selezione componenti e posizioni" e "Cavi, layout e quadro" — e collega
+      la meccanica solo alla prima. Collegarla all'intero lavoro elettrico darebbe avvisi falsi e
+      una data limite più stretta del vero. Nei dati di esempio il progetto 25-0470 è costruito
+      così, mentre il 25-0412 è lasciato apposta fuori sequenza, per vedere gli avvisi.</p>
       <h3>Spostare e correggere</h3>
       <p>Per <b>spostare</b> un'attività già pianificata trascinala orizzontalmente con il mouse:
       si muove di un giorno alla volta. Per intervenire nel dettaglio, fai clic sul blocco.</p>
@@ -349,10 +401,15 @@ A tool to support team management and coordination.
       <h3>La scheda del progetto</h3>
       <p>Il pulsante <b>Scheda</b> apre il riepilogo completo del progetto: ore pianificate e
       concluse, persone e periodo, e l'elenco delle attività persona per persona, ciascuna con il
-      suo stato (✓ conclusa, ✕ annullata, ⏸ sospesa, ○ aperta). In alto compaiono le segnalazioni
+      suo stato (✓ conclusa, ✕ annullata, ⏸ sospesa, ○ aperta). Le attività collegate sono in
+      ordine di sequenza: sotto ciascuna, rientrate con └ e ├, quelle che possono partire solo
+      quando è finita; se un'attività dipende da più di una, sta sotto quella che finisce per
+      ultima e le altre sono scritte accanto ("dopo anche: …"). Un'attività fuori sequenza è
+      segnata "⚠ fuori sequenza" sotto le date. In alto compaiono le segnalazioni
       automatiche, per esempio una consegna non indicata per una tipologia che la richiede, un
       progetto attivo ancora senza attività, una fine pianificata oltre la data limite, attività
-      sospese rimaste su un progetto tornato attivo. <b>Vedi nel piano</b> porta al calendario
+      sospese rimaste su un progetto tornato attivo, attività che partono prima che finisca
+      quella da cui dipendono. <b>Vedi nel piano</b> porta al calendario
       filtrato su quel progetto. Per un progetto chiuso la scheda dice quando è stato chiuso e
       fra quanti giorni passerà in archivio.</p>
       <p>Da qui puoi anche far calcolare l'<b>ultimo giorno utile per iniziare</b>: una tabella
@@ -430,7 +487,8 @@ A tool to support team management and coordination.
       <h3>Carichi e capacità</h3>
       <p>Mostra, nel periodo selezionato nella barra, il carico di lavoro di ogni persona,
       settimana per settimana: ore disponibili, ore pianificate e quanti giorni superano la
-      capacità. Sotto, l'elenco dei singoli giorni in sovraccarico, con la causa: persona assente,
+      capacità. Ogni settimana è indicata con il suo numero nell'anno (<b>W42</b>, secondo lo
+      standard ISO: da lunedì a domenica) e la data del lunedì. Sotto, l'elenco dei singoli giorni in sovraccarico, con la causa: persona assente,
       giorno festivo, giorno non lavorativo oppure oltre capacità (troppe ore assegnate).</p>
       <p>Per i giorni oltre capacità, il pulsante <b>Opzioni</b> (con il numero di attività
       coinvolte) apre le proposte di riassegnazione per le attività che occupano quel giorno. Per
@@ -448,7 +506,7 @@ A tool to support team management and coordination.
       lavoro a chi nel frattempo si è liberato. Applicando una proposta l'attività non è più in
       overtime, perché il nuovo giorno o il collega hanno ore libere.</p>
       <h3>Tempistiche</h3>
-      <p>Tre pannelli, tutti indipendenti dal periodo mostrato nel calendario.</p>
+      <p>Quattro pannelli, tutti indipendenti dal periodo mostrato nel calendario.</p>
       <ul>
         <li><b>Media tempistiche</b>: calcolata sui progetti chiusi e archiviati, su tutta la
         storia disponibile. Per tipologia di progetto mostra ore e giorni lavorati, per gruppo le
@@ -465,7 +523,12 @@ A tool to support team management and coordination.
         sviluppo interno, fornitura esterna e margine di sicurezza — non regge più con la
         pianificazione attuale, oppure che non sono ancora pianificati affatto (compresi quelli
         senza nessuna attività, per cui la data limite non è ancora calcolabile). Per ciascuno:
-        entro quando l'ufficio deve finire, la fine pianificata e di quanti giorni si sfora.</li>
+        entro quando l'ufficio deve finire, la fine pianificata e di quanti giorni si sfora. La
+        data limite di un'attività tiene conto anche delle attività che dipendono da lei.</li>
+        <li><b>Attività fuori sequenza</b>: tutte le attività aperte che partono prima che sia
+        finita un'attività da cui dipendono, o che aspettano un'attività sospesa, dalla più
+        vicina. Per ciascuna: progetto, attività (un clic la apre), quando parte, da quale
+        attività dipende, quando finisce quella e di quanti giorni si accavallano.</li>
         <li><b>Tempistiche non rispettate</b>: le singole attività ancora aperte, di progetti
         aperti, con una scadenza (vincolo "Consegna entro il" o carico ripartito) che con il piano
         attuale finiscono oltre quella data — per esempio perché dividono le giornate con altre
@@ -475,7 +538,9 @@ A tool to support team management and coordination.
       <p>Una fotografia stampabile del carico di lavoro delle persone in organico, filtrabile per
       tutto l'ufficio, un gruppo o una singola persona e ordinabile con <b>Ordina per</b>. In alto
       la saturazione complessiva e quante persone sono oltre il 100%; poi le tabelle per persona
-      (con saturazione e primo giorno critico) e per settimana. <b>Stampa / PDF</b> permette di
+      (con saturazione e primo giorno critico) e per settimana, con il numero di settimana
+      (W42) e il giorno da cui parte: se il periodo è un mese solare, la prima e l'ultima settimana
+      possono essere parziali. <b>Stampa / PDF</b> permette di
       stampare su carta o salvare in PDF; <b>Esporta CSV</b> scarica gli stessi dati per poi
       poterli importare in Excel.</p>
     </div>
@@ -608,7 +673,8 @@ A tool to support team management and coordination.
         <li><b>Archivia i chiusi dopo (giorni)</b>: dopo quanti giorni dalla chiusura un progetto
         passa in archivio. L'archiviazione avviene all'apertura del programma, e subito quando
         cambi il valore; 0 la disattiva.</li>
-        <li><b>Esporta CSV</b>: tutte le attività in una tabella per Excel.</li>
+        <li><b>Esporta CSV</b>: tutte le attività in una tabella per Excel, compresa la colonna
+        "Starts after" con le attività da cui ciascuna dipende.</li>
         <li><b>Scarica</b> il file dati: una copia del piano nella cartella Download.</li>
         <li><b>Svuota tutto</b>: cancella persone, progetti, attività e assenze; restano gruppi,
         impostazioni e backlog. Chiede conferma, e il codice se la protezione è attiva.</li>
@@ -796,11 +862,15 @@ A tool to support team management and coordination.
         <span>✓ Completed</span>
         <span>✕ Cancelled</span>
         <span>⏸ On hold</span>
+        <span>⛓ Linked</span>
+        <span>⚠ Out of sequence</span>
       </div>
       <p>A block's colour always identifies the project, with the same colour wherever that
       project appears in the program. A completed block is faded, with its name struck through; a
-      block with a <b>red border</b> is an activity that ends after its due date. Hovering over a
-      block shows total hours, hours per day, period, constraint and any overtime.</p>
+      block with a <b>red border</b> is an activity that ends after its due date, or, with the
+      <b>⚠</b> sign, an activity <b>out of sequence</b>: it starts before an activity it depends on
+      is finished. The <b>⛓</b> sign marks an activity linked to others in the same project (see
+      "Linked activities" below). Hovering over a block shows total hours, hours per day, period, constraint and any overtime.</p>
       <p>A person's special days show on their row: annual leave and sick leave are hatched boxes
       covering the whole row, time off is a hatched strip at the bottom, remote work and business
       trips are solid strips at the bottom. A remote-work strip over the weekly limit is marked in
@@ -810,6 +880,9 @@ A tool to support team management and coordination.
       blue</b> if the day is partly taken, <b>blue</b> if it is full, <b>orange</b> if it goes over
       the available hours (this only happens with overtime). The colours are chosen to stay
       distinguishable for colour-blind people too.</p>
+      <p>At the top of the calendar, under the month, each week is shown with its number in the
+      year (<b>W42</b>, ISO standard: Monday to Sunday), as in the Checks tables and the Load
+      report.</p>
       <h3>Moving around the calendar</h3>
       <p>The ◀ and ▶ buttons move the window by one week; <b>Today</b> goes back to the current
       week; in the <b>From</b> field you can type a start date. The <b>Period</b> menu offers a
@@ -840,6 +913,9 @@ A tool to support team management and coordination.
         <li><b>Total hours</b> and, if needed, <b>hours per day override</b>, to work at a pace
         different from the person's normal one on this activity only. With a spread load the
         override isn't used: the window sets the pace.</li>
+        <li><b>Starts after</b>: the activities in the same project that must be finished before
+        this one can start. Search for the activity and choose it: it stays as a tag, which you
+        remove with the ×. See "Linked activities" below.</li>
         <li><b>Internal development</b>: the internal development type of this activity — it sets
         its latest start date (the available types are managed in Settings → Lead time). Leave it
         unset if this work has no internal development time to count separately.</li>
@@ -854,14 +930,16 @@ A tool to support team management and coordination.
       </ul>
       <p>If the project has an agreed delivery date, a box shows the delivery, the date by which
       the office must finish and the <b>latest possible start day</b>; the <b>Tie it to the
-      deadline</b> button sets the activity to finish exactly by that date. At the bottom, a
-      summary says in one sentence what you've set (how many days, from when to when, how many
-      hours a day) and warns if the start falls in the past, if the window is too narrow for the
-      hours given, or if saving will make other activities of the person finish later. Read it
-      before confirming.</p>
+      deadline</b> button sets the activity to finish exactly by that date; if other activities
+      depend on this one, the box also says by when it must finish to leave them time. At the
+      bottom, a warnings box appears only when there is something to point out: a start in the
+      past or on a non-working day, a window too narrow for the hours given, other activities of
+      the person that would finish later on saving, a sequence not respected. If it doesn't
+      appear, there is nothing to point out.</p>
       <p>In the editor of an existing activity, <b>Duplicate activity</b> opens a new activity
-      with the same person, project, description and internal development type; hours and dates
-      are to be filled in from scratch (useful to plan the rest of an activity on hold).
+      with the same person and project; everything else (description, hours, dates, internal
+      development type, "Starts after") is to be filled in from scratch, on purpose (useful to
+      plan the rest of an activity on hold).
       <b>Delete</b> removes it, asking for the code if activity protection is on.</p>
       <h3>Several activities on the same day</h3>
       <p>A day never goes over the person's hours. A <b>short</b> activity, one that on no day
@@ -874,6 +952,48 @@ A tool to support team management and coordination.
       maximum set in Settings (those days show as over the limit and stay flagged in Checks); or
       <b>Cancel</b>, which leaves everything as it was. If the maximum overtime is 0%, the
       Overtime choice does not appear.</p>
+      <h3>Linked activities</h3>
+      <p>When a piece of work can only start after another — for instance design after a
+      colleague's sizing calculations — link them with <b>Starts after</b> in the editor of the
+      second activity. Only activities in the same project can be linked, and only in the sense
+      "this one starts when that one is finished".</p>
+      <ul>
+        <li><b>It can't start earlier.</b> If you save, drag or bring forward an activity so that
+        it starts before an activity it depends on is finished, saving is blocked: a window says
+        which activity blocks it and when it ends, and proposes <b>Start on …</b>, the first
+        working day after. There is no "save anyway": if it really no longer depends on that
+        activity, remove it from Starts after. This also applies to an activity already out of
+        sequence that you open just to change a note: whoever touches it puts it back in
+        order.</li>
+        <li><b>If it's the upstream activity that slips</b> (more hours, another date, a suggested
+        reassignment), the program doesn't forbid it, but before saving it lists the activities
+        that depend on it and would start too early, with three choices: <b>Cancel</b>, <b>leave
+        them</b> (they stay marked ⚠) or <b>move them after</b> (to the first working day after the
+        new end). Only the directly linked ones move.</li>
+        <li><b>Cancelling or putting on hold</b> an activity others depend on: a window lists all
+        the activities that come after, even further down the chain. The ones that depend only on
+        this chain are ticked; those that also depend on another activity still open are listed
+        separately, unticked. When cancelling you can cancel the ticked ones too, leave them, or
+        <b>leave them and bring them forward</b> — for instance if someone else has already done
+        the work: a second window shows for each one the proposed start and whether the person's
+        calendar is free. When putting on hold you can put the ticked ones on hold too or leave
+        them; resuming them is always done by hand, one by one.</li>
+        <li><b>Deleting</b> an activity deletes only that one: the activities that depended on it
+        stay and lose that link. <b>Moving it to another project</b> loses its links: before
+        saving a window lists them and asks for confirmation.</li>
+        <li><b>Deadlines.</b> If the project has a delivery date, an activity's deadline also takes
+        into account the ones that depend on it: it must finish in time to leave them room.
+        Planned hours and dates never change by themselves; if the plan doesn't fit, the project
+        record and Checks point it out.</li>
+      </ul>
+      <p><b>When an activity depends on only part of another</b>, split the upstream one in two.
+      Example: mechanical design can start as soon as the electrical side has chosen the
+      components outside the panel and agreed where they go, not when it has finished cables and
+      panel. Plan the electrical work as two activities — "Component selection and positions" and
+      "Cables, layout and panel" — and link mechanical design only to the first. Linking it to the
+      whole electrical job would give false warnings and a tighter deadline than the real one. In
+      the sample data, project 25-0470 is built this way, while 25-0412 is left out of sequence
+      on purpose, to show the warnings.</p>
       <h3>Moving and correcting</h3>
       <p>To <b>move</b> an activity that's already planned, drag it horizontally with the mouse:
       it moves one day at a time. To make detailed changes, click the block.</p>
@@ -938,10 +1058,15 @@ A tool to support team management and coordination.
       <h3>The project record</h3>
       <p>The <b>Details</b> button opens the full project summary: planned and completed hours,
       people and period, and the list of activities person by person, each with its status
-      (✓ completed, ✕ cancelled, ⏸ on hold, ○ open). At the top come the automatic warnings, for
+      (✓ completed, ✕ cancelled, ⏸ on hold, ○ open). Linked activities are in sequence order:
+      under each one, indented with └ and ├, the ones that can only start once it is finished;
+      if an activity depends on more than one, it sits under the one that finishes last and the
+      others are written next to it ("also after: …"). An activity out of sequence is marked
+      "⚠ out of sequence" under its dates. At the top come the automatic warnings, for
       instance a missing delivery date for a type that requires one, an active project with no
       activities yet, a planned end past the deadline, activities left on hold on a project that
-      is active again. <b>Show on the plan</b> takes you to the calendar filtered on that project.
+      is active again, activities starting before the one they depend on is finished. <b>Show on
+      the plan</b> takes you to the calendar filtered on that project.
       For a closed project the record says when it was closed and in how many days it will be
       archived.</p>
       <p>From here you can also have the program work out the <b>latest start day</b>: a table
@@ -1016,7 +1141,9 @@ A tool to support team management and coordination.
       <h2 class="din">Checks</h2>
       <h3>Workload and capacity</h3>
       <p>Shows, for the period selected in the toolbar, each person's workload week by week:
-      available hours, planned hours and how many days go over capacity. Below, the list of
+      available hours, planned hours and how many days go over capacity. Each week is shown with
+      its number in the year (<b>W42</b>, following the ISO standard: Monday to Sunday) and the
+      date of its Monday. Below, the list of
       individual overloaded days, with the cause: person absent, public holiday, non-working day
       or over capacity (too many hours assigned).</p>
       <p>For days over capacity, the <b>Options</b> button (with the number of activities
@@ -1034,7 +1161,7 @@ A tool to support team management and coordination.
       someone who has meanwhile become free. Applying a proposal takes the activity out of
       overtime, because the new day or the colleague has free hours.</p>
       <h3>Timing</h3>
-      <p>Three panels, all independent of the period shown in the calendar.</p>
+      <p>Four panels, all independent of the period shown in the calendar.</p>
       <ul>
         <li><b>Average timing</b>: calculated on closed and archived projects, over the whole
         history available. By project type it shows hours and days worked, by group hours only
@@ -1051,7 +1178,12 @@ A tool to support team management and coordination.
         development, external supply and safety margin — no longer holds with the current plan,
         or that aren't planned at all yet (including those with no activities, for which the
         deadline can't be worked out yet). For each one: by when the office must finish, the
-        planned end and by how many days it overruns.</li>
+        planned end and by how many days it overruns. An activity's deadline also takes into
+        account the activities that depend on it.</li>
+        <li><b>Out-of-sequence activities</b>: all open activities that start before an activity
+        they depend on is finished, or that are waiting for an activity on hold, nearest first.
+        For each one: project, activity (a click opens it), when it starts, which activity it
+        depends on, when that one ends and by how many days they overlap.</li>
         <li><b>Timing not met</b>: individual activities still open, on open projects, with a
         deadline ("Due by" constraint or spread load) that with the current plan finish after that
         date — for instance because they share their days with other activities of the same
@@ -1061,7 +1193,8 @@ A tool to support team management and coordination.
       <p>A printable snapshot of the workload of the people on staff, filterable for the whole
       office, one group or a single person and sortable with <b>Sort by</b>. At the top, overall
       saturation and how many people are over 100%; then the tables by person (with saturation
-      and first critical day) and by week. <b>Print / PDF</b> lets you print on paper or save as
+      and first critical day) and by week, with the week number (W42) and the day it starts: if
+      the period is a calendar month, the first and last weeks may be partial. <b>Print / PDF</b> lets you print on paper or save as
       PDF; <b>Export CSV</b> downloads the same data so you can import it into Excel.</p>
     </div>
 
@@ -1188,7 +1321,8 @@ A tool to support team management and coordination.
         <li><b>Archive closed projects after (days)</b>: how many days after closing a project is
         archived. Archiving happens when the program opens, and straight away when you change the
         value; 0 turns it off.</li>
-        <li><b>Export CSV</b>: all activities in a table for Excel.</li>
+        <li><b>Export CSV</b>: all activities in a table for Excel, including the "Starts after"
+        column with the activities each one depends on.</li>
         <li><b>Download</b> the data file: a copy of the plan in the Downloads folder.</li>
         <li><b>Clear everything</b>: deletes people, projects, activities and leave; groups,
         settings and backlog stay. It asks for confirmation, and for the code if protection is

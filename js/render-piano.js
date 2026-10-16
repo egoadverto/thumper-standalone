@@ -73,6 +73,16 @@ function rendiPiano(){
       m0 = i;
     }
   }
+  // testata: settimane ISO ("W42"), una banda da lunedì a domenica — la prima può essere
+  // parziale se la finestra non parte di lunedì
+  let settimane = "";
+  let s0 = 0;
+  for(let i=1;i<=gg.length;i++){
+    if(i===gg.length || gg[i].gs===1){
+      settimane += `<div class="sett-testa" style="left:${s0*C}px;width:${(i-s0)*C}px" title="${tr("Settimana {0}", settimanaIso(gg[s0].k).n)}">${(i-s0)*C >= 30 ? etichettaSettimana(gg[s0].k) : ""}</div>`;
+      s0 = i;
+    }
+  }
   let testaGiorni = "";
   gg.forEach((g,i)=>{
     const cls = ["gt"];
@@ -84,6 +94,8 @@ function rendiPiano(){
 
   const carichi = caricoPersone();
   const dist = distribuzioni();
+  const collegate = idsCollegati();   // attività con almeno una dipendenza: icona neutra sul blocco
+  const fuoriSeq = idsFuoriSequenza();   // partono prima che finisca una da cui dipendono: ⚠ e bordo
   const indice = {};
   gg.forEach((g,i)=> indice[g.k]=i);
 
@@ -120,9 +132,10 @@ function rendiPiano(){
         const tardi = sforaConsegna(x.a);
         const vincolo = modoAtt(x.a)==="fine" ? "&#10;"+tr("Consegna entro il {0}", itData(x.a.scadenza))+(tardi?" "+tr("⚠ NON RISPETTATA"):"")
                       : modoAtt(x.a)==="finestra" ? "&#10;"+tr("Finestra: carico ripartito") : "";
-        blocchi += `<div class="blocco ${tardi?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${tr("{0} h totali · {1} h/giorno", arr(x.e.ore), perG)}&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ "+tr("Annullata"):x.a.fatta?"&#10;✓ "+tr("Conclusa"):x.a.sospesa?"&#10;⏸ "+tr("Sospesa"):""}${x.a.straordinario?"&#10;Overtime":""}"
+        const fs = fuoriSeq.has(x.a.id);
+        blocchi += `<div class="blocco ${tardi||fs?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${tr("{0} h totali · {1} h/giorno", arr(x.e.ore), perG)}&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ "+tr("Annullata"):x.a.fatta?"&#10;✓ "+tr("Conclusa"):x.a.sospesa?"&#10;⏸ "+tr("Sospesa"):""}${x.a.straordinario?"&#10;Overtime":""}${collegate.has(x.a.id)?"&#10;⛓ "+tr("Collegata ad altre attività del progetto"):""}${fs?"&#10;⚠ "+tr("Fuori sequenza: parte prima che finisca un'attività da cui dipende"):""}"
           style="left:${left}px;width:${wid}px;top:${x.corsia*26+3}px;background:${coloreCommessa(c)}">
-          ${x.a.annullata?'<span class="segno" title="Annullata">✕</span>':x.a.fatta?'<span class="segno" title="Conclusa">✓</span>':x.a.sospesa?'<span class="segno" title="Sospesa">⏸</span>':""}<span class="num mono">${esc(c.numero)}</span>
+          ${x.a.annullata?'<span class="segno" title="Annullata">✕</span>':x.a.fatta?'<span class="segno" title="Conclusa">✓</span>':x.a.sospesa?'<span class="segno" title="Sospesa">⏸</span>':""}${fs?`<span class="segno" title="${tr("Fuori sequenza: parte prima che finisca un'attività da cui dipende")}">⚠</span>`:""}${collegate.has(x.a.id)?`<span class="segno dip" title="${tr("Collegata ad altre attività del progetto")}">⛓&#xFE0E;</span>`:""}<span class="num mono">${esc(c.numero)}</span>
           <span class="cli">${esc(c.cliente)}</span>
           <span class="ore mono">${arr(x.e.ore)}h</span></div>`;
       });
@@ -216,6 +229,7 @@ function rendiPiano(){
       <div class="persona-sub">${tr("{0} in organico", S.persone.filter(p=>p.attivo!==false).length)}</div></div>
       <div class="pista" style="width:${W}px">
         <div class="mesi din">${mesi}</div>
+        <div class="settimane-test mono">${settimane}</div>
         <div class="giorni-test mono">${testaGiorni}</div>
       </div>
     </div>
@@ -291,20 +305,29 @@ function agganciaPiano(tab, gg, C){
           // blocco, altrimenti sbaglia esattamente dei giorni di weekend saltati
           const e = estremi(a);
           const rifInizio = (e && e.dal) || a.dataInizio;
-          const nuova = Object.assign({}, a, {dataInizio: iso(sommaGiorni(d(rifInizio), spostato))});
+          let nuova = Object.assign({}, a, {dataInizio: iso(sommaGiorni(d(rifInizio), spostato))});
           // se e' ancorata alla consegna, trascinare sposta tutto il blocco, scadenza compresa
           if(a.scadenza){
             const rifFine = (modoAtt(a) === "finestra" && e && e.al) ? e.al : a.scadenza;
             nuova.scadenza = iso(sommaGiorni(d(rifFine), spostato));
           }
+          // dipendenze: non può finire prima che finiscano quelle da cui dipende; con la
+          // proposta del banner il blocco va alla prima partenza utile, con Annulla torna dov'era
+          const seq = await controllaPrecedenti(nuova);
+          if(seq === null){ rendi(); return; }
+          if(seq !== "ok") nuova = seq;
           // se il blocco nella nuova posizione fa slittare altre attività, si chiede prima:
           // slittamento, overtime o annulla (il blocco torna dov'era)
           const scelta = await decidiSlittamento(a, nuova);
-          if(scelta !== null){
+          const successive = scelta === null ? null
+            : await controllaSuccessive(Object.assign({}, nuova, {straordinario:scelta}));
+          if(scelta !== null && successive !== null){
             a.dataInizio = nuova.dataInizio;
             if(a.scadenza) a.scadenza = nuova.scadenza;
             a.straordinario = scelta;
-            invalida(); segnaModificato();
+            invalida();
+            spostaSuccessive(successive);
+            segnaModificato();
           }
           rendi();
         }
