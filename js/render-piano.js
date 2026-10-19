@@ -104,7 +104,7 @@ function rendiPiano(){
     const membri = S.persone.filter(p => p.attivo!==false && p.gruppoId===gr.id).sort(perNome);
     if(membri.length===0) return;
     righe += `<div class="riga gruppo">
-      <div class="cella-nomi"><span class="sigla din">${gr.sigla}</span>
+      <div class="cella-nomi"><span class="sigla din">${esc(gr.sigla)}</span>
       <span class="gruppo-nome din">${esc(gr.nome)}</span>
       <span class="gruppo-conta mono">${membri.length}</span></div>
       <div class="pista" style="width:${W}px;height:26px"></div></div>`;
@@ -113,11 +113,26 @@ function rendiPiano(){
       let att = S.assegnazioni.filter(a => a.personaId===p.id);
       if(V.filtroCommessa) att = att.filter(a => a.commessaId===V.filtroCommessa);
       if(V.nascondiFatte) att = att.filter(a => !a.fatta);
-      const {info, n} = corsie(att);
+      // riunioni e formazione della persona: stesse regole di filtro (progetto, nascondi concluse)
+      let evp = (S.eventi||[]).filter(e => e.personeIds.includes(p.id));
+      if(V.filtroCommessa) evp = evp.filter(e => e.commessaId===V.filtroCommessa);
+      if(V.nascondiFatte) evp = evp.filter(e => !e.fatta);
+      const {info, n} = corsie(att, evp);
 
       // blocchi
       let blocchi = "";
       info.forEach(x=>{
+        if(x.ev){
+          // riunione o formazione: grigio, o il colore del progetto se ne ha uno; non si trascina
+          const i = indice[x.ev.giorno];
+          if(i===undefined) return;
+          const ce = commessa(x.ev.commessaId), tipo = tr(TIPI_EVENTO[x.ev.tipo]);
+          blocchi += `<div class="blocco evento${x.ev.fatta?" fatta":""}" data-evento="${x.ev.id}" title="${tipo}${ce?" · "+esc(ce.numero):""}&#10;${esc(x.ev.descrizione)}&#10;${itData(x.ev.giorno)} · ${arr(x.ev.ore)} h${x.ev.personeIds.length>1?"&#10;"+tr("{0} persone", x.ev.personeIds.length):""}${x.ev.fatta?"&#10;✓ "+tr("Conclusa"):""}"
+            style="left:${i*C}px;width:${C-2}px;top:${x.corsia*26+3}px;background:${coloreCommessa(ce)}">
+            ${x.ev.fatta?'<span class="segno">✓</span>':""}<span class="num">${tipo}</span>
+            <span class="cli">${esc(x.ev.descrizione)}</span><span class="ore mono">${arr(x.ev.ore)}h</span></div>`;
+          return;
+        }
         const c = commessa(x.a.commessaId);
         if(!c) return;
         let i0 = indice[x.e.dal], i1 = indice[x.e.al];
@@ -148,12 +163,14 @@ function rendiPiano(){
         if(i1===undefined && a.al > gg[gg.length-1].k && a.dal <= gg[gg.length-1].k) i1 = gg.length-1;
         if(i0===undefined || i1===undefined) return;
         if(FUORI_SEDE.includes(a.tipo)) return;   // reso come fascia, non come assenza
-        if(a.tipo==="permesso") haPermesso = true;   // riga più alta: banda dedicata, vedi sotto
+        // a ore (permesso, ferie, assenza): fascia bassa, non copre le attività; riga più alta
+        const ore = oreAssenza(a);
+        if(ore != null) haPermesso = true;
         const et = tr(SIGLE_GIORNO[a.tipo] || a.tipo);
         const larg = (i1-i0+1)*C - 3;
-        const dett = a.tipo==="permesso" ? et+" "+(a.ore||0)+"h" : et;
-        assenze += `<div class="assenza ${a.tipo}" data-assenza="${a.id}"
-          title="${esc(p.nome)} · ${et}&#10;${itData(a.dal)} → ${itData(a.al)}${a.tipo==="permesso"?"&#10;"+(a.ore||0)+" ore al giorno":""}"
+        const dett = ore != null ? et+" "+arr(ore)+"h" : et;
+        assenze += `<div class="assenza ${a.tipo}${ore != null ? " parziale" : ""}" data-assenza="${a.id}"
+          title="${esc(p.nome)} · ${tr(TIPI_GIORNO[a.tipo] || a.tipo)}&#10;${itData(a.dal)} → ${itData(a.al)}${ore != null ? "&#10;"+tr("{0} ore al giorno", arr(ore)) : ""}${a.tipo==="generica" && a.motivo ? "&#10;"+esc(a.motivo) : ""}"
           style="left:${i0*C+1}px;width:${larg}px">${larg>38?dett:(larg>16?et[0]:"")}</div>`;
       });
       // riga più alta di 13px quando c'e' un permesso: gli lascia una banda dedicata sopra
@@ -257,6 +274,13 @@ function agganciaPiano(tab, gg, C){
       const riga = nome.closest("[data-persona]");
       if(riga){ apriSchedaPersona(riga.dataset.persona); return; }
     }
+    const evt = ev.target.closest("[data-evento]");
+    if(evt){
+      // in sola lettura apriEvento mostra la scheda di consultazione
+      // la riga da cui la si apre: con più partecipanti, eliminare o cambiare chiede "tutti o solo lei"
+      const riga = evt.closest("[data-persona]");
+      apriEvento(evt.dataset.evento, {daPersona: riga ? riga.dataset.persona : null}); return;
+    }
     const b = ev.target.closest(".blocco");
     if(b){ apriAttivita(b.dataset.att); return; }
     const s = ev.target.closest("[data-assenza]");
@@ -278,6 +302,19 @@ function agganciaPiano(tab, gg, C){
     if(!modificabile) return;
     const b = ev.target.closest(".blocco");
     if(!b) return;
+    if(b.dataset.evento){
+      // riunioni e formazione hanno la data fissa: non si trascinano. Se il mouse si sposta prima
+      // del rilascio, il "click" che ne nasce cadrebbe sulla pista e aprirebbe una nuova attività
+      ev.preventDefault();
+      const x0 = ev.clientX;
+      document.addEventListener("mouseup", e => {
+        if(Math.abs(e.clientX - x0) < 4) return;
+        const ignoraClick = c => { c.stopPropagation(); c.preventDefault(); };
+        window.addEventListener("click", ignoraClick, {capture:true, once:true});
+        setTimeout(() => window.removeEventListener("click", ignoraClick, {capture:true}), 0);
+      }, {once:true});
+      return;
+    }
     ev.preventDefault();
     const x0 = ev.clientX, left0 = parseFloat(b.style.left);
     let spostato = 0;

@@ -31,7 +31,7 @@ A tool to support team management and coordination.
 // vedi PLANNER_DATA in CLAUDE.md), mostrata in Impostazioni > Licenza. Politica di
 // aggiornamento in CLAUDE.md, sezione "Versione dell'app": semver, un push su main = un
 // rilascio, incremento a cura di chi fa il push in base a cosa contiene quel push.
-const VERSIONE_APP = "1.5.0";
+const VERSIONE_APP = "1.6.0";
 let S = null;
 let modificabile = false;
 let modificato = false;
@@ -68,6 +68,7 @@ function mansione(id){ return (S.mansioni||[]).find(m=>m.id===id); }
 function natura(id){ return (S.tipologie||[]).find(t=>t.id===id); }
 function festivita(id){ return (S.config.festivitaNazionali||[]).find(v=>v.id===id); }
 function backlogItem(id){ return (S.backlog||[]).find(x=>x.id===id); }
+function evento(id){ return (S.eventi||[]).find(x=>x.id===id); }
 // ore nominali configurate per quel giorno della settimana: la fonte è sempre questa tabella
 function oreGiornoSettimana(isoStr){
   const v = (S.config.oreGiorniSettimana || {})[d(isoStr).getDay()];
@@ -95,7 +96,8 @@ function quotaGiorno(personaId, isoStr, orePerGiorno){
   return Math.max(0, Math.min(richiesta, capacitaGiorno(personaId, isoStr)));
 }
 
-const STATI = {attiva:"Attiva", sospesa:"Sospesa", chiusa:"Chiusa", archiviata:"Archiviata"};
+// archiviata non è uno stato: è una spunta (commessa.archiviata) che si aggiunge a sospesa/annullata/chiusa
+const STATI = {attiva:"Attiva", sospesa:"Sospesa", annullata:"Annullata", chiusa:"Chiusa"};
 // sezioni della scheda Impostazioni, nell'ordine in cui compaiono
 const SOTTO_IMP = {calendario:"Calendario e orario", tempi:"Lead time",
                    protezione:"Protezione", dati:"Archivio e dati", licenza:"Licenza"};
@@ -107,7 +109,18 @@ const SOTTO_COM = {elenco:"Elenco", tipologie:"Tipologie"};
 // (a differenza di mansioni/tipologie, non c'è un caso d'uso reale per estenderli)
 const STATI_BACKLOG = {dafare:"Da fare", incorso:"In corso", fatto:"Fatto"};
 const PRIORITA_BACKLOG = {alta:"Alta", media:"Media", bassa:"Bassa"};
+// riunioni e formazione (S.eventi): impegni fissi di una o più persone, progetto facoltativo
+const TIPI_EVENTO = {riunione:"Riunione", formazione:"Formazione"};
 function statoEti(k){ return tr(STATI[k] || k); }
+function chipStato(c){
+  return `<span class="chip ${c.stato}">${statoEti(c.stato)}</span>`
+    + (c.archiviata ? ` <span class="chip archiviata">${tr("Archiviata")}</span>` : "");
+}
+// il giorno della decisione: ultimo giorno di lavoro per sospesa/annullata, chiusura per chiusa
+function dataStato(c){
+  return c.stato === "sospesa" ? c.sospesaIl || null
+    : (c.stato === "chiusa" || c.stato === "annullata") ? c.chiusaIl || null : null;
+}
 // colore stabile ricavato dal numero: con centinaia di commesse sceglierlo a mano non ha senso
 function coloreCommessa(c){
   if(!c) return "#63737F";
@@ -128,7 +141,7 @@ function annoCommessa(c){
 }
 // commesse selezionabili: le archiviate restano nello storico ma non nei menu
 function commesseSceglibili(inclusa){
-  return S.commesse.filter(c => c.stato !== "archiviata" || c.id === inclusa);
+  return S.commesse.filter(c => !c.archiviata || c.id === inclusa);
 }
 function etichettaCommessa(c){ return c.numero + (c.cliente ? " · " + c.cliente : ""); }
 

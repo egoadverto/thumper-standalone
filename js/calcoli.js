@@ -27,19 +27,34 @@ A tool to support team management and coordination.
 /* ==========================================================
    4. CALCOLI
    ========================================================== */
-const TIPI_GIORNO = {ferie:"Ferie", permesso:"Permesso a ore", malattia:"Malattia",
+// "generica" = Assenza in UI: per i casi straordinari (lutto, permesso studio o sindacale), con note
+const TIPI_GIORNO = {ferie:"Ferie", permesso:"Permesso", generica:"Assenza", malattia:"Malattia",
                      smart:"Smart working", trasferta:"Trasferta"};
-const SIGLE_GIORNO = {ferie:"Ferie", permesso:"Perm.", malattia:"Mal.",
+const SIGLE_GIORNO = {ferie:"Ferie", permesso:"Perm.", generica:"Ass.", malattia:"Mal.",
                       smart:"Smart", trasferta:"Trasferta"};
 const FUORI_SEDE = ["smart","trasferta"];
 
+/* Ore tolte da un'assenza (o da una trasferta) in ognuno dei suoi giorni: null = giornata intera,
+   un numero = solo quelle ore. Ferie, permesso, assenza e trasferta possono essere l'una o l'altra;
+   la malattia è sempre a giornata intera. Compatibilità: i vecchi permessi hanno sempre un numero
+   (anche 0) e restano a ore; ferie salvate con 0 ore restano a giornata intera. */
+function oreAssenza(a){
+  if(a.tipo === "malattia" || a.ore == null) return null;
+  if(a.tipo === "permesso") return +a.ore || 0;
+  return a.ore > 0 ? +a.ore : null;
+}
 function vociGiorno(personaId, isoStr){
   return (S.assenze||[]).filter(a => a.personaId===personaId && isoStr>=a.dal && isoStr<=a.al);
 }
 // smart working e trasferta non sono "assenze" nel senso di assenzaGiorno/assenzaTotale: la loro
 // riduzione di capacità (solo la trasferta ne ha una, vedi trasfertaGiorno) si calcola a parte
 function assenzaGiorno(personaId, isoStr){
-  return vociGiorno(personaId, isoStr).find(a => !FUORI_SEDE.includes(a.tipo)) || null;
+  const v = vociGiorno(personaId, isoStr).filter(a => !FUORI_SEDE.includes(a.tipo));
+  // un'assenza a giornata intera vince su quelle a ore dello stesso giorno, qualunque sia l'ordine
+  // di inserimento; più assenze a ore nello stesso giorno (permesso + assenza...) sommano le ore
+  const intera = v.find(a => oreAssenza(a) == null);
+  if(intera || v.length < 2) return intera || v[0] || null;
+  return Object.assign({}, v[0], {ore: v.reduce((s, a) => s + oreAssenza(a), 0)});
 }
 // versione senza la guardia di assenzaTotale, per chi (assenzaTotale stessa, capacitaGiorno) deve
 // poter interrogare una voce fuori sede senza innescare una chiamata circolare
@@ -60,8 +75,8 @@ function voceFuoriSede(personaId, isoStr){
   if(!eLavorativo(isoStr)) return null;
   const a = assenzaGiorno(personaId, isoStr);
   if(a){
-    if(a.tipo !== "permesso") return null;
-    if((a.ore||0) >= capacitaPersonaGiorno(persona(personaId), isoStr)) return null;
+    const o = oreAssenza(a);
+    if(o == null || o >= capacitaPersonaGiorno(persona(personaId), isoStr)) return null;
   }
   return vociFuoriSedeGiorno(personaId, isoStr);
 }
@@ -122,20 +137,29 @@ function riepilogoSmart(personaId, dal, al, escludiId, comeDeroga){
   });
 }
 function assenzaTotale(personaId, isoStr){
+  // a ore: blocca il giorno solo se le ore coprono tutto l'orario della persona
+  const copre = v => { const o = oreAssenza(v); return o == null || o >= capacitaPersonaGiorno(persona(personaId), isoStr); };
   const a = assenzaGiorno(personaId, isoStr);
-  if(a){
-    if(a.tipo === "permesso"){
-      const p = persona(personaId);
-      return (a.ore||0) >= capacitaPersonaGiorno(p, isoStr);
-    }
-    return true;
-  }
+  if(a) return copre(a);
   const t = trasfertaGiorno(personaId, isoStr);
-  if(t) return t.ore == null || t.ore >= capacitaPersonaGiorno(persona(personaId), isoStr);
-  return false;
+  return t ? copre(t) : false;
 }
 // vincolo dell'attività: "inizio" = parte il, "fine" = consegna entro, "finestra" = dal…al ripartito
 function modoAtt(a){ return a.modo || (a.scadenza ? "fine" : "inizio"); }
+// ore di riunioni e formazione (S.eventi) di una persona in un giorno: impegni fissi, prendono le
+// loro ore prima di ogni attività e restano anche oltre la capacità (il giorno risulta in sovraccarico)
+/* L'elenco delle riunioni e formazioni dopo un salvataggio dall'editor. Nuova: si aggiunge.
+   Esistente: cambia per tutti i partecipanti, oppure con "soloPer" (id di una persona) quella
+   persona esce dalla voce comune e riceve una voce sua con i dati nuovi; gli altri restano com'erano. */
+function eventiModificati(elenco, ev, dati, soloPer){
+  if(!ev) return elenco.concat([Object.assign({}, dati, {id:nuovoId("e")})]);
+  if(!soloPer) return elenco.map(x => x.id === ev.id ? Object.assign({}, x, dati) : x);
+  return elenco.map(x => x.id === ev.id ? Object.assign({}, x, {personeIds: x.personeIds.filter(id => id !== soloPer)}) : x)
+    .concat([Object.assign({}, dati, {id:nuovoId("e"), personeIds:[soloPer]})]);
+}
+function oreEventi(personaId, isoStr){
+  return (S.eventi||[]).reduce((s, e) => s + (e.giorno === isoStr && (e.personeIds||[]).includes(personaId) ? (+e.ore||0) : 0), 0);
+}
 // giorni realmente lavorabili da una persona fra due date, estremi compresi
 function giorniUtili(personaId, dal, al){
   const out = [];
@@ -308,7 +332,9 @@ function simulaPersona(personaId, elenco){
       continue;
     }
     if(eLavorativo(k) && !assenzaTotale(personaId, k)){
-      const cap = capacitaGiorno(personaId, k);
+      // riunioni e formazione prima di tutto: le attività si dividono le ore che restano
+      const capPiena = capacitaGiorno(personaId, k), ev = oreEventi(personaId, k);
+      const cap = Math.max(0, capPiena - ev);
       const desiderio = new Map(vive.map(x => [x, voglio(x, k)]));
       let libere = cap;
       prior.forEach(x=>{
@@ -321,7 +347,7 @@ function simulaPersona(personaId, elenco){
         libere -= assegna(x, k, Math.min(desiderio.get(x), libere / (altre.length - i)));
       });
       // overtime per ultimo: oltre la capacità, fino al tetto della giornata
-      let tetto = cap * (1 + overtimeMax()) - (cap - libere);
+      let tetto = capPiena * (1 + overtimeMax()) - ev - (cap - libere);
       extra.forEach(x=>{
         if(desiderio.has(x)) tetto -= assegna(x, k, Math.min(desiderio.get(x), Math.max(0, tetto)));
       });
@@ -443,11 +469,11 @@ function capacitaGiorno(personaId, isoStr){
   if(a){
     // limite noto e accettato: permesso + trasferta lo stesso giorno sottrae solo le ore
     // del permesso, non anche quelle della trasferta (caso raro, non risolto per ora)
-    if(a.tipo === "permesso") cap = Math.max(0, cap - (a.ore||0));
-    else cap = 0;
+    const o = oreAssenza(a);
+    cap = o == null ? 0 : Math.max(0, cap - o);
   } else {
     const t = trasfertaGiorno(personaId, isoStr);
-    if(t) cap = (t.ore != null) ? Math.max(0, cap - t.ore) : 0;
+    if(t){ const o = oreAssenza(t); cap = o == null ? 0 : Math.max(0, cap - o); }
   }
   return cap * efficienza();
 }
@@ -460,6 +486,12 @@ function caricoPersone(){
     const m = out.get(a.personaId);
     dist.get(a.id).forEach((ore,k)=> m.set(k, (m.get(k)||0) + ore));
   });
+  // riunioni e formazione pesano sul carico come le attività
+  (S.eventi||[]).forEach(e => (e.personeIds||[]).forEach(pid => {
+    if(!out.has(pid)) out.set(pid, new Map());
+    const m = out.get(pid);
+    m.set(e.giorno, (m.get(e.giorno)||0) + (+e.ore||0));
+  }));
   return out;
 }
 
@@ -470,14 +502,18 @@ function caricoPersone(){
    per margine, e propone dove/a chi ciascuna potrebbe spostarsi — la
    persona decide quale, se decide di spostarne una.
    ---------------------------------------------------------- */
+// attività aperte della persona con ore quel giorno: quelle che una riassegnazione può spostare
+function attivitaNelGiorno(personaId, isoGiorno){
+  const dist = distribuzioni();
+  return S.assegnazioni.filter(a => a.personaId === personaId && !a.fatta)
+    .map(a => ({a, mappa:dist.get(a.id)}))
+    .filter(x => x.mappa && (x.mappa.get(isoGiorno) || 0) > 0);
+}
 // attività della persona che occupano quel giorno, con margine (giorni prima del proprio
 // limite: la scadenza dell'attività se c'è, altrimenti la data limite della commessa) e,
 // se esistono, il primo spostamento di data in avanti e/o un collega sostituto
 function candidatiRiassegnazione(personaId, isoGiorno){
-  const dist = distribuzioni();
-  return S.assegnazioni.filter(a => a.personaId === personaId && !a.fatta)
-    .map(a => ({a, mappa:dist.get(a.id)}))
-    .filter(x => x.mappa && (x.mappa.get(isoGiorno) || 0) > 0)
+  return attivitaNelGiorno(personaId, isoGiorno)
     .map(x => {
       const c = commessa(x.a.commessaId);
       const e = estremi(x.a);
@@ -731,7 +767,8 @@ function dipendenzeValide(elenco){
    non blocca nessuno; una sospesa non è finita, quindi blocca sempre (le sue ore si fermano
    alla sospensione, la sua fine apparente non vuol dire che il lavoro sia fatto). */
 function sequenzaViolata(a, dal){
-  if(!a || !dal || a.fatta) return [];
+  // come blocchiSequenza: un'attività conclusa o sospesa non ha più una partenza da controllare
+  if(!a || !dal || a.fatta || a.sospesa) return [];
   return predecessori(a).filter(p => !p.annullata).map(p => {
     if(p.sospesa) return {p, sospesa:true};
     const e = estremi(p);
@@ -814,7 +851,7 @@ function successoriScavalcati(nuova){
 }
 /* Annullare o sospendere un'attività da cui ne dipendono altre: tutta la catena a valle
    (direttamente o lungo la catena) ancora da fare, da proporre nel banner. Per l'annullamento
-   contano anche le sospese (come "Annulla progetto"), per la sospensione no: sono già ferme.
+   contano anche le sospese (come annullando un progetto), per la sospensione no: sono già ferme.
    "piena" = dipende solo da "a", da altre attività della catena o da attività già risolte:
    proposta spuntata. Altrimenti "altri" elenca le attività aperte fuori dalla catena da cui
    dipende anche (va avanti per conto suo?): proposta a parte, non spuntata. */
@@ -857,6 +894,41 @@ function proposteAnticipo(a){
       : Object.assign({}, x, {dataInizio: dal});
     return {x, e, nuova, dal, sl: slittamentiAltre(nuova)};
   }).filter(Boolean);
+}
+/* Fermare un intero progetto a una data (sospensione o annullamento, scelta dall'utente, anche
+   nel passato): "data" è l'ultimo giorno di lavoro, le ore dopo si liberano. Per ogni attività
+   toccata dice cosa succede: sospendendo le aperte; annullando anche le sospese, ma una sospesa
+   già ferma prima di quella data resta al suo giorno (dopo non ha lavorato: spostarla avanti le
+   attribuirebbe ore mai fatte). "ultimo" = ultimo giorno con ore dopo il fermo (null: non era
+   ancora iniziata), "fineOra" = la fine di oggi, per capire se libera giornate. */
+function fermoProgetto(c, data, tipo){
+  const annulla = tipo === "annulla";
+  return S.assegnazioni.filter(a => a.commessaId === c.id && !a.fatta && !a.annullata && (annulla || !a.sospesa))
+    .map(a => {
+      const giaFerma = !!(a.sospesa && a.dataFine && a.dataFine <= data);
+      const fine = giaFerma ? a.dataFine : data;
+      const m = distribuzione(Object.assign({}, a, {fatta:false, sospesa:true, dataFine:fine}));
+      const giorni = Array.from(m.keys()).sort();
+      return {a, fine, giaFerma, ultimo: giorni.length ? giorni[giorni.length-1] : null,
+              fineOra: (estremi(a) || {}).al || null};
+    });
+}
+/* Applica il fermo calcolato da fermoProgetto(): sospende o annulla anche il progetto, con la
+   data scelta (sospesaIl, o chiusaIl per l'annullamento). Restituisce le persone che hanno giornate
+   liberate, per la proposta di anticipo: [{personaId, dopoIl}] */
+function applicaFermoProgetto(c, data, tipo){
+  const voci = fermoProgetto(c, data, tipo);
+  const liberate = new Map();
+  voci.forEach(v => {
+    if(v.fineOra && v.fine < v.fineOra) liberate.set(v.a.personaId, v.fine);
+    v.a.dataFine = v.fine;
+    if(tipo === "annulla"){ v.a.fatta = true; v.a.annullata = true; v.a.sospesa = false; }
+    else v.a.sospesa = true;
+  });
+  if(tipo === "annulla"){ c.stato = "annullata"; c.chiusaIl = data; c.sospesaIl = null; }
+  else { c.stato = "sospesa"; c.sospesaIl = data; }
+  invalida();
+  return Array.from(liberate, ([personaId, dopoIl]) => ({personaId, dopoIl}));
 }
 // id delle attività fuori sequenza oggi: partono prima che finisca una da cui dipendono (⚠ nel Gantt)
 function idsFuoriSequenza(){
@@ -927,7 +999,7 @@ function sintesi(v){
   return {n:v.length, poco:false, mediana:mediana(v), scarto:scartoMediano(v),
           media:v.reduce((a,b)=>a+b,0)/v.length, min:Math.min(...v), max:Math.max(...v)};
 }
-function commessaConclusa(c){ return c.stato === "chiusa" || c.stato === "archiviata"; }
+function commessaConclusa(c){ return c.stato === "chiusa" || c.stato === "annullata"; }
 
 // raccoglie ore e durate delle commesse concluse, separando le tipologie di progetto
 function statisticheCommesse(){
@@ -976,9 +1048,11 @@ function rischioCliente(c){
   const v = verificaTempi(c);
   return !!(v && v.sfora);
 }
-// assegna una corsia verticale a ogni attività sovrapposta
-function corsie(attivita){
-  const info = attivita.map(a=>({a, e:estremi(a)})).filter(x=>x.e);
+// assegna una corsia verticale a ogni attività sovrapposta; "eventi" (riunioni e formazione,
+// un giorno solo) dividono le stesse corsie, con x.ev al posto di x.a
+function corsie(attivita, eventi){
+  const info = attivita.map(a=>({a, e:estremi(a)})).filter(x=>x.e)
+    .concat((eventi||[]).map(ev => ({ev, e:{dal:ev.giorno, al:ev.giorno, ore:+ev.ore||0}})));
   info.sort((x,y)=> x.e.dal < y.e.dal ? -1 : x.e.dal > y.e.dal ? 1 : 0);
   const fine = [];
   info.forEach(x=>{

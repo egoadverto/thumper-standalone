@@ -90,6 +90,10 @@ function datiDemo(){
     assenze:[
       {id:"s1", personaId:"p2", dal:g(8), al:g(12), tipo:"ferie", ore:0}
     ],
+    eventi:[
+      {id:"e1", tipo:"riunione", descrizione:"Riunione generale aziendale", personeIds:["p1","p2","p3","p4","p5","p6"], giorno:g(3), ore:2, commessaId:null, fatta:false},
+      {id:"e2", tipo:"formazione", descrizione:"Aggiornamento sicurezza sul lavoro", personeIds:["p3","p4"], giorno:g(9), ore:4, commessaId:null, fatta:false}
+    ],
     backlog:[
       {id:"bk1", titolo:"Richiesta preventivo revisione quadro", descrizione:"", priorita:"alta", stato:"dafare", ownerId:null, creato:g(-2)},
       {id:"bk2", titolo:"Aggiornare disegno standard staffa", descrizione:"Da rifare in formato nativo", priorita:"media", stato:"incorso", ownerId:"p3", creato:g(-6)},

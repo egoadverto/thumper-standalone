@@ -27,12 +27,10 @@ A tool to support team management and coordination.
 /* ==========================================================
    8. RENDER — PERSONE
    ========================================================== */
-// ore da mostrare accanto a una giornata registrata: il permesso è sempre a ore, la
-// trasferta solo se non è di tutta la giornata (ore null = giornata intera, vedi trasfertaGiorno)
+// ore da mostrare accanto a una giornata registrata, se è a ore (oreAssenza: null = giornata intera)
 function oreAssenzaTesto(a){
-  if(a.tipo === "permesso") return tr("{0} h", arr(a.ore||0));
-  if(a.tipo === "trasferta" && a.ore != null) return tr("{0} h", arr(a.ore));
-  return "";
+  const o = a.tipo === "smart" ? null : oreAssenza(a);
+  return o != null ? tr("{0} h", arr(o)) : "";
 }
 /* ----------------------------------------------------------
    Scheda della persona: sola lettura, stesso linguaggio della
@@ -100,6 +98,7 @@ function apriSchedaPersona(id){
       </div>
       <div class="testo-nota">${tr(TIPI_GIORNO[a.tipo] || a.tipo)}${
         oreAssenzaTesto(a) ? ` <span class="nota">(${oreAssenzaTesto(a)})</span>` : ""}${
+        a.tipo === "generica" && a.motivo ? ` <span class="nota">— ${esc(a.motivo)}</span>` : ""}${
         a.deroga ? ` <span class="chip sospesa">✦ deroga</span>` : ""}
         <div class="nota">${tr("{0} giorni", diffGiorni(a.dal, a.al)+1)}</div></div>
     </div>`).join("") || `<div class="nota">${tr("Nessuna giornata registrata.")}</div>`;
@@ -286,7 +285,7 @@ function rendiAnagrafiche(){
     const p = persona(a.personaId);
     const et = tr(TIPI_GIORNO[a.tipo] || a.tipo);
     return `<tr><td>${p?esc(p.nome):"?"}</td>
-      <td>${et}${oreAssenzaTesto(a)?" ("+oreAssenzaTesto(a)+")":""}${a.deroga?` <span class="chip sospesa">✦ deroga${a.motivo?": "+esc(a.motivo):""}</span>`:""}</td>
+      <td>${et}${oreAssenzaTesto(a)?" ("+oreAssenzaTesto(a)+")":""}${a.tipo==="generica"&&a.motivo?" — "+esc(a.motivo):""}${a.deroga?` <span class="chip sospesa">✦ deroga${a.motivo?": "+esc(a.motivo):""}</span>`:""}</td>
       <td class="mono">${itData(a.dal)}</td><td class="mono">${itData(a.al)}</td>
       <td class="num-cella mono">${diffGiorni(a.dal, a.al)+1}</td>
       <td style="text-align:right"><button class="btn piccolo" data-mod-assenza="${a.id}">Modifica</button></td></tr>`;

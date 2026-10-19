@@ -651,7 +651,7 @@ function apriAttivita(id, pre){
     // se la chiusura anticipata (o la sospensione) ha liberato giornate, chiedo cosa farne
     const proponi = () => {
       if(a && (dati.fatta || dati.sospesa) && dati.dataFine && primaFine && dati.dataFine < primaFine)
-        proponiAnticipo(a.personaId, dati.dataFine, a.id);
+        proponiAnticipo([{personaId:a.personaId, dopoIl:dati.dataFine}]);
     };
     // annullata lasciando le successive: prima la proposta di anticiparle, poi quella sopra
     if(!(catena && catena.r === "anticipa" && apriAnticipoSuccessive(a, proponi))) proponi();
@@ -851,7 +851,7 @@ function applicaCatena(scelta, tipo, dataFine){
   scelta.ids.map(id => S.assegnazioni.find(x => x.id === id)).filter(Boolean).forEach(x => {
     if(tipo === "sospendi"){ x.sospesa = true; x.dataFine = dataFine; }
     else {
-      // come "Annulla progetto": una sospesa tiene il troncamento già congelato
+      // come annullando un progetto: una sospesa tiene il troncamento già congelato
       if(!x.sospesa) x.dataFine = dataFine;
       x.fatta = true; x.annullata = true; x.sospesa = false;
     }
@@ -893,48 +893,57 @@ function apriAnticipoSuccessive(a, poi){
   return true;
 }
 
-// dopo una chiusura anticipata: propone di spostare avanti le attività successive
-function proponiAnticipo(personaId, dopoIl, escludiId){
-  const p = persona(personaId);
-  const candidate = S.assegnazioni.filter(x=>{
-    if(x.personaId !== personaId || x.id === escludiId || x.fatta) return false;
-    const e = estremi(x);
-    return e && e.dal > dopoIl;
-  }).map(x=>({x, e:estremi(x)})).sort((u,v)=> u.e.dal < v.e.dal ? -1 : 1).slice(0, 20);
-
-  if(!candidate.length) return false;
-  const primoUtile = giornoUtile(personaId, dopoIl);
+// dopo una chiusura anticipata (o il fermo di un intero progetto): a chi ha liberato giornate
+// propone di spostare avanti le attività successive. Una finestra sola, una sezione per
+// persona con il suo nome come titolo. voci: [{personaId, dopoIl}]. Le attività concluse,
+// annullate o sospese non si propongono: non hanno una partenza da anticipare.
+function proponiAnticipo(voci){
+  const sezioni = voci.map(v => {
+    const candidate = S.assegnazioni.filter(x=>{
+      if(x.personaId !== v.personaId || x.fatta || x.sospesa) return false;
+      const e = estremi(x);
+      return e && e.dal > v.dopoIl;
+    }).map(x=>({x, e:estremi(x)})).sort((u,w)=> u.e.dal < w.e.dal ? -1 : 1).slice(0, 20);
+    return {p:persona(v.personaId), dopoIl:v.dopoIl, candidate, primoUtile:giornoUtile(v.personaId, v.dopoIl)};
+  }).filter(z => z.p && z.candidate.length).sort((u,w)=> perNome(u.p, w.p));
+  if(!sezioni.length) return false;
 
   finestra("Anticipare le attività successive?",
-    `<p style="margin:0 0 12px">${tr("{0} ha capacità libera dopo il {1}. Scegli quali lavorazioni anticipare: quelle che lasci ferme restano dove sono.", esc(p.nome), itData(dopoIl))}</p>
-     <div class="campo"><label for="an-data">Fai partire la prima dal</label>
-       <input type="date" id="an-data" value="${primoUtile}">
-       <span class="aiuto">Le altre selezionate slittano della stessa quantità, mantenendo le distanze tra loro.</span></div>
+    sezioni.map((z,i)=>`<div class="sc-sezione" data-sezione="${i}"${i?' style="margin-top:18px"':""}>
+     <h5 class="titoletto din">${esc(z.p.nome)}</h5>
+     <p style="margin:0 0 12px">${tr("{0} ha capacità libera dopo il {1}. Scegli quali lavorazioni anticipare: quelle che lasci ferme restano dove sono.", esc(z.p.nome), itData(z.dopoIl))}</p>
+     <div class="campo"><label for="an-data-${i}">${tr("Fai partire la prima dal")}</label>
+       <input type="date" id="an-data-${i}" value="${z.primoUtile}">
+       <span class="aiuto">${tr("Le altre selezionate slittano della stessa quantità, mantenendo le distanze tra loro.")}</span></div>
      <table><thead><tr><th style="width:30px"></th><th>Progetto</th><th>Dal</th><th>Al</th><th class="num-cella">Ore</th></tr></thead><tbody>
-     ${candidate.map((k,idx)=>{
+     ${z.candidate.map((k,idx)=>{
        const cz = commessa(k.x.commessaId);
        return `<tr><td><input type="checkbox" data-anticipa="${k.x.id}" ${idx===0?"checked":""}></td>
          <td><span class="pastiglia" style="background:${coloreCommessa(cz)}"></span><span class="mono">${cz?esc(cz.numero):"?"}</span>${cz&&cz.cliente?" · "+esc(cz.cliente):""}</td>
          <td class="mono">${itData(k.e.dal)}</td><td class="mono">${itData(k.e.al)}</td>
          <td class="num-cella mono">${arr(k.e.ore)}</td></tr>`;
      }).join("")}
-     </tbody></table>`,
+     </tbody></table></div>`).join(""),
     `<button class="btn" id="an-no">Non spostare niente</button>
      <button class="btn primario" id="an-ok">Anticipa le selezionate</button>`);
   document.querySelector(".finestra").classList.add("larga");
   document.getElementById("an-no").onclick = chiudi;
   document.getElementById("an-ok").onclick = ()=>{
-    const scelte = Array.from(document.querySelectorAll("[data-anticipa]")).filter(c=>c.checked)
-      .map(c => S.assegnazioni.find(x=>x.id===c.dataset.anticipa)).filter(Boolean);
-    if(!scelte.length){ chiudi(); return; }
-    const dataScelta = val("an-data");
-    const prima = scelte.map(x=>estremi(x)).filter(Boolean).map(e=>e.dal).sort()[0];
-    const delta = diffGiorni(prima, dataScelta);
+    // ogni sezione ha la sua data: le selezionate di quella persona slittano tutte dello stesso delta
+    const spostamenti = [];
+    sezioni.forEach((z,i)=>{
+      const scelte = Array.from(document.querySelectorAll(`[data-sezione="${i}"] [data-anticipa]:checked`))
+        .map(c => S.assegnazioni.find(x=>x.id===c.dataset.anticipa)).filter(Boolean);
+      if(!scelte.length) return;
+      const prima = scelte.map(x=>estremi(x)).filter(Boolean).map(e=>e.dal).sort()[0];
+      const delta = diffGiorni(prima, val("an-data-" + i));
+      scelte.forEach(x => spostamenti.push({x, nuova:Object.assign({}, x,
+        {dataInizio: iso(sommaGiorni(d(x.dataInizio), delta))},
+        x.scadenza ? {scadenza: iso(sommaGiorni(d(x.scadenza), delta))} : {})}));
+    });
+    if(!spostamenti.length){ chiudi(); return; }
     // dipendenze: nessuna può partire prima che finisca un'attività da cui dipende
-    const bloccate = scelte.map(x => ({x, b:blocchiSequenza(Object.assign({}, x,
-      {dataInizio: iso(sommaGiorni(d(x.dataInizio), delta))},
-      x.scadenza ? {scadenza: iso(sommaGiorni(d(x.scadenza), delta))} : {}))}))
-      .filter(z => z.b.length);
+    const bloccate = spostamenti.map(z => ({x:z.x, b:blocchiSequenza(z.nuova)})).filter(z => z.b.length);
     if(bloccate.length){
       alert(tr("Non si può anticipare così:") + "\n" + bloccate.map(z => "• " + nomeAttivita(z.x) + " — "
         + z.b.map(q => q.sospesa ? tr("“{0}” è sospesa: non è finita.", nomeAttivita(q.p))
@@ -942,12 +951,9 @@ function proponiAnticipo(personaId, dopoIl, escludiId){
         + "\n" + tr("Scegli una data più avanti o non selezionarle."));
       return;
     }
-    scelte.forEach(x=>{
-      x.dataInizio = iso(sommaGiorni(d(x.dataInizio), delta));
-      if(x.scadenza) x.scadenza = iso(sommaGiorni(d(x.scadenza), delta));
-    });
+    spostamenti.forEach(z=>{ z.x.dataInizio = z.nuova.dataInizio; if(z.x.scadenza) z.x.scadenza = z.nuova.scadenza; });
     invalida(); segnaModificato(); chiudi(); rendi();
-    brindisi(tr(scelte.length===1 ? "{0} attività anticipata" : "{0} attività anticipate", scelte.length));
+    brindisi(tr(spostamenti.length===1 ? "{0} attività anticipata" : "{0} attività anticipate", spostamenti.length));
   };
   return true;
 }
@@ -1225,6 +1231,9 @@ function apriPersona(id){
     S.assenze = S.assenze.filter(a=>a.personaId!==p.id);
     // il backlog non si elimina con la persona: gli elementi restano, senza responsabile
     (S.backlog||[]).forEach(b=>{ if(b.ownerId===p.id) b.ownerId = null; });
+    // riunioni e formazione: esce dai partecipanti; un evento rimasto senza nessuno sparisce
+    (S.eventi||[]).forEach(e=>{ e.personeIds = e.personeIds.filter(id=>id!==p.id); });
+    S.eventi = (S.eventi||[]).filter(e=>e.personeIds.length);
     invalida(); segnaModificato(); chiudi(); rendi();
   };
   document.getElementById("p-ok").onclick = ()=>{
@@ -1256,7 +1265,7 @@ function apriCommessa(id, pre){
     <div class="sc-intestazione">
       <span class="pastiglia" style="background:${coloreCommessa(c||{numero:pre.numero||"nuova"})}"></span>
       <span class="din">${c ? esc(c.numero) + (c.cliente ? " · " + esc(c.cliente) : "") : tr("Nuovo progetto")}</span>
-      ${c ? `<span class="chip ${c.stato}">${statoEti(c.stato)}</span>` : ""}
+      ${c ? chipStato(c) : ""}
     </div>
 
     <div class="sc-due">
@@ -1272,15 +1281,16 @@ function apriCommessa(id, pre){
         </div>
 
         <div class="sc-sezione">
-          <h5 class="titoletto din">Stato e apertura</h5>
+          <h5 class="titoletto din">Stato</h5>
           <div class="riga-campi">
             <div class="campo"><label for="c-stato">Stato</label><select id="c-stato">
               ${Object.keys(STATI).map(k=>`<option value="${k}" ${c&&c.stato===k?"selected":""}>${statoEti(k)}</option>`).join("")}
-            </select><span class="aiuto">Gli archiviati restano nel calendario ma spariscono dalle ricerche.</span></div>
-            <div class="campo"><label for="c-apertura">Data di apertura</label>
-              <input type="date" id="c-apertura" value="${c&&c.apertura?c.apertura:iso(new Date())}">
-              <span class="aiuto">Serve a filtrare per anno.</span></div>
+            </select></div>
+            <div class="campo"><label for="c-data-stato" id="c-data-eti">Data</label>
+              <input type="date" id="c-data-stato"></div>
           </div>
+          <div class="campo"><label class="spunta"><input type="checkbox" id="c-archiviata" ${c&&c.archiviata?"checked":""}> ${tr("Archiviata")}</label>
+            <span class="aiuto">${tr("Non compare più nelle ricerche e nei menu, resta nel calendario e nello storico.")}</span></div>
         </div>
 
         <div class="sc-sezione">
@@ -1306,16 +1316,25 @@ function apriCommessa(id, pre){
 
         <div class="sc-sezione">
           <h5 class="titoletto din">Consegna e tempi</h5>
-          <div class="campo"><label for="c-consegna">Consegna concordata</label>
-            <input type="date" id="c-consegna" value="${c&&c.consegnaCliente?c.consegnaCliente:""}">
-            <span class="aiuto">${tr('Facoltativa. La data limite di inizio si calcola dalle attività pianificate su questo progetto (ognuna con la propria tipologia di sviluppo interno), non da qui: si vede in Scheda → “Calcola il giorno ultimo di inizio”.')}</span></div>
+          <div class="campo"><label for="c-apertura">Data di apertura</label>
+            <input type="date" id="c-apertura" value="${c&&c.apertura?c.apertura:iso(new Date())}">
+            <span class="aiuto">Serve a filtrare per anno.</span></div>
+          <div class="campo"><label for="c-consegna">${tr("Consegna concordata (facoltativa)")}</label>
+            <input type="date" id="c-consegna" value="${c&&c.consegnaCliente?c.consegnaCliente:""}"></div>
         </div>
 
       </div>
-    </div>`;
-  const puoAnnullareProgetto = c && c.stato !== "chiusa" && c.stato !== "archiviata";
+    </div>
+    ${c ? `<div class="sc-sezione" style="margin-top:20px" id="c-fermo" hidden>
+      <h5 class="titoletto din" id="c-fermo-titolo"></h5>
+      <p class="aiuto">${tr("La data accanto allo stato è l'ultimo giorno di lavoro, anche nel passato: le ore fino a quel giorno restano nello storico, quelle dopo si liberano.")}</p>
+      <div id="c-fermo-elenco"></div>
+    </div>` : ""}
+    ${c ? `<div class="sc-sezione" style="margin-top:20px" id="c-attivita-collegate">
+      <h5 class="titoletto din">Attività di progetto</h5>
+      ${tabellaAttivitaCommessa(datiCommessa(c).att)}
+    </div>` : ""}`;
   const piede = `${c?'<button class="btn pericolo sinistra" id="c-elimina">Elimina</button>':""}
-    ${puoAnnullareProgetto?'<button class="btn pericolo sinistra" id="c-annulla-progetto">Annulla progetto</button>':""}
     <button class="btn" id="c-annulla">Annulla</button><button class="btn primario" id="c-ok">Salva</button>`;
   finestra(c?"Modifica progetto":"Nuovo progetto", corpo, piede);
   document.querySelector(".finestra").classList.add("enorme");
@@ -1329,38 +1348,56 @@ function apriCommessa(id, pre){
   document.getElementById("c-annulla").onclick = chiudi;
   if(c) document.getElementById("c-elimina").onclick = ()=>{
     const n = S.assegnazioni.filter(a=>a.commessaId===c.id).length;
-    if(!autorizza(n ? tr("Questo progetto ha {0} attività pianificate che verranno eliminate. Procedere?", n) : tr("Eliminare questo progetto?"))) return;
+    // riunioni e formazione del progetto esistono per lui: si eliminano con le sue attività
+    const ne = (S.eventi||[]).filter(e=>e.commessaId===c.id).length;
+    if(!autorizza(ne ? tr("Questo progetto ha {0} attività pianificate e {1} riunioni o formazioni che verranno eliminate. Procedere?", n, ne)
+                 : n ? tr("Questo progetto ha {0} attività pianificate che verranno eliminate. Procedere?", n) : tr("Eliminare questo progetto?"))) return;
     S.commesse = S.commesse.filter(x=>x.id!==c.id);
     S.assegnazioni = S.assegnazioni.filter(a=>a.commessaId!==c.id);
+    S.eventi = (S.eventi||[]).filter(e=>e.commessaId!==c.id);
     invalida(); segnaModificato(); chiudi(); rendi();
   };
-  // elenco leggibile delle attività coinvolte in un'azione di massa (sospensione, annullamento):
-  // un conteggio secco ("3 attività") non dice chi/cosa/quando, non aiuta a decidere consapevolmente
-  const elencoAttivita = lista => lista.map(a=>{
-    const p = persona(a.personaId), e = estremi(a);
-    const periodo = e ? itData(e.dal)+"–"+itData(e.al) : tr("nessuna ora pianificata");
-    return "• " + (p?p.nome:"?") + (a.descrizione?" — "+a.descrizione:"") + " (" + periodo + ")";
-  }).join("\n");
-  // Chiudere un progetto che non si concluderà mai: segna come annullata ogni attività
-  // ancora aperta (comprese quelle sospese, che tengono il troncamento già congelato dal
-  // momento della sospensione — cambia solo l'etichetta), poi chiude il progetto — vedi
-  // CLAUDE.md, "Chiudere un progetto che non si concluderà mai".
-  if(puoAnnullareProgetto) document.getElementById("c-annulla-progetto").onclick = ()=>{
-    const daAnnullare = S.assegnazioni.filter(a=>a.commessaId===c.id && !a.fatta && !a.annullata);
-    const msg = daAnnullare.length
-      ? tr("Annullare questo progetto segna come annullate queste {0} attività (comprese le sospese) e lo chiude. Le ore già lavorate restano nello storico:", daAnnullare.length)
-          + "\n\n" + elencoAttivita(daAnnullare) + "\n\n" + tr("Procedere?")
-      : tr("Annullare questo progetto lo chiude, senza attività da segnare. Procedere?");
-    const consenso = S.config.proteggiAttivita ? autorizza(msg) : confirm(msg);
-    if(!consenso) return;
-    const oggi = iso(new Date());
-    daAnnullare.forEach(a=>{
-      if(!a.sospesa) a.dataFine = oggi;
-      a.fatta = true; a.annullata = true; a.sospesa = false;
-    });
-    c.stato = "chiusa"; c.chiusaIl = oggi;
-    invalida(); segnaModificato(); chiudi(); rendi();
+  /* Stato e data: la data accanto allo stato è sempre visibile, vuota e spenta su "Attiva".
+     Riaprendo un progetto sospeso, annullato o chiuso mostra quando è successo (in sola
+     lettura: è il giorno a cui si sono fermate le attività). Scegliendo uno stato nuovo si
+     accende, con oggi di default e anche nel passato; per sospensione e annullamento sotto
+     compare l'elenco di cosa succede a ogni attività — vedi CLAUDE.md, "Sospensione di
+     un'attività/progetto". */
+  const campoData = document.getElementById("c-data-stato");
+  const tipoFermo = st => c && st !== c.stato ? (st === "sospesa" ? "sospendi" : st === "annullata" ? "annulla" : null) : null;
+  const mostraFermo = tipo => {
+    document.getElementById("c-fermo").hidden = !tipo;
+    if(!tipo) return;
+    const voci = fermoProgetto(c, campoData.value || iso(new Date()), tipo);
+    document.getElementById("c-fermo-titolo").textContent = tipo === "annulla" ? tr("Annullamento del progetto") : tr("Sospensione del progetto");
+    const effetto = v => v.giaFerma ? tr("già ferma dal {0}: resta così", itData(v.fine))
+      : !v.ultimo ? tr("non ancora iniziata: nessuna ora resta")
+      : (v.fineOra && v.fineOra <= v.fine) ? tr("finisce il {0}, prima di questa data: nessuna ora in meno", itData(v.fineOra))
+      : tr("lavora fino al {0}, poi si ferma", itData(v.ultimo));
+    document.getElementById("c-fermo-elenco").innerHTML = !voci.length
+      ? `<p class="nota">${tr("Nessuna attività aperta da fermare.")}</p>`
+      : `<p style="margin:8px 0 4px"><b>${tipo === "annulla"
+          ? (voci.length === 1 ? tr("1 attività verrà annullata:") : tr("{0} attività verranno annullate:", voci.length))
+          : (voci.length === 1 ? tr("1 attività verrà sospesa:") : tr("{0} attività verranno sospese:", voci.length))}</b></p>
+         <table><tbody>${voci.map(v => `<tr><td>${esc(nomeAttivita(v.a))}</td><td>${effetto(v)}</td></tr>`).join("")}</tbody></table>`;
   };
+  let dataScelta = "";   // la data scelta per lo stato nuovo, tenuta se si cambia stato più volte
+  const aggiornaStato = () => {
+    const st = val("c-stato") || "attiva", salvato = c && st === c.stato;
+    campoData.disabled = st === "attiva" || salvato;
+    campoData.value = st === "attiva" ? "" : salvato ? (dataStato(c) || "") : (dataScelta || iso(new Date()));
+    document.getElementById("c-data-eti").textContent = st === "attiva" ? tr("Data")
+      : st === "chiusa" ? tr("Data di chiusura") : tr("Ultimo giorno di lavoro");
+    const arch = document.getElementById("c-archiviata");
+    arch.disabled = st === "attiva";
+    if(arch.disabled) arch.checked = false;
+    if(c) mostraFermo(tipoFermo(st));
+  };
+  campoData.onchange = () => { dataScelta = campoData.value; if(c) mostraFermo(tipoFermo(val("c-stato"))); };
+  document.getElementById("c-stato").onchange = aggiornaStato;
+  aggiornaStato();
+  // l'anticipo si propone dopo il salvataggio, a editor chiuso: una finestra sola per tutte le persone
+  const dopoFermo = persone => { if(persone.length) proponiAnticipo(persone); };
   document.getElementById("c-ok").onclick = ()=>{
     const numero = val("c-num");
     if(!numero){ alert(tr("Serve il numero di progetto.")); return; }
@@ -1377,32 +1414,195 @@ function apriCommessa(id, pre){
         return;
       }
     }
-    // sospendere il progetto tronca le sue attività ancora aperte da oggi in poi (ore
-    // future liberate, storia congelata) — nuovo meccanismo (sospesa+dataFine), non
-    // implica fatta: l'attività non è conclusa, solo in pausa. Riattivarla è manuale,
-    // attività per attività (vedi CLAUDE.md, "Regola di chiusura estesa alle attività sospese")
-    if(nuovoStato === "sospesa" && c && c.stato !== "sospesa"){
-      const aperte = S.assegnazioni.filter(a=>a.commessaId===c.id && !a.fatta && !a.annullata && !a.sospesa);
-      if(aperte.length){
-        const msg = tr("Sospendendo il progetto, queste {0} attività escono dal piano da oggi in poi (le ore già lavorate restano nello storico):", aperte.length)
-          + "\n\n" + elencoAttivita(aperte) + "\n\n" + tr("Procedere?");
-        if(!confirm(msg)) return;
-        const oggi = iso(new Date());
-        aperte.forEach(a=>{ a.sospesa = true; a.dataFine = oggi; });
-        invalida();
-      }
+    const cambia = !c || nuovoStato !== c.stato, data = campoData.value;
+    if(cambia && nuovoStato !== "attiva" && !data){ alert(tr("Indica la data accanto allo stato.")); return; }
+    // sospendere e annullare chiedono sempre conferma (con la protezione, il codice); chiudere
+    // solo il codice, se la protezione è attiva
+    const tipo = tipoFermo(nuovoStato);
+    if(cambia && (nuovoStato === "sospesa" || nuovoStato === "annullata")){
+      const n = tipo ? fermoProgetto(c, data, tipo).length : 0;   // un progetto nuovo non ha attività
+      if(!autorizza(nuovoStato === "annullata"
+          ? (n ? tr("Annullare il progetto con ultimo giorno di lavoro il {0}? Le {1} attività ancora aperte (comprese le sospese) verranno annullate; le ore già lavorate restano nello storico.", itData(data), n)
+               : tr("Annullare il progetto con ultimo giorno di lavoro il {0}?", itData(data)))
+          : (n ? tr("Sospendere il progetto con ultimo giorno di lavoro il {0}? Le {1} attività ancora aperte verranno sospese; riprenderle sarà manuale.", itData(data), n)
+               : tr("Sospendere il progetto con ultimo giorno di lavoro il {0}?", itData(data))))) return;
     }
+    if(c && cambia && nuovoStato === "chiusa" && protetto() && !autorizza(tr("Chiudere il progetto il {0}?", itData(data)))) return;
+    // sospesa+dataFine: storia congelata, ore dopo liberate, non implica fatta. Riattivare è
+    // manuale, attività per attività
+    const persone = tipo ? applicaFermoProgetto(c, data, tipo) : [];
     const dati = {numero, cliente:val("c-cli"), descrizione:val("c-desc"), colore:scelto || null,
                   stato:nuovoStato, apertura:val("c-apertura") || null,
                   consegnaCliente:val("c-consegna") || null,
-                  natura:val("c-natura") || null};
-    if(nuovoStato === "chiusa") dati.chiusaIl = (c && c.stato === "chiusa" && c.chiusaIl) ? c.chiusaIl : iso(new Date());
-    else if(nuovoStato !== "archiviata") dati.chiusaIl = null;
+                  natura:val("c-natura") || null,
+                  archiviata: nuovoStato !== "attiva" && document.getElementById("c-archiviata").checked};
+    if(cambia){
+      dati.chiusaIl = (nuovoStato === "chiusa" || nuovoStato === "annullata") ? data : null;
+      dati.sospesaIl = nuovoStato === "sospesa" ? data : null;
+    }
     if(c) Object.assign(c, dati); else S.commesse.push(Object.assign({id:nuovoId("c")}, dati));
-    segnaModificato(); chiudi(); rendi();
+    segnaModificato(); chiudi(); rendi(); dopoFermo(persone);
   };
 }
 
+/* Riunioni e formazione (S.eventi): una versione semplificata dell'editor attività. Tipo,
+   descrizione, una o più persone (anche un gruppo intero), progetto facoltativo, giorno e
+   ore, attiva o conclusa. Niente vincoli di inizio/fine né sviluppo interno: è un impegno
+   fisso, prende le sue ore prima di ogni attività e le riassegnazioni non lo spostano mai. */
+// riunione o formazione in sola lettura: la scheda di consultazione, come per le attività
+function anteprimaEvento(id){
+  const ev = evento(id); if(!ev) return;
+  const c = commessa(ev.commessaId);
+  const attivi = S.persone.filter(p => p.attivo !== false);
+  const tutti = attivi.length > 1 && attivi.every(p => ev.personeIds.includes(p.id));
+  const nomi = ev.personeIds.map(pid => persona(pid)).filter(Boolean).sort(perNome).map(p => esc(p.nome));
+  finestra(tr(TIPI_EVENTO[ev.tipo]),
+    `<table><tbody>
+      <tr><th style="width:130px">${tr("Tipo")}</th><td>${tr(TIPI_EVENTO[ev.tipo])}</td></tr>
+      <tr><th>${tr("Descrizione")}</th><td>${esc(ev.descrizione)}</td></tr>
+      ${c?`<tr><th>${tr("Progetto")}</th><td><span class="pastiglia" style="background:${coloreCommessa(c)}"></span><span class="mono">${esc(c.numero)}</span>${c.cliente?" · "+esc(c.cliente):""}</td></tr>`:""}
+      <tr><th>${tr("Giorno")}</th><td class="mono">${itData(ev.giorno)} · ${arr(ev.ore)} h</td></tr>
+      <tr><th>${tr("Persone")}</th><td>${tutti ? tr("Tutto l'organico") + ` <span class="nota">(${tr("{0} persone", nomi.length)})</span>` : nomi.join(", ")}</td></tr>
+      ${ev.fatta?`<tr><th>${tr("Stato")}</th><td style="color:var(--positivo)"><b>✓ ${tr("Conclusa")}</b></td></tr>`:""}
+    </tbody></table>
+    <p class="nota" style="margin-top:12px">${tr("Attiva la modifica in alto a destra per cambiarla.")}</p>`,
+    `<button class="btn" id="ev-chiudi">${tr("Chiudi")}</button>`);
+  document.getElementById("ev-chiudi").onclick = chiudi;
+}
+function apriEvento(id, pre){
+  if(!modificabile){ if(id) anteprimaEvento(id); return; }
+  const ev = id ? evento(id) : null;
+  pre = pre || {};
+  const attivi = () => S.persone.filter(p => p.attivo !== false);
+  const scelti = new Set(ev ? ev.personeIds : [pre.personaId || personaAutore()].filter(Boolean));
+  // una riunione che comprende già tutto l'organico riparte con la spunta, non con centinaia di etichette
+  const tuttiAllInizio = !!ev && attivi().length > 1 && attivi().every(p => scelti.has(p.id));
+  const corpo = `
+    <div class="riga-campi">
+      <div class="campo"><label for="ev-tipo">${tr("Tipo")}</label><select id="ev-tipo">
+        ${Object.keys(TIPI_EVENTO).map(k=>`<option value="${k}" ${(ev?ev.tipo:pre.tipo)===k?"selected":""}>${tr(TIPI_EVENTO[k])}</option>`).join("")}
+      </select></div>
+      <div class="campo"><label for="ev-progetto">${tr("Progetto (facoltativo)")}</label>
+        <div class="cerca"><input type="text" id="ev-progetto" placeholder="${tr("Cerca numero o riferimento")}" autocomplete="off"></div></div>
+    </div>
+    <div class="campo"><label for="ev-desc">${tr("Descrizione")}</label><input type="text" id="ev-desc" value="${esc(ev?ev.descrizione:"")}"></div>
+    <div class="riga-campi">
+      <div class="campo"><label for="ev-giorno">${tr("Giorno")}</label><input type="date" id="ev-giorno" value="${ev?ev.giorno:(pre.giorno||iso(new Date()))}"></div>
+      <div class="campo"><label for="ev-ore">${tr("Ore")}</label><input type="number" id="ev-ore" min="0.5" step="0.5" value="${ev?ev.ore:1}"></div>
+    </div>
+    <div class="campo"><label for="ev-cerca-persone">${tr("Persone")}</label>
+      <label class="spunta"><input type="checkbox" id="ev-tutti" ${tuttiAllInizio?"checked":""}> <b>${tr("Tutto l'organico")}</b></label>
+      <div class="dip-scelte" id="ev-scelte"></div>
+      <div class="cerca dip-cerca"><input type="text" id="ev-cerca-persone" autocomplete="off"></div></div>
+    <div class="campo"><label class="spunta"><input type="checkbox" id="ev-fatta" ${ev&&ev.fatta?"checked":""}> ${tr("Conclusa")}</label></div>`;
+  const piede = `${ev?'<button class="btn pericolo sinistra" id="ev-elimina">Elimina</button>':""}
+    <button class="btn" id="ev-annulla">Annulla</button><button class="btn primario" id="ev-ok">Salva</button>`;
+  finestra(ev ? tr("Modifica riunione o formazione") : tr("Nuova riunione o formazione"), corpo, piede)
+    .querySelector(".finestra").classList.add("con-lista");
+  // progetto: lo stesso campo di ricerca dell'editor attività, qui si può lasciare vuoto
+  const comboP = creaCombo("ev-progetto", opzioniCombo(commesseSceglibili(ev ? ev.commessaId : null)),
+    {valore: ev ? ev.commessaId || "" : "", consentiVuoto: true});
+  /* persone: come "Parte dopo" nell'editor attività — si cercano una alla volta e restano come
+     etichette rimovibili; nella ricerca ci sono anche i gruppi, che aggiungono tutti i loro
+     membri. "Tutto l'organico" sostituisce l'elenco: niente lista di tutte le persone a schermo. */
+  const optPersone = [];
+  const comboPers = creaCombo("ev-cerca-persone", optPersone, {
+    consentiVuoto: true,
+    onScegli: v => {
+      if(!v) return;
+      if(v.startsWith("g:")) attivi().filter(p => p.gruppoId === v.slice(2)).forEach(p => scelti.add(p.id));
+      else scelti.add(v);
+      comboPers.imposta("", true);
+      disegnaPersone();
+    }
+  });
+  const disegnaPersone = () => {
+    const tutti = document.getElementById("ev-tutti").checked;
+    const box = document.getElementById("ev-scelte");
+    box.hidden = tutti;
+    box.innerHTML = Array.from(scelti).map(pid => persona(pid)).filter(Boolean).sort(perNome).map(p =>
+      `<span class="dip-etichetta">${esc(p.nome)}${p.attivo===false?" ("+tr("non attivo")+")":""}
+       <button type="button" class="dip-togli" data-togli="${p.id}" title="${tr("Togli")}" aria-label="${tr("Togli")}">×</button></span>`).join("");
+    box.querySelectorAll("[data-togli]").forEach(b => b.onclick = () => { scelti.delete(b.dataset.togli); disegnaPersone(); });
+    optPersone.length = 0;
+    S.gruppi.forEach(g => {
+      const n = attivi().filter(p => p.gruppoId === g.id && !scelti.has(p.id)).length;
+      if(n) optPersone.push({id:"g:" + g.id, eti:tr("Gruppo: {0}", g.nome), sotto:tr("{0} persone", n)});
+    });
+    personeOrdinate(true).filter(p => !scelti.has(p.id)).forEach(p =>
+      optPersone.push({id:p.id, eti:p.nome, sotto:(gruppo(p.gruppoId)||{}).nome || ""}));
+    const inp = document.getElementById("ev-cerca-persone");
+    inp.disabled = tutti || !optPersone.length;
+    inp.placeholder = tutti ? tr("Tutto l'organico") : tr("Cerca una persona o un gruppo…");
+  };
+  document.getElementById("ev-tutti").onchange = disegnaPersone;
+  disegnaPersone();
+  const personeScelte = () => document.getElementById("ev-tutti").checked
+    ? attivi().map(p => p.id) : Array.from(scelti).filter(pid => persona(pid));
+  document.getElementById("ev-annulla").onclick = chiudi;
+  // aperta dalla riga di una persona, con altri partecipanti: eliminare o cambiare giorno e ore
+  // chiede se vale per tutti o solo per lei — chi agisce dalla propria riga non deve cambiare o
+  // cancellare la riunione agli altri senza accorgersene
+  const da = ev && pre.daPersona && ev.personeIds.length > 1 && ev.personeIds.includes(pre.daPersona) ? persona(pre.daPersona) : null;
+  if(ev) document.getElementById("ev-elimina").onclick = async ()=>{
+    let soloLei = false;
+    if(da){
+      const r = await bannerScelta(tr("Eliminare per tutti o solo per {0}?", esc(da.nome)),
+        `<p class="nota">${tr("Questa riunione o formazione riguarda {0} persone.", ev.personeIds.length)}</p>`,
+        [{r:"annulla", eti:tr("Torna indietro")}, {r:"solo", eti:tr("Togli solo {0}", esc(da.nome))},
+         {r:"tutti", eti:tr("Elimina per tutti i {0}", ev.personeIds.length)}]);
+      if(r === "annulla") return;
+      soloLei = r === "solo";
+    }
+    if(soloLei) S.eventi = eventiModificati(S.eventi, ev, {personeIds: ev.personeIds.filter(id => id !== da.id)});
+    else {
+      const msg = tr("Eliminare questa riunione o formazione?");
+      if(!da && !(S.config.proteggiAttivita ? autorizza(msg) : confirm(msg))) return;
+      if(da && S.config.proteggiAttivita && !autorizza(msg)) return;
+      S.eventi = S.eventi.filter(x => x.id !== ev.id);
+    }
+    invalida(); segnaModificato(); chiudi(); rendi();
+  };
+  document.getElementById("ev-ok").onclick = async ()=>{
+    const dati = {tipo:val("ev-tipo"), descrizione:val("ev-desc"), commessaId:comboP.valore() || null,
+                  giorno:val("ev-giorno"), ore:numVal("ev-ore"), fatta:document.getElementById("ev-fatta").checked,
+                  personeIds:personeScelte()};
+    if(!dati.descrizione){ alert(tr("Scrivi una descrizione.")); return; }
+    if(!dati.personeIds.length){ alert(tr("Scegli almeno una persona.")); return; }
+    if(!dati.giorno || !(dati.ore > 0)){ alert(tr("Servono un giorno e delle ore maggiori di zero.")); return; }
+    // giorno, ore o tipo cambiati partendo dalla riga di una persona: per tutti o solo per lei
+    let soloPer = null;
+    if(da && dati.personeIds.includes(da.id) && (dati.giorno !== ev.giorno || dati.ore !== +ev.ore || dati.tipo !== ev.tipo)){
+      const r = await bannerScelta(tr("Cambiare per tutti o solo per {0}?", esc(da.nome)),
+        `<p class="nota">${tr("Questa riunione o formazione riguarda {0} persone. “Solo per {1}” la toglie dalla riunione comune e le crea una voce sua con i dati nuovi.", ev.personeIds.length, esc(da.nome))}</p>`,
+        [{r:"annulla", eti:tr("Torna all'editor")}, {r:"solo", eti:tr("Cambia solo per {0}", esc(da.nome))},
+         {r:"tutti", eti:tr("Cambia per tutti i {0}", ev.personeIds.length), primario:true}]);
+      if(r === "annulla") return;
+      if(r === "solo") soloPer = da.id;
+    }
+    const nuovi = eventiModificati(S.eventi, ev, dati, soloPer);
+    // le attività aperte delle persone coinvolte che per questo finirebbero più tardi: lo si dice
+    // prima di salvare, come per un'attività (verifica e segnala, nessuno slittamento in silenzio)
+    const coinvolte = new Set([...dati.personeIds, ...(ev ? ev.personeIds : [])]);
+    const fine = () => new Map(S.assegnazioni.filter(a => coinvolte.has(a.personaId) && !a.fatta && !a.sospesa)
+      .map(a => [a, (estremi(a)||{}).al]));
+    const prima = fine();
+    const vecchi = S.eventi;
+    S.eventi = nuovi; invalida();
+    const dopo = fine();
+    S.eventi = vecchi; invalida();
+    const slittano = Array.from(prima).filter(([a, al]) => al && dopo.get(a) && dopo.get(a) > al);
+    if(slittano.length){
+      const r = await bannerScelta(tr("Alcune attività finiscono più tardi"),
+        `<ul>${slittano.map(([a, al]) => `<li>${esc(nomeAttivita(a))}: ${itData(al)} → ${itData(dopo.get(a))}</li>`).join("")}</ul>
+         <p class="nota">${tr("Riunioni e formazione hanno la precedenza: le attività si dividono le ore che restano.")}</p>`,
+        [{r:"annulla", eti:tr("Torna all'editor")}, {r:"salva", eti:tr("Salva comunque"), primario:true}]);
+      if(r !== "salva") return;
+    }
+    S.eventi = nuovi;
+    invalida(); segnaModificato(); chiudi(); rendi();
+  };
+}
 function apriAssenza(id){
   if(!modificabile) return;
   const a = id ? S.assenze.find(x=>x.id===id) : null;
@@ -1412,13 +1612,15 @@ function apriAssenza(id){
       <div class="campo"><label for="s-tipo">Tipo</label><select id="s-tipo">
         ${Object.keys(TIPI_GIORNO).map(k=>`<option value="${k}" ${a&&a.tipo===k?"selected":""}>${tr(TIPI_GIORNO[k])}</option>`).join("")}
       </select><span class="aiuto" id="s-nota"></span></div>
-      <div class="campo"><label for="s-ore">Ore</label><input type="number" id="s-ore" min="0" step="0.5" value="${a?a.ore||0:0}">
-        <span class="aiuto">Solo per permessi e trasferte a ore.</span></div>
+      <div class="campo"><label for="s-ore">Ore</label><input type="number" id="s-ore" min="0" step="0.5" value="${a&&oreAssenza(a)!=null?oreAssenza(a):""}">
+        <span class="aiuto">${tr("Ore tolte in ognuno dei giorni indicati.")}</span></div>
     </div>
     <div class="campo" id="s-trasf-campo" hidden>
-      <label class="spunta"><input type="checkbox" id="s-trasf-intero" ${(!a || a.ore==null)?"checked":""}> Tutta la giornata</label>
+      <label class="spunta"><input type="checkbox" id="s-trasf-intero" ${(a ? oreAssenza(a)==null : true)?"checked":""}> Tutta la giornata</label>
       <span class="aiuto">Deseleziona per indicare solo alcune ore (es. mezza giornata).</span>
     </div>
+    <div class="campo" id="s-note-campo" hidden><label for="s-note">${tr("Note (facoltative)")}</label>
+      <input type="text" id="s-note" placeholder="${tr("Es. permesso studio, lutto, permesso sindacale")}" value="${esc(a&&a.tipo==="generica"&&a.motivo?a.motivo:"")}"></div>
     <div class="riga-campi">
       <div class="campo"><label for="s-dal">Dal</label><input type="date" id="s-dal" value="${a?a.dal:iso(new Date())}"></div>
       <div class="campo"><label for="s-al">Al</label><input type="date" id="s-al" value="${a?a.al:iso(new Date())}"></div>
@@ -1431,15 +1633,21 @@ function apriAssenza(id){
     </div>`;
   const piede = `${a?'<button class="btn pericolo sinistra" id="s-elimina">Elimina</button>':""}
     <button class="btn" id="s-annulla">Annulla</button><button class="btn primario" id="s-ok">Salva</button>`;
-  finestra(a?"Modifica giornata":"Ferie, permesso, malattia o smart", corpo, piede);
+  finestra(a?"Modifica giornata":"Ferie, permessi, assenze, malattia o smart", corpo, piede);
   const nota = document.getElementById("s-nota"), campoOre = document.getElementById("s-ore");
   const boxConta = document.getElementById("s-conteggio"), boxDeroga = document.getElementById("s-deroga-campo");
   const campoTrasf = document.getElementById("s-trasf-campo"), trasfIntero = document.getElementById("s-trasf-intero");
+  // ferie, permesso, assenza e trasferta: giornata intera o solo alcune ore; malattia e smart no
+  const conDurata = t => ["ferie","permesso","generica","trasferta"].includes(t);
+  let tipoPrima = val("s-tipo");
   const aggiornaTipo = () => {
     const t = val("s-tipo");
-    campoTrasf.hidden = (t !== "trasferta");
-    const interoGiorno = t === "trasferta" && trasfIntero.checked;
-    campoOre.disabled = !(t === "permesso" || (t === "trasferta" && !interoGiorno));
+    // passando a un permesso nuovo si parte "a ore", come il permesso di sempre
+    if(t !== tipoPrima && !a && t === "permesso") trasfIntero.checked = false;
+    tipoPrima = t;
+    campoTrasf.hidden = !conDurata(t);
+    document.getElementById("s-note-campo").hidden = t !== "generica";
+    campoOre.disabled = !conDurata(t) || trasfIntero.checked;
     const campoAl = document.getElementById("s-al");
     let dal = val("s-dal"), al = val("s-al"), pid = val("s-persona");
     if(dal && al && al < dal){ campoAl.value = dal; al = dal; }
@@ -1461,8 +1669,8 @@ function apriAssenza(id){
     nota.textContent = tr(
         t === "smart"     ? "Lavoro fuori sede: ore invariate, ma conta sul limite settimanale."
       : t === "trasferta" ? "Riduce le ore disponibili del giorno: tutta la giornata, oppure solo le ore indicate."
-      : t === "permesso"  ? "Riduce le ore disponibili del giorno."
-      : "La persona non è disponibile: le attività saltano questi giorni.");
+      : t === "malattia"  ? "La persona non è disponibile: le attività saltano questi giorni."
+      : "Tutta la giornata: le attività saltano questi giorni. A ore: riduce solo le ore indicate.");
   };
   ["s-tipo","s-persona","s-dal","s-al","s-deroga","s-trasf-intero"].forEach(i=>{
     const el = document.getElementById(i);
@@ -1493,10 +1701,13 @@ function apriAssenza(id){
       }
       if(deroga && !val("s-motivo")){ alert(tr("Indica il motivo della deroga.")); return; }
     }
-    const ore = (tipo === "trasferta" && document.getElementById("s-trasf-intero").checked)
-      ? null : numVal("s-ore");
+    // ore vuote = giornata intera (malattia e smart sempre); a ore servono ore maggiori di zero
+    const intero = !["ferie","permesso","generica","trasferta"].includes(tipo) || document.getElementById("s-trasf-intero").checked;
+    if(!intero && !(numVal("s-ore") > 0)){ alert(tr("Indica le ore, oppure spunta “Tutta la giornata”.")); return; }
+    const ore = intero ? null : numVal("s-ore");
+    // "motivo": il perché della deroga allo smart working, o le note facoltative di un'assenza
     const dati = {personaId:val("s-persona"), tipo, ore, dal, al,
-                  deroga, motivo: deroga ? val("s-motivo") : ""};
+                  deroga, motivo: deroga ? val("s-motivo") : tipo === "generica" ? val("s-note") : ""};
     if(a) Object.assign(a, dati); else S.assenze.push(Object.assign({id:nuovoId("s")}, dati));
     invalida(); segnaModificato(); chiudi(); rendi();
   };

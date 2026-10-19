@@ -20,7 +20,8 @@
 | <img src="assets/Screenshot-Setting.png" width="420"><br>Impostazioni / Settings | <img src="assets/Screenshot-Login.png" width="420"><br>"Chi sei?" all'avvio / "Who are you?" on launch |
 | <img src="assets/Screenshot-Activity.png" width="420"><br>Editor di un'attività / Activity editor | <img src="assets/Screenshot-Overtime.png" width="420"><br>Avviso di slittamento e overtime / Delay notice and overtime |
 | <img src="assets/Screenshot-Dependency.png" width="420"><br>Attività bloccata fuori sequenza / Out-of-sequence activity blocked | <img src="assets/Screenshot-Sequence.png" width="420"><br>Attività collegate nella scheda progetto / Linked activities on the project sheet |
-| <img src="assets/Screenshot-Timing.png" width="420"><br>Attività fuori sequenza in Verifiche / Out-of-sequence activities in Checks | |
+| <img src="assets/Screenshot-Timing.png" width="420"><br>Attività fuori sequenza in Verifiche / Out-of-sequence activities in Checks | <img src="assets/Screenshot-Meeting.png" width="420"><br>Riunione o formazione per più persone / Meeting or training for several people |
+| <img src="assets/Screenshot-ProjectStatus.png" width="420"><br>Sospendere un progetto a una data scelta / Putting a project on hold on a chosen date | |
 
 </details>
 
@@ -66,7 +67,9 @@ Non è pensato per grandi organizzazioni con PMO strutturati: è deliberatamente
 - **Numero di settimana ISO** (W42) nel calendario e nei report di carico.
 - **Verifiche su sovraccarichi e scadenze**: ore assegnate contro ore disponibili, giorno per giorno, con proposte di spostamento o di riassegnazione a un collega libero — sempre da confermare, mai applicate da sole.
 - **Statistiche sui tempi dei progetti chiusi** basate su mediana e scarto mediano, non sulla media, per non farsi spostare da un caso isolato.
-- **Gestione assenze e smart working**, con permessi parziali che riducono la capacità giornaliera senza bloccarla.
+- **Gestione assenze e smart working**: ferie, permessi e assenze a giornata intera o a ore, che riducono la capacità giornaliera senza bloccarla.
+- **Riunioni e formazione** per una o più persone (anche un gruppo intero o tutto l'organico), con progetto facoltativo: le loro ore hanno la precedenza sulle attività del giorno.
+- **Sospendere o annullare un progetto** a una data scelta, anche nel passato, vedendo prima cosa succede a ogni attività; la data resta accanto allo stato, e l'archiviazione è una spunta a parte.
 - **Backlog in stile Kanban** per il lavoro non ancora pianificato (nessuna data, nessun progetto assegnato), con promozione a vera attività quando è il momento.
 - **Gestore documenti e note per progetto**, in Markdown.
 - **Report di carico di lavoro** con esportazione CSV (sempre in inglese, uguale per tutti).
@@ -185,7 +188,9 @@ It isn't built for large organizations with a structured PMO: it's deliberately 
 - **ISO week number** (W42) in the calendar and in the workload reports.
 - **Overload and deadline checks**: assigned hours against available hours, day by day, with proposals to move the work or hand it to a free colleague — always to be confirmed, never applied on their own.
 - **Timing statistics on closed projects** based on the median and median deviation, not the mean, so a single odd case doesn't skew them.
-- **Absence and remote-work management**, with partial leave that reduces daily capacity without blocking it.
+- **Absence and remote-work management**: annual leave, time off and absences for a whole day or for a few hours, reducing daily capacity without blocking it.
+- **Meetings and training** for one or more people (a whole group or all staff too), with an optional project: their hours take precedence over the day's activities.
+- **Putting a project on hold or cancelling it** on a chosen date, even in the past, seeing first what happens to each activity; the date stays next to the status, and archiving is a separate tick box.
 - **Kanban-style backlog** for work that hasn't been scheduled yet (no date, no project assigned), promoted to a real activity when the time comes.
 - **Document and note manager per project**, in Markdown.
 - **Workload reports** with CSV export (always in English, the same for everyone).

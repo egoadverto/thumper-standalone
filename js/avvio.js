@@ -153,6 +153,7 @@ function avvia(){
   document.getElementById("nav-oggi").onclick = ()=>{ V.inizio = iso(inizioSettimana(new Date())); document.getElementById("da").value=V.inizio; rendi(); };
   document.getElementById("btn-nuova-att").onclick = ()=>{ if(!modificabile) return brindisi(tr("Attiva prima la modifica")); apriAttivita(null,{}); };
   document.getElementById("btn-nuova-assenza").onclick = ()=>{ if(!modificabile) return brindisi(tr("Attiva prima la modifica")); apriAssenza(null); };
+  document.getElementById("btn-nuovo-evento").onclick = ()=>{ if(!modificabile) return brindisi(tr("Attiva prima la modifica")); apriEvento(null); };
 
   // eventi delegati per le schede tabellari
   document.getElementById("pagina").addEventListener("click", e=>{
@@ -264,9 +265,9 @@ function avvia(){
     }
     if(e.target.id === "btn-archivia"){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
-      const n = S.commesse.filter(c=>c.stato==="chiusa").length;
+      const n = S.commesse.filter(c=>commessaConclusa(c) && !c.archiviata).length;
       if(!confirm(tr("Archiviare {0} progetti chiusi? Restano nel calendario e nello storico, ma non compaiono più nelle ricerche.", n))) return;
-      S.commesse.forEach(c=>{ if(c.stato==="chiusa") c.stato="archiviata"; });
+      S.commesse.forEach(c=>{ if(commessaConclusa(c)) c.archiviata = true; });
       segnaModificato(); rendi(); return;
     }
     if(bp) apriPersona(bp.dataset.modPersona || null);

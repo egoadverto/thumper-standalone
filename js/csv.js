@@ -104,12 +104,20 @@ function assenzeCalendario(personaId, modo, mesi, oggiIso){
   return (S.assenze||[]).filter(a => a.personaId === personaId && a.dal && a.al && a.al >= dal)
     .sort((x,y) => x.dal < y.dal ? -1 : x.dal > y.dal ? 1 : 0);
 }
+// riunioni e formazione della persona, stesso filtro di periodo: "attive" = non concluse
+function eventiCalendario(personaId, modo, mesi, oggiIso){
+  const limite = new Date(d(oggiIso)); limite.setMonth(limite.getMonth() - (mesi || 0));
+  const dal = iso(limite);
+  return (S.eventi||[]).filter(e => e.personeIds.includes(personaId) && e.giorno
+      && (modo === "attive" ? !e.fatta : e.giorno >= dal))
+    .sort((x,y) => x.giorno < y.giorno ? -1 : x.giorno > y.giorno ? 1 : 0);
+}
 // "fuori sede" (Outlook: OOF) solo se la giornata intera è persa per il lavoro ordinario;
 // smart working e permessi a ore lasciano la persona raggiungibile, quindi "libero"
 function assenzaTuttoIlGiorno(a){
-  return a.tipo === "ferie" || a.tipo === "malattia" || (a.tipo === "trasferta" && a.ore == null);
+  return a.tipo !== "smart" && oreAssenza(a) == null;
 }
-function testoIcs(personaId, modo, mesi, adesso, conAssenze){
+function testoIcs(personaId, modo, mesi, adesso, conAssenze, conEventi){
   const p = persona(personaId);
   const ora = adesso || new Date();
   const stamp = ora.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
@@ -135,7 +143,8 @@ function testoIcs(personaId, modo, mesi, adesso, conAssenze){
       "END:VEVENT");
   });
   if(conAssenze) assenzeCalendario(personaId, modo, mesi, iso(ora)).forEach(a=>{
-    const ore = a.ore != null && (a.tipo === "permesso" || a.tipo === "trasferta") ? " · " + tr("{0} h", arr(a.ore)) : "";
+    const o = a.tipo === "smart" ? null : oreAssenza(a);
+    const ore = o != null ? " · " + tr("{0} h", arr(o)) : "";
     const fuori = assenzaTuttoIlGiorno(a);
     righe.push("BEGIN:VEVENT",
       "UID:" + a.id + "@thumper",
@@ -143,9 +152,28 @@ function testoIcs(personaId, modo, mesi, adesso, conAssenze){
       "DTSTART;VALUE=DATE:" + icsData(a.dal),
       "DTEND;VALUE=DATE:" + icsData(iso(sommaGiorni(d(a.al), 1))),
       "SUMMARY:" + icsTesto(tr(TIPI_GIORNO[a.tipo] || a.tipo) + ore),
-      ...(a.motivo ? ["DESCRIPTION:" + icsTesto(a.motivo)] : []),
+      // le note di un'assenza possono essere personali (lutto, permesso sindacale): in Outlook il
+      // calendario lo vedono anche persone che non usano Thumper, quindi lì resta solo "Assenza"
+      ...(a.motivo && a.tipo !== "generica" ? ["DESCRIPTION:" + icsTesto(a.motivo)] : []),
       "TRANSP:" + (fuori ? "OPAQUE" : "TRANSPARENT"),
       "X-MICROSOFT-CDO-BUSYSTATUS:" + (fuori ? "OOF" : "FREE"),
+      "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+      "END:VEVENT");
+  });
+  // riunioni e formazione: Thumper non sa l'orario, solo le ore. "Occupato" se prendono tutta la
+  // giornata, altrimenti "libero" con le ore nel titolo, come il permesso a ore
+  if(conEventi) eventiCalendario(personaId, modo, mesi, iso(ora)).forEach(e=>{
+    const ce = commessa(e.commessaId);
+    const tutto = (+e.ore||0) >= capacitaPersonaGiorno(p, e.giorno);
+    righe.push("BEGIN:VEVENT",
+      "UID:" + e.id + "-" + personaId + "@thumper",
+      "DTSTAMP:" + stamp,
+      "DTSTART;VALUE=DATE:" + icsData(e.giorno),
+      "DTEND;VALUE=DATE:" + icsData(iso(sommaGiorni(d(e.giorno), 1))),
+      "SUMMARY:" + icsTesto((e.fatta ? "✓ " : "") + tr(TIPI_EVENTO[e.tipo]) + " · " + e.descrizione + " · " + tr("{0} h", arr(e.ore))),
+      ...(ce ? ["DESCRIPTION:" + icsTesto(etichettaCommessa(ce))] : []),
+      "TRANSP:" + (tutto ? "OPAQUE" : "TRANSPARENT"),
+      "X-MICROSOFT-CDO-BUSYSTATUS:" + (tutto ? "BUSY" : "FREE"),
       "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
       "END:VEVENT");
   });
@@ -172,6 +200,8 @@ function apriEsportaCalendario(personaId){
        </select></div>
      <div class="campo" style="margin-top:10px"><label class="spunta"><input type="checkbox" id="ec-assenze"> Includi assenze e giornate fuori sede</label>
        <span class="aiuto">Ferie, malattia, permessi, smart working e trasferte, nello stesso periodo.</span></div>
+     <div class="campo" style="margin-top:6px"><label class="spunta"><input type="checkbox" id="ec-eventi"> ${tr("Includi riunioni e formazione")}</label>
+       <span class="aiuto">${tr("Lascialo spento se arrivano già dal calendario aziendale, per non averle due volte.")}</span></div>
      <p class="nota" id="ec-conta"></p>`,
     `<button class="btn" id="ec-annulla">Annulla</button>
      <button class="btn primario" id="ec-ok">Scarica .ics</button>`);
@@ -181,16 +211,20 @@ function apriEsportaCalendario(personaId){
     const n = attivitaCalendario(val("ec-persona"), modo(), +val("ec-mesi"), iso(new Date())).length;
     const na = document.getElementById("ec-assenze").checked
       ? assenzeCalendario(val("ec-persona"), modo(), +val("ec-mesi"), iso(new Date())).length : 0;
+    const ne = document.getElementById("ec-eventi").checked
+      ? eventiCalendario(val("ec-persona"), modo(), +val("ec-mesi"), iso(new Date())).length : 0;
     document.getElementById("ec-conta").textContent = (n === 1 ? tr("1 attività nel file.") : tr("{0} attività nel file.", n))
-      + (document.getElementById("ec-assenze").checked ? " " + (na === 1 ? tr("1 assenza.") : tr("{0} assenze.", na)) : "");
-    document.getElementById("ec-ok").disabled = n + na === 0;
+      + (document.getElementById("ec-assenze").checked ? " " + (na === 1 ? tr("1 assenza.") : tr("{0} assenze.", na)) : "")
+      + (document.getElementById("ec-eventi").checked ? " " + (ne === 1 ? tr("1 riunione o formazione.") : tr("{0} riunioni o formazione.", ne)) : "");
+    document.getElementById("ec-ok").disabled = n + na + ne === 0;
   };
-  ["ec-persona","ec-attive","ec-tutto","ec-mesi","ec-assenze"].forEach(i => document.getElementById(i).addEventListener("change", aggiorna));
+  ["ec-persona","ec-attive","ec-tutto","ec-mesi","ec-assenze","ec-eventi"].forEach(i => document.getElementById(i).addEventListener("change", aggiorna));
   aggiorna();
   document.getElementById("ec-annulla").onclick = chiudi;
   document.getElementById("ec-ok").onclick = ()=>{
     const pid = val("ec-persona"), p = persona(pid);
-    const testo = testoIcs(pid, modo(), +val("ec-mesi"), null, document.getElementById("ec-assenze").checked);
+    const testo = testoIcs(pid, modo(), +val("ec-mesi"), null, document.getElementById("ec-assenze").checked,
+                           document.getElementById("ec-eventi").checked);
     const b = new Blob([testo], {type:"text/calendar;charset=utf-8"});
     const u = URL.createObjectURL(b);
     const a = document.createElement("a"); a.href = u;

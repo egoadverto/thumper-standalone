@@ -63,8 +63,9 @@ function rendiCommesse(){
   const oggiK = iso(new Date());
 
   let elenco = S.commesse.filter(c=>{
-    if(F.stato === "vive" && (c.stato === "archiviata" || c.stato === "chiusa")) return false;
-    if(F.stato !== "vive" && F.stato !== "" && c.stato !== F.stato) return false;
+    if(F.stato === "vive" && (commessaConclusa(c) || c.archiviata)) return false;
+    if(F.stato === "archiviata" && !c.archiviata) return false;
+    if(STATI[F.stato] && c.stato !== F.stato) return false;
     if(F.anno && String(annoCommessa(c)) !== F.anno) return false;
     if(F.natura && (c.natura||"") !== (F.natura === "vuota" ? "" : F.natura)) return false;
     if(F.soloRitardo){ const q0 = datiCommessa(c); if(!q0.ritardo && !q0.rischio) return false; }
@@ -90,13 +91,13 @@ function rendiCommesse(){
   const righe = elenco.map(c=>{
     const i = info.get(c.id);
     const attiva = i.al && i.al >= oggiK && i.dal <= oggiK;
-    return `<tr class="${c.stato==="archiviata"?"spenta":""}">
+    return `<tr class="${c.archiviata?"spenta":""}">
       <td><span class="commessa-link" data-scheda="${c.id}"><span class="pastiglia" style="background:${coloreCommessa(c)}"></span><span class="mono">${esc(c.numero)}</span></span></td>
       <td>${esc(c.cliente)||"–"}</td>
       <td>${esc(c.descrizione)||"–"}</td>
       <td>${c.natura&&natura(c.natura)?`<span class="tag din" title="${esc(natura(c.natura).nome)}">${esc(natura(c.natura).sigla)}</span>`:"–"}</td>
       <td>${i.gruppi.map(gid=>{const g=gruppo(gid); return g?`<span class="tag din" title="${esc(g.nome)}">${esc(g.sigla)}</span>`:"";}).join(" ")||"–"}</td>
-      <td><span class="chip ${c.stato}">${statoEti(c.stato)}</span>${attiva?' <span class="chip attiva">in corso</span>':""}${i.ritardo?` <span class="chip ritardo">⚠ ${tr("+{0} gg", i.ritardo)}</span>`:""}</td>
+      <td>${chipStato(c)}${attiva?' <span class="chip attiva">in corso</span>':""}${i.ritardo?` <span class="chip ritardo">⚠ ${tr("+{0} gg", i.ritardo)}</span>`:""}</td>
       <td class="num-cella mono">${i.n||"–"}</td>
       <td class="num-cella mono">${i.ore?arr(i.ore):"–"}</td>
       <td class="num-cella mono" ${i.tot&&i.fatte===i.tot?'style="color:var(--positivo);font-weight:700"':""}>${i.tot?i.fatte+"/"+i.tot:"–"}</td>
@@ -111,7 +112,7 @@ function rendiCommesse(){
       ${q ? `<button class="btn primario" data-nuova-cerca="1">${tr("Crea il progetto “{0}”", esc(F.testo.trim()))}</button>` : ""}
     </td></tr>`;
 
-  const daChiudere = S.commesse.filter(c=>c.stato==="chiusa").length;
+  const daChiudere = S.commesse.filter(c=>commessaConclusa(c) && !c.archiviata).length;
 
   const sez = {};
   sez.elenco = `
@@ -128,6 +129,7 @@ function rendiCommesse(){
           <option value="vive" ${F.stato==="vive"?"selected":""}>Attive e sospese</option>
           <option value="" ${F.stato===""?"selected":""}>Tutte</option>
           ${Object.keys(STATI).map(k=>`<option value="${k}" ${F.stato===k?"selected":""}>${statoEti(k)}</option>`).join("")}
+          <option value="archiviata" ${F.stato==="archiviata"?"selected":""}>${tr("Archiviate")}</option>
         </select></div>
         <div class="campo"><label for="q-natura">Tipologia</label><select id="q-natura">
           <option value="">Tutte</option>

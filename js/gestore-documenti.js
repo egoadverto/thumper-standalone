@@ -503,7 +503,7 @@ async function scriviNota(c, testo){
       handle = f.handle;
       vecchio = await (await handle.getFile()).text();
     }else{
-      handle = await h.getFileHandle(c.numero + " - NOTES.md", {create:true});
+      handle = await h.getFileHandle(nomeFileNote(c), {create:true});
       vecchio = await (await handle.getFile()).text();   // vuoto se appena creato
     }
   }catch(err){
@@ -528,10 +528,12 @@ async function scriviNota(c, testo){
   await disegnaCartella(c);
 }
 
+// "/" e "\\" non sono ammessi nei nomi di file: un numero come "25/0412" diventa "25-0412"
+function nomeFileNote(c){ return String(c.numero).replace(/[\\/]/g, "-") + " - NOTES.md"; }
 async function creaFileNote(c){
   const h = CARTELLE.get(c.id); if(!h) return;
   try{
-    const handle = await h.getFileHandle(c.numero + " - NOTES.md", {create:true});
+    const handle = await h.getFileHandle(nomeFileNote(c), {create:true});
     if((await handle.getFile()).size > 0){        // esisteva gia': non va svuotato
       brindisi(tr("Il file esiste già: lo rileggo"));
       return disegnaCartella(c);

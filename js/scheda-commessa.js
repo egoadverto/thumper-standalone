@@ -59,12 +59,11 @@ function righeInSequenza(att){
   return out;
 }
 
-function apriSchedaCommessa(id){
-  const c = commessa(id); if(!c) return;
-  const i = datiCommessa(c);
-  const pct = i.ore ? Math.round(i.oreFatte / i.ore * 100) : 0;
-
-  const righe = righeInSequenza(i.att).map(({a, livello, ultimo, altri})=>{
+// righe della tabella attività di un progetto: usata sia dalla Scheda sia da Modifica
+// progetto, che la mostra sempre per far vedere l'impatto di una modifica (es. sospendere
+// il progetto) prima ancora di salvare
+function righeAttivitaCommessa(att){
+  return righeInSequenza(att).map(({a, livello, ultimo, altri})=>{
     const p = persona(a.personaId), e = estremi(a);
     const g = p ? gruppo(p.gruppoId) : null;
     const tardi = !a.fatta && sforaConsegna(a);
@@ -90,6 +89,19 @@ function apriSchedaCommessa(id){
         ? '<span style="color:var(--neutro);font-weight:700" title="Sospesa">⏸</span>'
         : '<span style="color:var(--linea-forte)">○</span>'}</td></tr>`;
   }).join("") || `<tr><td colspan="5" style="color:var(--tenue);padding:14px">Nessuna attività pianificata su questo progetto.</td></tr>`;
+}
+function tabellaAttivitaCommessa(att){
+  return `<table><thead><tr>
+    <th>Risorsa</th><th style="width:34px">Gr.</th><th>Date</th>
+    <th class="num-cella" style="width:52px">Ore</th>
+    <th class="num-cella" style="width:64px">Conclusa</th>
+  </tr></thead><tbody>${righeAttivitaCommessa(att)}</tbody></table>`;
+}
+function apriSchedaCommessa(id){
+  const c = commessa(id); if(!c) return;
+  const i = datiCommessa(c);
+  const pct = i.ore ? Math.round(i.oreFatte / i.ore * 100) : 0;
+  const righe = righeAttivitaCommessa(i.att);
 
   /* --- segnalazioni: tutte ricavate dal piano, niente da inserire a mano --- */
   const avvisi = [];
@@ -117,12 +129,12 @@ function apriSchedaCommessa(id){
   finestra(esc(c.numero) + (c.cliente ? " · " + esc(c.cliente) : ""),
     `<div class="sc-intestazione">
        <span class="pastiglia" style="background:${coloreCommessa(c)}"></span>
-       <span class="chip ${c.stato}">${statoEti(c.stato)}</span>
+       ${chipStato(c)}
        <span class="nota">${tr("Anno {0}", annoCommessa(c)||"–")}</span>
        ${c.natura&&natura(c.natura)?`<span class="tag din">${esc(natura(c.natura).nome)}</span>`:""}
        ${c.consegnaCliente?`<span class="chip ${rischioCliente(c)?"ritardo":"attiva"}">${tr("Consegna {0}", itData(c.consegnaCliente))}</span>`:""}
-       ${c.stato==="chiusa"&&c.chiusaIl?`<span class="nota">${tr("Chiusa il {0}", itData(c.chiusaIl))}${
-         S.config.giorniArchiviazione>0
+       ${dataStato(c)?`<span class="nota">${tr(c.stato==="sospesa"?"Sospesa il {0}":c.stato==="annullata"?"Annullata il {0}":"Chiusa il {0}", itData(dataStato(c)))}${
+         c.stato!=="sospesa"&&!c.archiviata&&S.config.giorniArchiviazione>0
            ? tr(" · archiviazione tra {0} gg", Math.max(0, S.config.giorniArchiviazione - diffGiorni(c.chiusaIl, iso(new Date()))))
            : ""}</span>`:""}
        <span style="margin-left:auto">${gruppiEti}</span>
@@ -143,7 +155,11 @@ function apriSchedaCommessa(id){
              <div><div class="eti">Persone</div><div class="val mono din">${i.n||"–"}</div></div>
              <div><div class="eti">Periodo</div><div class="val mono" style="font-size:13px;white-space:normal;line-height:1.3">${i.dal?itData(i.dal)+" –<br>"+itData(i.al):"–"}</div></div>
            </div>
-           <table style="margin-top:10px"><thead><tr>
+         </div>
+
+         <div class="sc-sezione">
+           <h5 class="titoletto din">Attività di progetto</h5>
+           <table><thead><tr>
              <th>Risorsa</th><th style="width:34px">Gr.</th><th>Date</th>
              <th class="num-cella" style="width:52px">Ore</th>
              <th class="num-cella" style="width:64px">Conclusa</th>

@@ -214,9 +214,9 @@ A tool to support team management and coordination.
       cui dipende. Il segno <b>⛓</b> indica un'attività collegata ad altre dello stesso progetto
       (vedi "Attività collegate" più sotto). Passando con il
       mouse su un blocco vedi ore totali, ore al giorno, periodo, vincolo ed eventuale overtime.</p>
-      <p>Le giornate particolari della persona si vedono sulla sua riga: ferie e malattia sono
-      riquadri tratteggiati che coprono tutta la riga, il permesso è una fascia tratteggiata in
-      basso, smart working e trasferta sono fasce a tinta unita in basso. Una fascia di smart
+      <p>Le giornate particolari della persona si vedono sulla sua riga: ferie, permessi, assenze e
+      malattia di una giornata intera sono riquadri tratteggiati che coprono tutta la riga, quelli
+      di poche ore sono una fascia tratteggiata in basso, smart working e trasferta sono fasce a tinta unita in basso. Una fascia di smart
       working oltre il limite settimanale è segnata in rosso. Sotto il nome della persona trovi le
       sue ore al giorno e quante giornate di assenza, smart e trasferta ha nel periodo
       mostrato.</p>
@@ -349,10 +349,34 @@ A tool to support team management and coordination.
       dove sono. Le attività che anticipi si spostano tutte della stessa quantità, mantenendo le
       distanze che avevano tra loro, così l'ordine del lavoro non cambia. Se preferisci non
       toccare nulla, "Non spostare niente" chiude la finestra senza modifiche.</p>
+      <h3>Riunioni e formazione</h3>
+      <p>Il pulsante <b>+ Riunione o formazione</b> registra gli impegni fissi che non sempre
+      hanno un progetto dietro: una riunione generale aziendale, un corso di sicurezza o di pronto
+      soccorso. Scegli il tipo (Riunione o Formazione), scrivi una descrizione, indica il giorno e le
+      ore. Le persone si cercano per nome e restano come etichette, che togli con la ×; cercando un
+      gruppo le aggiungi tutte insieme, e "Tutto l'organico" vale per tutti. Il progetto è
+      facoltativo e si cerca come nell'editor delle attività.</p>
+      <p>Riunioni e formazione hanno la precedenza su tutto: in quel giorno le attività si dividono
+      le ore che restano, e se per questo qualcuna finisce più tardi il programma te lo dice prima
+      di salvare. Se superano le ore della giornata restano comunque intere, e il giorno risulta
+      in sovraccarico in Verifiche. Nel calendario sono un blocco grigio (o del colore del
+      progetto, se ne hanno uno); si aprono con un clic (in sola lettura una scheda con tipo,
+      descrizione, progetto, giorno, ore e persone) ma non si trascinano, e le riassegnazioni
+      suggerite non le spostano mai, perché coinvolgono un gruppo di persone.</p>
+      <p>Una riunione con più persone è una sola voce: spostarla la sposta per tutti. Se però la
+      apri dalla riga di una persona e la elimini, o ne cambi giorno, ore o tipo, il programma
+      chiede se vale per tutti o solo per quella persona. "Solo per" la toglie dalla riunione
+      comune e le crea una riunione sua; gli altri restano com'erano.</p>
       <h3>Assenze e smart working</h3>
       <p>Il pulsante <b>+ Assenza o smart</b> apre una finestra simile per registrare ferie,
-      permesso (a ore: riduce le ore disponibili di quel giorno), malattia, smart working o
-      trasferta. Lo smart working non riduce le ore disponibili, perché la persona lavora
+      permesso, assenza, malattia, smart working o trasferta. Ferie, permesso, assenza e trasferta
+      possono essere di tutta la giornata oppure solo di alcune ore: togli la spunta "Tutta la
+      giornata" e indica le ore, che vengono tolte da ognuno dei giorni scelti. La malattia è
+      sempre a giornata intera. <b>Assenza</b> serve per i casi straordinari (permesso studio,
+      lutto, permesso sindacale) e ha in più un campo di note facoltativo, che si legge passando col
+      mouse sull'assenza nel calendario; nell'esportazione del calendario le note non escono, perché
+      in Outlook il calendario lo vedono anche altri colleghi. Più assenze a ore nello stesso giorno
+      si sommano. Lo smart working non riduce le ore disponibili, perché la persona lavora
       comunque, solo da un altro posto, ma conta sul limite settimanale impostato in
       Impostazioni. La trasferta invece è un'attività diversa da quella ordinaria, quindi riduce
       le ore disponibili come un permesso: puoi indicare "Tutta la giornata" oppure solo alcune
@@ -377,6 +401,10 @@ A tool to support team management and coordination.
       Ferie, malattia e trasferte di un giorno intero risultano <b>fuori sede</b>; smart working
       e permessi a ore risultano <b>libero</b>, perché quel giorno si lavora almeno in parte. Il
       permesso a ore riporta nel titolo quante ore.</p>
+      <p><b>Includi riunioni e formazione</b> aggiunge anche quelle, ma è spenta di default: spesso
+      arrivano già dal calendario aziendale, e ritrovarle due volte non serve. Thumper non conosce
+      l'orario, solo le ore: risultano <b>occupato</b> se prendono tutta la giornata, altrimenti
+      <b>libero</b> con le ore nel titolo, come il permesso a ore.</p>
       <p><b>Come importarlo.</b> Conviene importare il file in un calendario dedicato (per esempio
       "Thumper"), separato dal tuo. Reimportando il file, molti calendari aggiornano le attività
       già presenti, ma nessuno toglie quelle eliminate in Thumper. Se compaiono doppioni o vuoi
@@ -410,37 +438,48 @@ A tool to support team management and coordination.
       progetto attivo ancora senza attività, una fine pianificata oltre la data limite, attività
       sospese rimaste su un progetto tornato attivo, attività che partono prima che finisca
       quella da cui dipendono. <b>Vedi nel piano</b> porta al calendario
-      filtrato su quel progetto. Per un progetto chiuso la scheda dice quando è stato chiuso e
-      fra quanti giorni passerà in archivio.</p>
+      filtrato su quel progetto. Per un progetto sospeso, annullato o chiuso la scheda dice da
+      quando, e per uno chiuso o annullato fra quanti giorni passerà in archivio.</p>
       <p>Da qui puoi anche far calcolare l'<b>ultimo giorno utile per iniziare</b>: una tabella
       che parte dalla consegna concordata e toglie a ritroso sviluppo interno, fornitura esterna e
       margine (vedi Impostazioni → Lead time). Serve almeno un'attività pianificata, perché la
       tipologia di sviluppo interno si indica sulle attività.</p>
       <h3>Modificare un progetto</h3>
       <p><b>Modifica</b> apre i dati del progetto: numero, riferimento, descrizione, stato, data
-      di apertura (serve per filtrare per anno), colore sul calendario ("A" torna al colore
+      di apertura (in "Consegna e tempi") (serve per filtrare per anno), colore sul calendario ("A" torna al colore
       automatico), tipologia e consegna concordata. <b>Elimina</b> cancella il progetto insieme a
       tutte le sue attività, dopo una conferma.</p>
-      <p>Un progetto può essere in quattro stati:</p>
+      <p>Un progetto può essere in quattro stati. Accanto allo stato c'è sempre una <b>data</b>:
+      vuota e spenta finché il progetto è attivo, si accende quando scegli un altro stato (parte da
+      oggi, ma puoi spostarla anche nel passato o nel futuro). Riaprendo un progetto sospeso,
+      annullato o chiuso, la data dice subito quando è successo.</p>
       <ul>
         <li><b>Attiva</b>: il caso normale.</li>
-        <li><b>Sospesa</b>: il progetto è in pausa. Salvandolo come sospeso, il programma ti
-        elenca le attività ancora aperte e, se confermi, le sospende tutte da oggi: le ore già
-        fatte restano, quelle future si liberano. Quando il progetto torna attivo le attività
-        <b>non ripartono da sole</b>: riapri ciascuna, togli la spunta "Sospesa" e dalle una nuova
-        data, oppure, se era già iniziata, pianifica il lavoro restante con <b>Duplica
-        attività</b>.</li>
-        <li><b>Chiusa</b>: si può chiudere solo quando ogni attività è conclusa o annullata;
-        altrimenti il salvataggio si ferma con un avviso.</li>
-        <li><b>Archiviata</b>: un progetto chiuso passa in archivio da solo dopo il periodo
-        impostato in Impostazioni, e sparisce dalle ricerche normali. Il controllo avviene
-        all'apertura del programma: se ne archivia qualcuno, un messaggio te lo dice e il piano
-        risulta da salvare. Quando c'è almeno un progetto chiuso in attesa, un pulsante in fondo
-        all'elenco li archivia subito.</li>
+        <li><b>Sospesa</b>: il progetto è in pausa. La data è l'<b>ultimo giorno di lavoro</b>
+        ("ci lavoriamo ancora due giorni", oppure una sospensione arrivata giovedì e registrata il
+        lunedì dopo: scegli giovedì). Sotto compare l'elenco delle attività ancora aperte con cosa
+        succede a ognuna con quella data. Salvando, il programma chiede conferma e le sospende
+        tutte a quel giorno: le ore fino a lì restano, quelle dopo si liberano. Se qualcuno ha
+        giornate liberate, il programma propone di anticipare le sue attività successive. Quando il
+        progetto torna attivo le attività <b>non ripartono da sole</b>: riapri ciascuna, togli la
+        spunta "Sospesa" e dalle una nuova data, oppure, se era già iniziata, pianifica il lavoro
+        restante con <b>Duplica attività</b>.</li>
+        <li><b>Annullata</b>: il progetto non si concluderà mai. Come per la sospensione, la data è
+        l'ultimo giorno di lavoro e sotto compare l'elenco delle attività. Salvando, dopo la
+        conferma, tutte le attività ancora aperte (anche quelle sospese) diventano annullate; una
+        già sospesa da prima resta ferma al suo giorno. Anche qui chi ha giornate liberate riceve
+        la proposta di anticipare le attività successive: una finestra sola, una sezione per
+        persona.</li>
+        <li><b>Chiusa</b>: la data è quella di chiusura. Si può chiudere solo quando ogni attività è
+        conclusa o annullata; altrimenti il salvataggio si ferma con un avviso.</li>
       </ul>
-      <p>Il pulsante <b>Annulla progetto</b> serve quando il progetto non si concluderà mai: segna
-      come annullate tutte le attività ancora aperte (anche quelle sospese) e chiude il progetto
-      in un colpo solo, dopo una conferma che le elenca.</p>
+      <p>Sotto lo stato c'è la spunta <b>Archiviata</b>: un progetto archiviato sparisce dalle
+      ricerche normali e dai menu, ma resta nel calendario e nello storico. Non si può archiviare un
+      progetto attivo, e archiviare non cambia lo stato. Un progetto chiuso o annullato passa in
+      archivio da solo dopo il periodo impostato in Impostazioni: il controllo avviene all'apertura
+      del programma, e se ne archivia qualcuno un messaggio te lo dice e il piano risulta da
+      salvare. Quando c'è almeno un progetto chiuso in attesa, un pulsante in fondo all'elenco li
+      archivia subito.</p>
       <h3>Cartella e note</h3>
       <p>Se le cartelle dei progetti sono collegate (menu <b>⋯</b> → <b>Collega cartelle</b>, oppure
       Impostazioni → Archivio e dati), la scheda trova da sola la cartella di ogni progetto in base
@@ -871,8 +910,9 @@ A tool to support team management and coordination.
       <b>⚠</b> sign, an activity <b>out of sequence</b>: it starts before an activity it depends on
       is finished. The <b>⛓</b> sign marks an activity linked to others in the same project (see
       "Linked activities" below). Hovering over a block shows total hours, hours per day, period, constraint and any overtime.</p>
-      <p>A person's special days show on their row: annual leave and sick leave are hatched boxes
-      covering the whole row, time off is a hatched strip at the bottom, remote work and business
+      <p>A person's special days show on their row: annual leave, time off, absences and sick leave
+      for a whole day are hatched boxes covering the whole row, those of a few hours are a hatched
+      strip at the bottom, remote work and business
       trips are solid strips at the bottom. A remote-work strip over the weekly limit is marked in
       red. Under the person's name you see their hours per day and how many days of leave, remote
       work and business trips they have in the period shown.</p>
@@ -1005,10 +1045,32 @@ A tool to support team management and coordination.
       unticked stay where they are. The activities you bring forward all move by the same amount,
       keeping the gaps they had between them, so the order of the work doesn't change. If you'd
       rather not touch anything, "Move nothing" closes the window without changes.</p>
+      <h3>Meetings and training</h3>
+      <p>The <b>+ Meeting or training</b> button records fixed commitments that don't always have a
+      project behind them: a company-wide meeting, a safety or first-aid course. Choose the type
+      (Meeting or Training), write a description, and set the day and the hours. People are searched by
+      name and stay as tags, which you remove with the ×; searching for a group adds all of its members
+      at once, and "All staff" covers everyone. The project is optional and is searched as in the
+      activity editor.</p>
+      <p>Meetings and training come first: on that day the activities share the hours that are left,
+      and if this makes one of them end later the program tells you before saving. If they take more
+      than the working day they stay whole anyway, and the day shows as overloaded in Checks. In the
+      calendar they are a grey block (or in the project's colour, if they have one); they open with
+      a click (read-only: a card with type, description, project, day, hours and people) but can't be dragged, and suggested reassignments never move them, because they
+      involve a group of people.</p>
+      <p>A meeting with several people is a single entry: moving it moves it for everyone. But if you
+      open it from one person's row and delete it, or change its day, hours or type, the program asks
+      whether it applies to everyone or only to that person. "Only for" takes them out of the shared
+      meeting and gives them their own; the others stay as they were.</p>
       <h3>Leave and remote work</h3>
       <p>The <b>+ Leave or remote</b> button opens a similar window to record annual leave, time
-      off (by the hour: it reduces the hours available that day), sick leave, remote work or a
-      business trip. Remote work doesn't reduce the available hours, because the person is still
+      off, an absence, sick leave, remote work or a business trip. Annual leave, time off, absence
+      and business trips can cover the whole day or just some hours: untick "All day" and enter the
+      hours, which are removed from each of the chosen days. Sick leave is always a whole day.
+      <b>Absence</b> is for exceptional cases (study leave, bereavement, union leave) and also has an
+      optional notes field, shown when you hover over the absence in the calendar; the notes are not
+      included in the calendar export, because in Outlook other colleagues can see the calendar too.
+      Several hourly absences on the same day add up. Remote work doesn't reduce the available hours, because the person is still
       working, just from somewhere else, but it counts towards the weekly limit set in Settings.
       A business trip, on the other hand, is a different activity from the usual one, so it
       reduces the available hours like time off: you can set "All day" or just some hours
@@ -1034,6 +1096,10 @@ A tool to support team management and coordination.
       Annual leave, sick leave and full-day business trips show as <b>out of office</b>; remote
       work and hourly time off show as <b>free</b>, because some work still happens that day.
       Hourly time off shows the hours in its title.</p>
+      <p><b>Include meetings and training</b> adds those too, but it's off by default: they often
+      already come from the company calendar, and having them twice doesn't help. Thumper doesn't know
+      the time of day, only the hours: they show as <b>busy</b> if they take the whole day, otherwise
+      <b>free</b> with the hours in the title, like hourly time off.</p>
       <p><b>How to import it.</b> It's best to import the file into a dedicated calendar (for
       example "Thumper"), separate from your own. When you import the file again, many calendars
       update the activities already there, but none of them removes those deleted in Thumper. If
@@ -1067,37 +1133,49 @@ A tool to support team management and coordination.
       activities yet, a planned end past the deadline, activities left on hold on a project that
       is active again, activities starting before the one they depend on is finished. <b>Show on
       the plan</b> takes you to the calendar filtered on that project.
-      For a closed project the record says when it was closed and in how many days it will be
-      archived.</p>
+      For a project on hold, cancelled or closed the record says since when, and for a closed or
+      cancelled one in how many days it will be archived.</p>
       <p>From here you can also have the program work out the <b>latest start day</b>: a table
       that starts from the agreed delivery date and works backwards through internal development,
       external supply and margin (see Settings → Lead time). It needs at least one planned
       activity, because the internal development type is set on activities.</p>
       <h3>Editing a project</h3>
       <p><b>Edit</b> opens the project's data: number, reference, description, status, opening
-      date (used to filter by year), colour on the calendar ("A" goes back to the automatic
+      date (under "Delivery and timing") (used to filter by year), colour on the calendar ("A" goes back to the automatic
       colour), type and agreed delivery date. <b>Delete</b> removes the project together with all
       its activities, after a confirmation.</p>
-      <p>A project can be in four states:</p>
+      <p>A project can be in four states. Next to the status there is always a <b>date</b>:
+      empty and greyed out while the project is active, it turns on when you choose another status
+      (it starts from today, but you can move it into the past or the future). When you reopen a
+      project that is on hold, cancelled or closed, the date tells you straight away when it
+      happened.</p>
       <ul>
         <li><b>Active</b>: the normal case.</li>
-        <li><b>On hold</b>: the project is paused. When you save it as on hold, the program lists
-        the activities still open and, if you confirm, puts them all on hold from today: hours
-        already done stay, future ones are freed up. When the project becomes active again the
-        activities <b>don't restart by themselves</b>: reopen each one, untick "On hold" and give
-        it a new date, or, if it had already started, plan the remaining work with <b>Duplicate
-        activity</b>.</li>
-        <li><b>Closed</b>: it can only be closed when every activity is completed or cancelled;
-        otherwise saving stops with a warning.</li>
-        <li><b>Archived</b>: a closed project is archived by itself after the period set in
-        Settings, and disappears from normal searches. The check happens when the program opens:
-        if some projects get archived, a message tells you and the plan needs saving. When at
-        least one closed project is waiting, a button at the bottom of the list archives them
-        straight away.</li>
+        <li><b>On hold</b>: the project is paused. The date is the <b>last working day</b> ("we're
+        still working on it for two days", or a hold that arrived on Thursday and is recorded the
+        following Monday: choose Thursday). Below it, the list of activities still open shows what
+        happens to each one with that date. When saving, the program asks for confirmation and puts
+        them all on hold on that day: hours up to then stay, those after are freed up. If someone
+        has days freed up, the program offers to bring their next activities forward. When the
+        project becomes active again the activities <b>don't restart by themselves</b>: reopen
+        each one, untick "On hold" and give it a new date, or, if it had already started, plan the
+        remaining work with <b>Duplicate activity</b>.</li>
+        <li><b>Cancelled</b>: the project will never be finished. As for putting on hold, the date
+        is the last working day and the list of activities appears below. When saving, after the
+        confirmation, every activity still open (including those on hold) is cancelled; one
+        already on hold since earlier stays stopped on its own day. Here too, anyone with days
+        freed up is offered to bring their next activities forward: a single window, one section
+        per person.</li>
+        <li><b>Closed</b>: the date is the closing date. It can only be closed when every activity
+        is completed or cancelled; otherwise saving stops with a warning.</li>
       </ul>
-      <p>The <b>Cancel project</b> button is for when the project will never be finished: it marks
-      every activity still open (including those on hold) as cancelled and closes the project in
-      one go, after a confirmation that lists them.</p>
+      <p>Below the status there is the <b>Archived</b> tick box: an archived project disappears
+      from normal searches and menus, but stays in the calendar and in the history. An active
+      project can't be archived, and archiving doesn't change the status. A closed or cancelled
+      project is archived by itself after the period set in Settings: the check happens when the
+      program opens, and if some projects get archived a message tells you and the plan needs
+      saving. When at least one closed project is waiting, a button at the bottom of the list
+      archives them straight away.</p>
       <h3>Folder and notes</h3>
       <p>If the project folders are connected (<b>⋯</b> menu → <b>Connect folders</b>, or Settings
       → Archive and data), the record finds each project's folder by itself from its number.

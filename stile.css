@@ -262,6 +262,8 @@ button{cursor:pointer}
 .blocco.fatta{opacity:.55}
 .blocco.fatta .cli{text-decoration:line-through}
 .blocco .segno{font-size:11px;font-weight:700;position:relative;z-index:1}
+/* riunioni e formazione: data fissa, si aprono col clic ma non si trascinano */
+.blocco.evento{cursor:pointer}
 /* dipendenza: un'unica icona neutra, uguale per chi viene prima e chi viene dopo */
 .blocco .segno.dip{font-weight:400;opacity:.9}
 .blocco .num,.blocco .cli,.blocco .ore{position:relative;z-index:1}
@@ -279,12 +281,15 @@ button{cursor:pointer}
 /* sfondo chiaro: testo scuro invece del bianco generico, altrimenti illeggibile */
 .assenza.ferie{background:repeating-linear-gradient(135deg,#C3EEF0 0 6px,#D5F3F5 6px 12px);border:1px solid #92B3B4;color:var(--inchiostro);text-shadow:none}
 .assenza.malattia{background:repeating-linear-gradient(135deg,#BD3C63 0 6px,#D17792 6px 12px);border:1px solid #8E2D4A}
-/* il permesso occupa solo parte della giornata: fascia in basso come lo smart working, non in
-   alto dove coprirebbe le attività. Una banda sopra quella di .fs-fascia (smart/trasferta,
-   bottom:13px), non la stessa: se coincidono lo stesso giorno (permesso di poche ore + smart)
-   non si devono sovrapporre. La riga è più alta apposta quando c'è un permesso (vedi render-piano.js). */
+/* assenza "generica": grigio tratteggiato, testo scuro — distinto dal grigio pieno delle riunioni */
+.assenza.generica{background:repeating-linear-gradient(135deg,#D3D9DE 0 6px,#E4E8EB 6px 12px);border:1px solid #8A969F;color:var(--inchiostro);text-shadow:none}
 .assenza.permesso{background:repeating-linear-gradient(135deg,#E953FA 0 6px,#F087FC 6px 12px);
-  border:1px solid #AF3EBC;top:auto;bottom:26px;height:12px;font-size:9px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  border:1px solid #AF3EBC;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+/* un'assenza a ore (permesso, ferie, assenza) occupa solo parte della giornata: fascia in basso
+   come lo smart working, non in alto dove coprirebbe le attività. Una banda sopra quella di
+   .fs-fascia (smart/trasferta, bottom:13px), non la stessa: se coincidono lo stesso giorno non si
+   devono sovrapporre. La riga è più alta apposta quando ce n'è una (vedi render-piano.js). */
+.assenza.parziale{top:auto;bottom:26px;height:12px;font-size:9px}
 
 .fs-fascia{position:absolute;height:12px;border-radius:var(--r-piccolo);z-index:3;overflow:hidden;
   font-size:8.5px;font-weight:700;letter-spacing:.05em;color:#fff;white-space:nowrap;
@@ -329,7 +334,10 @@ th{
   color:var(--tenue);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--linea);
 }
 td{padding:8px 12px;border-bottom:1px solid var(--linea-tenue)}
-tr:hover td{background:var(--superficie)}
+tr:hover td:not(.q0):not(.q1):not(.q2):not(.q3):not(.q4){background:var(--superficie)}
+/* le celle colorate per carico (.q0-.q4) non prendono lo sfondo dell'hover, che le appiattirebbe nascondendo
+   i giorni in sovraccarico: si scuriscono appena con un velo, così la riga si legge ma ogni cella tiene il suo colore */
+tr:hover td.q0,tr:hover td.q1,tr:hover td.q2,tr:hover td.q3,tr:hover td.q4{box-shadow:inset 0 0 0 100vmax rgba(31,41,51,.08)}
 .num-cella{text-align:center;font-variant-numeric:tabular-nums}
 /* tabelle con celle di inserimento (Lead time, Giorni lavorativi, ecc.): input/select
    pieni, bordati e con spigoli arrotondati come ogni altro campo dell'app — senza
@@ -433,7 +441,7 @@ tr:hover td{background:var(--superficie)}
 .chip.attiva{background:#F3E7DB;color:var(--accento-scuro)}
 .chip.sospesa{background:var(--avviso-tenue);color:var(--avviso)}
 .chip.chiusa{background:#EAF0EA;color:#3D5C42}
-.chip.archiviata{background:var(--neutro-tenue);color:var(--neutro)}
+.chip.annullata,.chip.archiviata{background:var(--neutro-tenue);color:var(--neutro)}
 .chip.ritardo{background:var(--allarme-tenue);color:var(--allarme);font-weight:700}
 
 .filtri{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}

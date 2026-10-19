@@ -77,13 +77,16 @@ function rendiCarichi(){
   const rigaSovra = sovra.length ? sovra.map(s=>{
     const motivo = s.c===0 ? (eLavorativo(s.k) ? "persona assente" : (eFestivo(s.k) ? "giorno festivo" : "giorno non lavorativo")) : "oltre capacità";
     // "persona assente"/giorno non lavorativo: nessuna attivita' da spostare risolverebbe niente
-    const candidati = s.c > 0 ? candidatiRiassegnazione(s.p.id, s.k) : [];
     const chiave = s.k + "|" + s.p.id;
     const aperta = V.opzioniAperte.has(chiave);
+    // le proposte (provaSpostamento rifà la simulazione per ogni giorno provato) si calcolano solo
+    // per la riga aperta: per tutte insieme Verifiche si bloccava per secondi; il conteggio basta per le altre
+    const nCandidati = s.c > 0 ? attivitaNelGiorno(s.p.id, s.k).length : 0;
+    const candidati = aperta && nCandidati ? candidatiRiassegnazione(s.p.id, s.k) : [];
     const riga = `<tr class="riga-sovra${aperta?" aperta":""}"><td class="mono">${itData(s.k)}</td><td>${esc(s.p.nome)}</td>
       <td class="num-cella mono">${arr(s.o)}</td><td class="num-cella mono">${arr(s.c)}</td>
       <td class="num-cella mono" style="color:var(--allarme)"><b>+${arr(s.o-s.c)}</b></td><td>${motivo}</td>
-      <td>${candidati.length ? `<button class="btn piccolo${aperta?" primario":""}" data-apri-opzioni="${esc(chiave)}"><span class="freccia">▸</span>${tr("Opzioni ({0})", candidati.length)}</button>` : ""}</td></tr>`;
+      <td>${nCandidati ? `<button class="btn piccolo${aperta?" primario":""}" data-apri-opzioni="${esc(chiave)}"><span class="freccia">▸</span>${tr("Opzioni ({0})", nCandidati)}</button>` : ""}</td></tr>`;
     if(!aperta) return riga;
     const cRisolvibili = candidati.some(x=>x.spostamento || x.sostituto);
     return riga + `<tr class="riga-opzioni"><td colspan="7"><div class="opzioni-corpo">
@@ -140,7 +143,7 @@ function rendiCarichi(){
   };
 
   // commesse la cui consegna concordata col cliente non regge piu'
-  const rischio = S.commesse.filter(c => c.consegnaCliente && c.stato !== "chiusa" && c.stato !== "archiviata")
+  const rischio = S.commesse.filter(c => c.consegnaCliente && !commessaConclusa(c) && !c.archiviata)
     .map(c => ({c, v:verificaTempi(c)}))
     .filter(x => x.v && (x.v.sfora || !x.v.finePiano))
     // senza nessuna attività non c'è una data limite da ordinare: quelli vanno per primi,
@@ -150,7 +153,7 @@ function rendiCarichi(){
   // dipendenze: attività aperte che partono prima che finisca una da cui dipendono, o che
   // aspettano un'attività sospesa — già ⚠ nel piano, qui tutte insieme dalla più vicina
   const fuoriSeq = [];
-  S.commesse.filter(c => c.stato !== "chiusa" && c.stato !== "archiviata")
+  S.commesse.filter(c => !commessaConclusa(c) && !c.archiviata)
     .forEach(c => sequenzeViolateCommessa(c).forEach(v => fuoriSeq.push(Object.assign({c}, v))));
   fuoriSeq.sort((x,y) => x.dal < y.dal ? -1 : 1);
 
@@ -158,7 +161,7 @@ function rendiCarichi(){
   const tardive = S.assegnazioni.filter(a=>{
     if(!sforaConsegna(a) || a.fatta) return false;
     const cz = commessa(a.commessaId);
-    return !!cz && cz.stato !== "chiusa" && cz.stato !== "archiviata";
+    return !!cz && !commessaConclusa(cz) && !cz.archiviata;
   }).map(a=>{
     const e = estremi(a);
     return {a, p:persona(a.personaId), c:commessa(a.commessaId), e,

@@ -105,7 +105,11 @@ async function salva(){
       salvatoIlConosciuto = S.meta.salvatoIl;
       modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
       return;
-    }catch(err){ manico = null; cartellaSalvataggio = null; }
+    }catch(err){
+      // il file non si scrive più (rete caduta, permessi): lo si dice prima di chiedere un'altra cartella
+      brindisi(tr("Salvataggio non riuscito: {0}", err.message));
+      manico = null; cartellaSalvataggio = null;
+    }
   }
   if(window.showDirectoryPicker){
     try{
@@ -255,8 +259,13 @@ function normalizza(x){
       stato: (c.attiva === false ? "chiusa" : "attiva"), apertura: null, colore: null, descrizione: "", chiusaIl: null,
       consegnaCliente: null, tipologiaId: null, natura: null, cartella: ""
     }, c, {stato: c.stato || (c.attiva === false ? "chiusa" : "attiva")});
+    // "archiviata" era uno stato: ora è una spunta su un progetto chiuso
+    if(q.stato === "archiviata"){ q.stato = "chiusa"; q.archiviata = true; }
+    if(!STATI[q.stato]) q.stato = "attiva";
+    q.archiviata = !!q.archiviata && q.stato !== "attiva";
+    if(q.sospesaIl === undefined) q.sospesaIl = null;
     // chi era gia' chiuso senza data prende oggi: il conto alla rovescia parte da adesso, non retroattivo
-    if(q.stato === "chiusa" && !q.chiusaIl) q.chiusaIl = iso(new Date());
+    if((q.stato === "chiusa" || q.stato === "annullata") && !q.chiusaIl) q.chiusaIl = iso(new Date());
     return q;
   });
   // stesso calcolo di capacitaPersonaGiorno(), ma autonomo: qui S non è ancora assegnata
@@ -277,6 +286,13 @@ function normalizza(x){
   // progetti o che chiudono un ciclo vengono tolti
   dipendenzeValide(s.assegnazioni);
   s.assenze = x.assenze || [];
+  // riunioni e formazione: elenco a parte dalle attività (progetto facoltativo, più persone,
+  // un giorno solo). Un vecchio dati.js non ce l'ha e parte vuoto; un tipo fuori elenco torna "riunione"
+  s.eventi = (x.eventi || []).map(e => {
+    const q = Object.assign({tipo:"riunione", descrizione:"", personeIds:[], ore:0, commessaId:null, fatta:false}, e);
+    if(!TIPI_EVENTO[q.tipo]) q.tipo = "riunione";
+    return q;
+  });
   // backlog: elenco separato, non entra mai nel piano finché non viene promosso in
   // un'assegnazione (vedi apriAttivita/promuoviBacklogItem) — default per ogni campo,
   // così un vecchio dati.js senza backlog (o con voci scritte a mano incomplete) non si rompe
@@ -298,8 +314,8 @@ function archiviaScadute(){
   const oggi = iso(new Date());
   let n = 0;
   S.commesse.forEach(c=>{
-    if(c.stato !== "chiusa" || !c.chiusaIl) return;
-    if(diffGiorni(c.chiusaIl, oggi) >= soglia){ c.stato = "archiviata"; n++; }
+    if(!commessaConclusa(c) || c.archiviata || !c.chiusaIl) return;
+    if(diffGiorni(c.chiusaIl, oggi) >= soglia){ c.archiviata = true; n++; }
   });
   return n;
 }
