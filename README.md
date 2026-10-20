@@ -37,7 +37,6 @@
 - [Come funziona la persistenza dei dati](#come-funziona-la-persistenza-dei-dati)
 - [Stack tecnico e vincoli di progetto](#stack-tecnico-e-vincoli-di-progetto)
 - [Struttura del repository](#struttura-del-repository)
-- [Roadmap](#roadmap)
 - [Documentazione](#documentazione)
 - [Contribuire](#contribuire)
 - [Licenza](#licenza)
@@ -121,24 +120,13 @@ LICENSE                    — AGPL-3.0
 LICENZA-COMMERCIALE.md     — termini della licenza commerciale alternativa
 ```
 
-### Roadmap
-
-Il progetto è pensato per evolvere in quattro varianti:
-
-1. **Thumper std** — la versione attuale, `file://`-based *(attiva)*
-2. **Thumper Scrum** — variante specializzata Scrum sullo stesso sistema dati, con sprint, story point, velocity
-3. **Thumper std + DB** — versione standard con database dedicato, eventualmente containerizzata
-4. **Thumper Scrum + DB** — come sopra, versione Scrum
-
-Le funzionalità di utilità generale (come il backlog) vengono integrate prima nel nucleo comune, poi specializzate nelle varianti.
-
 ### Documentazione
 
 - [`manuale.html`](manuale.html) — manuale utente, in italiano e inglese
 
 ### Contribuire
 
-Il progetto nasce per un caso d'uso reale in azienda, quindi le decisioni di prodotto restano guidate da quello, ma segnalazioni di bug, idee e pull request sono benvenute. Prima di proporre una modifica sostanziale, apri una issue per discuterne: i vincoli architetturali (vedi sopra) non sono negoziabili, tutto il resto sì.
+Il progetto nasce per aiutare le aziende a pianificare il lavoro dei loro team, quindi segnalazioni di bug, idee e pull request sono benvenute. Prima di proporre una modifica sostanziale, apri una issue per discuterne: i vincoli architetturali (vedi sopra) non sono negoziabili, tutto il resto sì.
 
 ### Licenza
 
@@ -158,7 +146,6 @@ Distribuito con licenza **AGPL-3.0** (vedi [LICENSE](LICENSE)).
 - [How data persistence works](#how-data-persistence-works)
 - [Tech stack and design constraints](#tech-stack-and-design-constraints)
 - [Repository structure](#repository-structure)
-- [Roadmap (EN)](#roadmap-en)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -242,24 +229,13 @@ LICENSE                    — AGPL-3.0
 LICENZA-COMMERCIALE.md     — terms of the alternative commercial license
 ```
 
-### Roadmap (EN)
-
-The project is designed to grow into four variants:
-
-1. **Thumper std** — the current version, `file://`-based *(active)*
-2. **Thumper Scrum** — a Scrum-specialized variant on the same data system, adding sprints, story points, velocity
-3. **Thumper std + DB** — the standard version backed by a dedicated database, possibly containerized
-4. **Thumper Scrum + DB** — same as above, Scrum version
-
-Generally useful features (like the backlog) are integrated into the shared core first, then specialized within each variant.
-
 ### Documentation
 
 - [`manuale.html`](manuale.html) — user manual, in Italian and English
 
 ### Contributing
 
-The project was born to solve a real use case at a company, so product decisions stay grounded in that, but bug reports, ideas and pull requests are welcome. Before proposing a substantial change, please open an issue to discuss it: the architectural constraints (see above) are non-negotiable, everything else is.
+The project was born to help companies plan their teams' work, so bug reports, ideas and pull requests are welcome. Before proposing a substantial change, please open an issue to discuss it: the architectural constraints (see above) are non-negotiable, everything else is.
 
 ### License
 
