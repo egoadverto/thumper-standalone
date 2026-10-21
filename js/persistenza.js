@@ -286,6 +286,9 @@ function normalizza(x){
   // progetti o che chiudono un ciclo vengono tolti
   dipendenzeValide(s.assegnazioni);
   s.assenze = x.assenze || [];
+  // overtime deciso giorno per giorno: {id, personaId, giorno}. Un vecchio dati.js non ce l'ha e
+  // parte vuoto; il vecchio flag "straordinario" sulle attività non si legge più
+  s.overtime = (x.overtime || []).filter(o => o && o.personaId && o.giorno);
   // riunioni e formazione: elenco a parte dalle attività (progetto facoltativo, più persone,
   // un giorno solo). Un vecchio dati.js non ce l'ha e parte vuoto; un tipo fuori elenco torna "riunione"
   s.eventi = (x.eventi || []).map(e => {

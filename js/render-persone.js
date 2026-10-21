@@ -100,20 +100,20 @@ function apriSchedaPersona(id){
         oreAssenzaTesto(a) ? ` <span class="nota">(${oreAssenzaTesto(a)})</span>` : ""}${
         a.tipo === "generica" && a.motivo ? ` <span class="nota">— ${esc(a.motivo)}</span>` : ""}${
         a.deroga ? ` <span class="chip sospesa">✦ deroga</span>` : ""}
-        <div class="nota">${tr("{0} giorni", diffGiorni(a.dal, a.al)+1)}</div></div>
+        <div class="nota">${trN(diffGiorni(a.dal, a.al)+1, "1 giorno", "{0} giorni")}</div></div>
     </div>`).join("") || `<div class="nota">${tr("Nessuna giornata registrata.")}</div>`;
 
   /* segnalazioni ricavate, niente da compilare */
   const avvisi = [];
   if(p.attivo === false) avvisi.push(tr("Persona non attiva: non compare nel calendario né nei carichi."));
-  if(oltre) avvisi.push(tr("{0} giornate con più ore assegnate di quelle disponibili, nel periodo mostrato.", oltre));
+  if(oltre) avvisi.push(trN(oltre, "1 giornata con più ore assegnate di quelle disponibili, nel periodo mostrato.", "{0} giornate con più ore assegnate di quelle disponibili, nel periodo mostrato."));
   const settimane = new Set();
   (S.assenze||[]).filter(a => a.personaId === p.id && a.tipo === "smart").forEach(a=>{
     let cur = d(a.dal), giri = 0;
     while(iso(cur) <= a.al && giri++ < 400){ settimane.add(iso(inizioSettimana(cur))); cur = sommaGiorni(cur,1); }
   });
   const sfori = Array.from(settimane).filter(lun => smartDellaSettimana(p.id, lun).length > limiteSmart(p));
-  if(sfori.length) avvisi.push(tr("{0} settimane oltre il limite di smart working.", sfori.length));
+  if(sfori.length) avvisi.push(trN(sfori.length, "1 settimana oltre il limite di smart working.", "{0} settimane oltre il limite di smart working."));
   const tardive = aperte.filter(x => sforaConsegna(x.a)).length;
   if(tardive) avvisi.push(tr("{0} attività finiscono oltre la data di consegna richiesta.", tardive));
   const boxAvvisi = avvisi.length
@@ -260,7 +260,7 @@ function rendiAnagrafiche(){
     rP += `<tr class="riga-gruppo"><td colspan="8">
       ${g?`<span class="sigla din">${esc(g.sigla)}</span> <span class="din">${esc(g.nome)}</span>`
          :`<span class="din">${tr("Senza gruppo")}</span>`}
-      <span class="nota">${tr("{0} persone", membri.length)}</span></td></tr>`;
+      <span class="nota">${trN(membri.length, "1 persona", "{0} persone")}</span></td></tr>`;
     membri.forEach(p=>{
       const extra = (p.gruppiExtra||[]).map(id=>{const x=gruppo(id); return x?`<span class="tag din">${esc(x.sigla)}</span>`:"";}).join(" ");
       const m = p.mansioneId ? mansione(p.mansioneId) : null;
@@ -270,7 +270,7 @@ function rendiAnagrafiche(){
         <td>${extra||"–"}</td>
         <td>${m?`<span class="sigla din">${esc(m.sigla)}</span>`:"–"}</td>
         <td class="num-cella mono">${capacitaOggi(p)}</td>
-        <td class="num-cella mono" ${p.smartMax!=null?'style="color:#438A8C;font-weight:700"':""}>${limiteSmart(p)}${p.smartMax!=null?" ✦":""}</td>
+        <td class="num-cella mono" ${p.smartMax!=null?'style="color:var(--fascia-smart);font-weight:700"':""}>${limiteSmart(p)}${p.smartMax!=null?" ✦":""}</td>
         <td class="num-cella mono">${n||"–"}</td>
         <td>${p.attivo===false?`<span class="chip archiviata">${tr("Non attivo")}</span>`:`<span class="chip attiva">${tr("Attivo")}</span>`}</td>
         <td style="text-align:right;white-space:nowrap">
@@ -359,7 +359,7 @@ function rendiAnagrafiche(){
     <div class="pannello">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <h2 class="din" style="margin:0">Ferie, permessi e giornate fuori sede</h2>
-        <span class="conteggio mono" style="margin:0">${tr("{0} registrate", (S.assenze||[]).length)}</span>
+        <span class="conteggio mono" style="margin:0">${trN((S.assenze||[]).length, "1 registrata", "{0} registrate")}</span>
         <button class="btn primario" style="margin-left:auto" data-mod-assenza="">+ Nuova giornata</button>
       </div>
       <table><thead><tr><th>Persona</th><th>Tipo</th><th style="width:110px">Dal</th>

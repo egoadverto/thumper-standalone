@@ -101,11 +101,11 @@ function rendiImpostazioni(){
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:3px;flex:1 1 260px">
-          <label style="visibility:hidden;font-size:11px" aria-hidden="true">&nbsp;</label>
+          <label style="visibility:hidden;font-size:12px" aria-hidden="true">&nbsp;</label>
           <span class="aiuto" id="preset-fuso">${testoFusoPreset(Object.keys(PRESET_FESTIVITA)[0])}</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:3px">
-          <label style="visibility:hidden;font-size:11px" aria-hidden="true">&nbsp;</label>
+          <label style="visibility:hidden;font-size:12px" aria-hidden="true">&nbsp;</label>
           <button class="btn primario" id="preset-applica">Applica</button>
         </div>
       </div>
@@ -129,7 +129,7 @@ function rendiImpostazioni(){
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <h3 style="margin:0">Anteprima</h3>
         <button class="btn piccolo" id="fest-prec">◀</button>
-        <b class="mono din" style="font-size:15px">${anno}</b>
+        <b class="mono din" style="font-size:14px">${anno}</b>
         <button class="btn piccolo" id="fest-succ">▶</button>
       </div>
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px">
@@ -141,7 +141,7 @@ function rendiImpostazioni(){
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:3px;flex:1 1 320px">
-          <label style="visibility:hidden;font-size:11px" aria-hidden="true">&nbsp;</label>
+          <label style="visibility:hidden;font-size:12px" aria-hidden="true">&nbsp;</label>
           <span class="aiuto">${V.calAnteprima==="attivo"
             ? tr("A quali date corrispondono le festività qui sopra, per l'anno selezionato.")
             : tr("Cambia solo cosa vedi qui sotto, non tocca il calendario attivo.") + " " + testoFusoPreset(V.calAnteprima)}</span>
@@ -188,7 +188,7 @@ function rendiImpostazioni(){
       <tr>
         <td><input type="text" id="lf-nome" placeholder="Descrizione" aria-label="Descrizione"></td>
         <td><input type="number" class="num-cella" id="lf-valore" min="0" step="0.5" placeholder="10" aria-label="Tempo"></td>
-        <td><select id="lf-unita" aria-label="Giorni/settimane"><option value="settimane" selected>settimane</option><option value="giorni">giorni</option></select></td>
+        <td><select id="lf-unita" aria-label="${tr("Giorni/settimane")}"><option value="settimane" selected>settimane</option><option value="giorni">giorni</option></select></td>
         <td></td>
         <td style="text-align:right"><button class="btn piccolo" id="lf-aggiungi">Aggiungi</button></td></tr>
       </tbody></table>
@@ -215,7 +215,7 @@ function rendiImpostazioni(){
       <tr>
         <td><input type="text" id="lp-nome" placeholder="Descrizione" aria-label="Descrizione"></td>
         <td><input type="number" class="num-cella" id="lp-valore" min="0" step="0.5" placeholder="4" aria-label="Tempo"></td>
-        <td><select id="lp-unita" aria-label="Giorni/settimane"><option value="settimane" selected>settimane</option><option value="giorni">giorni</option></select></td>
+        <td><select id="lp-unita" aria-label="${tr("Giorni/settimane")}"><option value="settimane" selected>settimane</option><option value="giorni">giorni</option></select></td>
         <td style="text-align:center"><input type="checkbox" id="lp-fornitura" checked
           title="${tr('Somma anche la fornitura esterna più lunga al calcolo della scadenza.')}"></td>
         <td style="text-align:right"><button class="btn piccolo" id="lp-aggiungi">Aggiungi</button></td></tr>
@@ -228,9 +228,9 @@ function rendiImpostazioni(){
       <h2 class="din">Protezione</h2>
       <p class="nota">${tr("Un codice richiesto prima delle azioni che cancellano dati o sostituiscono un elenco in blocco, elencate qui sotto. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.")}</p>
       <p style="margin:10px 0">
-        <span class="chip ${protetto()?"attiva":"archiviata"}" style="font-size:12px;padding:4px 10px">
+        <span class="chip ${protetto()?"attiva":"archiviata"}">
           ${protetto() ? tr("Protezione attiva") : tr("Protezione non attiva")}</span>
-        ${protetto()&&modificato?` <span class="chip sospesa" style="font-size:12px;padding:4px 10px">${tr("da salvare")}</span>`:""}
+        ${protetto()&&modificato?` <span class="chip sospesa">${tr("da salvare")}</span>`:""}
       </p>
       <div class="riga-campi" style="align-items:flex-end">
         <div class="campo"><label for="cfg-codice">${protetto() ? tr("Nuovo codice") : tr("Codice")}</label>

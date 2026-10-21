@@ -153,7 +153,7 @@ function apriSchedaCommessa(id){
                <div class="nota">${tr("{0}% delle ore", pct)}</div></div>
              <div><div class="eti">Attività</div><div class="val mono din"${i.tot&&i.fatte===i.tot?' style="color:var(--positivo)"':""}>${i.fatte}/${i.tot}</div></div>
              <div><div class="eti">Persone</div><div class="val mono din">${i.n||"–"}</div></div>
-             <div><div class="eti">Periodo</div><div class="val mono" style="font-size:13px;white-space:normal;line-height:1.3">${i.dal?itData(i.dal)+" –<br>"+itData(i.al):"–"}</div></div>
+             <div><div class="eti">Periodo</div><div class="val mono" style="font-size:12px;white-space:normal;line-height:1.3">${i.dal?itData(i.dal)+" –<br>"+itData(i.al):"–"}</div></div>
            </div>
          </div>
 

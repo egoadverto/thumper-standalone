@@ -70,6 +70,7 @@ function rendi(){
 }
 
 function avvia(){
+  document.getElementById("versione-app").textContent = "Thumper " + VERSIONE_APP;
   // se manca uno dei file di contorno, meglio dirlo subito che comportarsi in modo strano
   if(typeof DIZ === "undefined"){
     window.DIZ = {};
@@ -386,9 +387,11 @@ function avvia(){
     else if(e.target.id==="cfg-efficienza"){
       const pctAttuale = Math.round((S.config.efficienza!=null?S.config.efficienza:1)*100);
       if(!modificabile){ e.target.value = pctAttuale; return brindisi(tr("Attiva prima la modifica")); }
-      const pct = Math.max(1, parseFloat(e.target.value) || 100);
+      const n = parseFloat(e.target.value);
+      const pct = isNaN(n) ? 100 : Math.max(1, n);
       S.config.efficienza = pct/100;
-      invalida(); segnaModificato(); rendi();
+      e.target.value = pct;
+      invalida(); segnaModificato();
       brindisi(tr("Ricalcolate le attività a tempo pieno"));
     }
     else if(e.target.id==="cfg-overtime" || e.target.id==="cfg-breve"){
@@ -397,12 +400,14 @@ function avvia(){
       if(!modificabile){ e.target.value = Math.round(attuale*100); return brindisi(tr("Attiva prima la modifica")); }
       const pct = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
       S.config[chiave] = pct/100;
-      invalida(); segnaModificato(); rendi();
+      e.target.value = pct;
+      invalida(); segnaModificato();
       brindisi(tr("Ricalcolate le attività a tempo pieno"));
     }
     else if(e.target.id==="cfg-margine"){
       if(!modificabile){ e.target.value = S.config.margineGiorni||0; return brindisi(tr("Attiva prima la modifica")); }
       S.config.margineGiorni = Math.max(0, parseInt(e.target.value) || 0);
+      e.target.value = S.config.margineGiorni;
       segnaModificato();
     }
     else if(e.target.dataset && (e.target.dataset.lfNome!==undefined || e.target.dataset.lfValore!==undefined || e.target.dataset.lfUnita!==undefined

@@ -148,7 +148,7 @@ function rendiPiano(){
         const vincolo = modoAtt(x.a)==="fine" ? "&#10;"+tr("Consegna entro il {0}", itData(x.a.scadenza))+(tardi?" "+tr("⚠ NON RISPETTATA"):"")
                       : modoAtt(x.a)==="finestra" ? "&#10;"+tr("Finestra: carico ripartito") : "";
         const fs = fuoriSeq.has(x.a.id);
-        blocchi += `<div class="blocco ${tardi||fs?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${tr("{0} h totali · {1} h/giorno", arr(x.e.ore), perG)}&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ "+tr("Annullata"):x.a.fatta?"&#10;✓ "+tr("Conclusa"):x.a.sospesa?"&#10;⏸ "+tr("Sospesa"):""}${x.a.straordinario?"&#10;Overtime":""}${collegate.has(x.a.id)?"&#10;⛓ "+tr("Collegata ad altre attività del progetto"):""}${fs?"&#10;⚠ "+tr("Fuori sequenza: parte prima che finisca un'attività da cui dipende"):""}"
+        blocchi += `<div class="blocco ${tardi||fs?"tardi":""}${x.a.fatta?" fatta":""}" data-att="${x.a.id}" title="${esc(c.numero+" · "+c.cliente)}${x.a.descrizione?"&#10;"+esc(x.a.descrizione):""}&#10;${tr("{0} h totali · {1} h/giorno", arr(x.e.ore), perG)}&#10;${itData(x.e.dal)} → ${itData(x.e.al)}${vincolo}${x.a.annullata?"&#10;✕ "+tr("Annullata"):x.a.fatta?"&#10;✓ "+tr("Conclusa"):x.a.sospesa?"&#10;⏸ "+tr("Sospesa"):""}${collegate.has(x.a.id)?"&#10;⛓ "+tr("Collegata ad altre attività del progetto"):""}${fs?"&#10;⚠ "+tr("Fuori sequenza: parte prima che finisca un'attività da cui dipende"):""}"
           style="left:${left}px;width:${wid}px;top:${x.corsia*26+3}px;background:${coloreCommessa(c)}">
           ${x.a.annullata?'<span class="segno" title="Annullata">✕</span>':x.a.fatta?'<span class="segno" title="Conclusa">✓</span>':x.a.sospesa?'<span class="segno" title="Sospesa">⏸</span>':""}${fs?`<span class="segno" title="${tr("Fuori sequenza: parte prima che finisca un'attività da cui dipende")}">⚠</span>`:""}${collegate.has(x.a.id)?`<span class="segno dip" title="${tr("Collegata ad altre attività del progetto")}">⛓&#xFE0E;</span>`:""}<span class="num mono">${esc(c.numero)}</span>
           <span class="cli">${esc(c.cliente)}</span>
@@ -206,15 +206,16 @@ function rendiPiano(){
       let nastro = "";
       gg.forEach((g,i)=>{
         const cap = capacitaGiorno(p.id, g.k);
-        const ore = mia.get(g.k) || 0;
+        const ore = mia.get(g.k) || 0, ot = haOvertime(p.id, g.k);
         nastro += `<div class="n-cella" style="left:${i*C}px;width:${C}px"></div>`;
+        // giorno in overtime: sempre della tinta "oltre", anche se le ore non superano la capacità
         if(ore > 0 && cap > 0){
           const r = ore/cap;
           const alt = Math.min(1, r) * 9;
-          const cls = r > 1.001 ? "oltre" : (r > 0.999 ? "pieno" : "");
-          nastro += `<div class="n-carico ${cls}" title="${esc(p.nome)} · ${itData(g.k)}&#10;${tr("{0} h su {1} h", arr(ore), cap)}" style="left:${i*C}px;width:${C-1}px;height:${r>1.001?9:alt}px"></div>`;
-        } else if(ore > 0 && cap === 0){
-          nastro += `<div class="n-carico oltre" title="Ore pianificate in un giorno non disponibile" style="left:${i*C}px;width:${C-1}px;height:9px"></div>`;
+          const cls = (r > 1.001 || ot) ? "oltre" : (r > 0.999 ? "pieno" : "");
+          nastro += `<div class="n-carico ${cls}" title="${esc(p.nome)} · ${itData(g.k)}${ot ? " · Overtime" : ""}&#10;${tr("{0} h su {1} h", arr(ore), cap)}" style="left:${i*C}px;width:${C-1}px;height:${(r>1.001||ot)?9:alt}px"></div>`;
+        } else if(ot || (ore > 0 && cap === 0)){
+          nastro += `<div class="n-carico oltre" title="${ot ? esc(p.nome)+" · "+itData(g.k)+" · Overtime" : "Ore pianificate in un giorno non disponibile"}" style="left:${i*C}px;width:${C-1}px;height:9px"></div>`;
         }
       });
 
@@ -230,7 +231,7 @@ function rendiPiano(){
       righe += `<div class="riga" data-persona="${p.id}">
         <div class="cella-nomi">
           <div class="persona-nome"><b>${esc(p.nome)}</b>${extra}</div>
-          <div class="persona-sub mono">${tr("{0} h/giorno", oreP)}${ggAssenza?` · <span style="color:var(--positivo);font-weight:700">${tr("{0} gg assenza", ggAssenza)}</span>`:""}${ggSmart?` · <span style="color:#438A8C;font-weight:700">${tr("{0} smart", ggSmart)}</span>`:""}${ggTrasf?` · <span style="color:#343A40;font-weight:700">${tr("{0} trasf.", ggTrasf)}</span>`:""}${ggOltre?` · <span style="color:var(--allarme);font-weight:700">${tr("⚠ {0} oltre limite", ggOltre)}</span>`:""}</div>
+          <div class="persona-sub mono">${tr("{0} h/giorno", oreP)}${ggAssenza?` · <span style="color:var(--positivo);font-weight:700">${tr("{0} gg assenza", ggAssenza)}</span>`:""}${ggSmart?` · <span style="color:var(--fascia-smart);font-weight:700">${tr("{0} smart", ggSmart)}</span>`:""}${ggTrasf?` · <span style="color:var(--fascia-trasferta);font-weight:700">${tr("{0} trasf.", ggTrasf)}</span>`:""}${ggOltre?` · <span style="color:var(--allarme);font-weight:700">${tr("⚠ {0} oltre limite", ggOltre)}</span>`:""}</div>
         </div>
         <div class="pista" style="width:${W}px;height:${h}px" data-pista="${p.id}">
           ${blocchi}${fuori}${assenze}
@@ -242,7 +243,7 @@ function rendiPiano(){
   pagina.innerHTML = `<div class="tabella" id="tabella">
     <div class="sfondo" style="left:var(--colonna-nomi);width:${W}px">${sf}</div>
     <div class="riga testata">
-      <div class="cella-nomi"><div class="din" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase">Persona</div>
+      <div class="cella-nomi"><div class="din" style="font-size:12px;letter-spacing:.08em;text-transform:uppercase">Persona</div>
       <div class="persona-sub">${tr("{0} in organico", S.persone.filter(p=>p.attivo!==false).length)}</div></div>
       <div class="pista" style="width:${W}px">
         <div class="mesi din">${mesi}</div>
@@ -288,6 +289,17 @@ function agganciaPiano(tab, gg, C){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica per aprire questa giornata"));
       apriAssenza(s.dataset.assenza); return;
     }
+    // clic sulla barra di carico: overtime di quel giorno (sopra la barra resta "nuova attività")
+    const nastroEl = ev.target.closest(".nastro");
+    if(nastroEl){
+      const rigaP = nastroEl.closest("[data-persona]");
+      if(modificabile && rigaP){
+        const r = nastroEl.getBoundingClientRect();
+        const i = Math.floor((ev.clientX - r.left)/C);
+        apriOvertimeGiorno(rigaP.dataset.persona, gg[Math.max(0,Math.min(gg.length-1,i))].k);
+      }
+      return;
+    }
     const pista = ev.target.closest("[data-pista]");
     if(pista && modificabile){
       const r = pista.getBoundingClientRect();
@@ -315,6 +327,10 @@ function agganciaPiano(tab, gg, C){
       }, {once:true});
       return;
     }
+    // conclusa, annullata o sospesa: la data di fine resterebbe indietro e l'attività perderebbe
+    // tutte le ore (e sparirebbe dal calendario). Il clic apre ancora l'editor
+    const att = S.assegnazioni.find(z=>z.id===b.dataset.att);
+    if(att && (att.fatta || att.sospesa || att.annullata)) return;
     ev.preventDefault();
     const x0 = ev.clientX, left0 = parseFloat(b.style.left);
     let spostato = 0;
@@ -354,14 +370,14 @@ function agganciaPiano(tab, gg, C){
           if(seq === null){ rendi(); return; }
           if(seq !== "ok") nuova = seq;
           // se il blocco nella nuova posizione fa slittare altre attività, si chiede prima:
-          // slittamento, overtime o annulla (il blocco torna dov'era)
-          const scelta = await decidiSlittamento(a, nuova);
-          const successive = scelta === null ? null
-            : await controllaSuccessive(Object.assign({}, nuova, {straordinario:scelta}));
-          if(scelta !== null && successive !== null){
+          // slittamento, overtime nei giorni che servono o annulla (il blocco torna dov'era)
+          const giorniOt = await decidiSlittamento(nuova);
+          const togliOt = giorniOt === null ? null : aggiungiOvertime(nuova.personaId, giorniOt);
+          const successive = giorniOt === null ? null : await controllaSuccessive(nuova);
+          if(giorniOt !== null && successive === null) togliOt();
+          if(giorniOt !== null && successive !== null){
             a.dataInizio = nuova.dataInizio;
             if(a.scadenza) a.scadenza = nuova.scadenza;
-            a.straordinario = scelta;
             invalida();
             spostaSuccessive(successive);
             segnaModificato();

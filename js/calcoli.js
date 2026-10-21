@@ -181,8 +181,7 @@ function orePerGiornoEff(a){
   return a.orePerGiorno != null ? a.orePerGiorno : capacitaPersonaGiorno(persona(a.personaId), a.dataInizio);
 }
 // distribuisce le ore di un'attività sui giorni utili come se fosse l'unica della persona:
-// è il calcolo dello straordinario (si aggiunge alle altre senza togliere loro ore) e la base
-// della modalità finestra in simulaPersona()
+// è la base della modalità finestra in simulaPersona()
 function distribuzioneIsolata(a){
   const mappa = new Map();
   const p = persona(a.personaId);
@@ -235,7 +234,7 @@ function distribuzioneIsolata(a){
 /* ----------------------------------------------------------
    Più attività della stessa persona nello stesso giorno.
    Le ore ordinarie di un giorno non superano mai la capacità della persona (capacitaGiorno):
-   le attività se le dividono, e quelle che restano senza ore si allungano. Tre classi:
+   le attività se le dividono, e quelle che restano senza ore si allungano. Due classi:
    - brevi (prioritaria): in nessun giorno chiedono più della soglia "attività brevi"
      (config.sogliaBreve, default 50%) delle ore nominali del giorno — un'attività di un
      giorno con poche ore, o un ritmo fissato basso (deroga, finestra). Prendono le loro ore
@@ -243,10 +242,11 @@ function distribuzioneIsolata(a){
    - le altre si dividono in parti uguali le ore rimaste, ciascuna senza superare il proprio
      ritmo (deroga/finestra) né il proprio residuo; quello che a una non serve passa alle
      altre (nessuna prevale);
-   - overtime (straordinario:true, scelto dall'utente nel banner di slittamento): viene per
-     ultimo e non toglie ore a nessuno; può superare la capacità, ma la giornata non va mai
-     oltre capacità × (1 + config.overtimeMax), default 0%: con 0% l'overtime non aggiunge
-     ore e l'attività prende solo quelle rimaste libere. Le ore che non ci stanno slittano.
+   Overtime (S.overtime, deciso giorno per giorno dall'utente, mai per attività): in quel giorno
+   la capacità della persona sale a capacità × (1 + config.overtimeMax), default 0%
+   (overtime non previsto); le attività se ne dividono le ore con le stesse regole di sempre.
+   Il giorno con overtime risulta comunque oltre il limite (capacitaGiorno resta quella
+   ordinaria), come promemoria. Le ore che non ci stanno slittano.
    ---------------------------------------------------------- */
 function primoGiornoUtile(personaId, dal){
   let cur = d(dal);
@@ -265,6 +265,32 @@ function sogliaBreve(){
 function overtimeMax(){
   const v = S.config.overtimeMax;
   return (v != null && v > 0) ? v : 0;
+}
+// overtime deciso per quella persona in quel giorno (S.overtime: {id, personaId, giorno})
+function haOvertime(personaId, k){
+  return (S.overtime || []).some(o => o.personaId === personaId && o.giorno === k);
+}
+// aggiunge l'overtime ai giorni indicati (quelli già presenti si saltano) e restituisce la
+// funzione che lo toglie di nuovo: serve a provare l'effetto prima che l'utente confermi
+function aggiungiOvertime(personaId, giorni){
+  const nuovi = Array.from(new Set(giorni)).filter(k => !haOvertime(personaId, k)).map(k => ({id:nuovoId("o"), personaId, giorno:k}));
+  S.overtime = (S.overtime || []).concat(nuovi); invalida();
+  return () => { S.overtime = S.overtime.filter(o => !nuovi.includes(o)); invalida(); };
+}
+// giorni in cui, passando da "prima" a "dopo" (due distribuzioni complete: id -> iso -> ore),
+// un'attività aperta della persona perde ore e non è già in overtime: sono i giorni dove un
+// overtime evita lo slittamento. "tranne" è l'id dell'attività che si sta modificando: i giorni
+// che lascia liberi spostandola non sono conflitti
+function giorniDaRecuperare(personaId, prima, dopo, tranne){
+  const out = new Set();
+  S.assegnazioni.forEach(x=>{
+    if(x.personaId !== personaId || x.fatta || x.sospesa || x.id === tranne) return;
+    const n = dopo.get(x.id);
+    (prima.get(x.id) || new Map()).forEach((ore, k)=>{
+      if((((n && n.get(k)) || 0) < ore - 0.001) && !haOvertime(personaId, k)) out.add(k);
+    });
+  });
+  return Array.from(out).sort();
 }
 // ore al giorno che l'attività chiede per ritmo, se ne ha uno fissato (deroga o media della
 // finestra); null = a tempo pieno, chiede tutto quello che resta
@@ -300,21 +326,21 @@ function simulaPersona(personaId, elenco){
     const giorniBase = base ? Array.from(base.keys()).sort() : null;
     const inizio = base ? giorniBase[0] : a.dataInizio;
     if(!inizio || (limite && limite < inizio)) return;
-    const ot = !!a.straordinario;
     att.push({a, m, inizio, limite, base, fineBase: base ? giorniBase[giorniBase.length-1] : null,
-              debito:0, resto:Math.max(0, a.oreTotali||0), ot, prior: !ot && prioritaria(a)});
+              debito:0, resto:Math.max(0, a.oreTotali||0), prior: prioritaria(a)});
   });
   if(!att.length) return out;
-  // ordine di precedenza (brevi e overtime): chi parte prima; a pari data, l'ordine di inserimento
+  // ordine di precedenza delle brevi: chi parte prima; a pari data, l'ordine di inserimento
   const perPartenza = (x,y)=> x.inizio < y.inizio ? -1 : x.inizio > y.inizio ? 1 : 0;
   const prior = att.filter(x => x.prior).sort(perPartenza);
-  const extra = att.filter(x => x.ot).sort(perPartenza);
   const aperta = (x, k) => x.resto > 0.001 && !(x.limite && k > x.limite);
   // quanto vuole l'attività oggi: il ritmo della finestra (con il debito dei giorni in cui non
   // ci è stata), la deroga, oppure tutto il residuo se è a tempo pieno
-  const voglio = (x, k) => {
+  // a tempo pieno chiede al massimo una giornata ordinaria (ord): l'overtime di un giorno serve
+  // a non far slittare le altre, non a far lavorare di più chi non ha conflitti
+  const voglio = (x, k, ord) => {
     if(x.base){ x.debito += x.base.get(k) || 0; return Math.min(x.resto, k >= x.fineBase ? x.resto : x.debito); }
-    return Math.min(x.resto, x.a.orePerGiorno != null ? x.a.orePerGiorno : x.resto);
+    return Math.min(x.resto, x.a.orePerGiorno != null ? x.a.orePerGiorno : ord);
   };
   const assegna = (x, k, q) => {
     if(q <= 0.001) return 0;
@@ -333,23 +359,19 @@ function simulaPersona(personaId, elenco){
     }
     if(eLavorativo(k) && !assenzaTotale(personaId, k)){
       // riunioni e formazione prima di tutto: le attività si dividono le ore che restano
-      const capPiena = capacitaGiorno(personaId, k), ev = oreEventi(personaId, k);
-      const cap = Math.max(0, capPiena - ev);
-      const desiderio = new Map(vive.map(x => [x, voglio(x, k)]));
+      const ord = capacitaGiorno(personaId, k);
+      const capPiena = ord * (haOvertime(personaId, k) ? 1 + overtimeMax() : 1);
+      const ev = oreEventi(personaId, k), cap = Math.max(0, capPiena - ev);
+      const desiderio = new Map(vive.map(x => [x, voglio(x, k, ord)]));
       let libere = cap;
       prior.forEach(x=>{
         if(desiderio.has(x)) libere -= assegna(x, k, Math.min(desiderio.get(x), libere));
       });
       // le altre si dividono il resto: in ordine di bisogno crescente, così chi ha bisogno di
       // meno della propria parte lascia la differenza alle successive
-      const altre = vive.filter(x => !x.prior && !x.ot).sort((x,y)=> desiderio.get(x) - desiderio.get(y));
+      const altre = vive.filter(x => !x.prior).sort((x,y)=> desiderio.get(x) - desiderio.get(y));
       altre.forEach((x,i)=>{
         libere -= assegna(x, k, Math.min(desiderio.get(x), libere / (altre.length - i)));
-      });
-      // overtime per ultimo: oltre la capacità, fino al tetto della giornata
-      let tetto = capPiena * (1 + overtimeMax()) - ev - (cap - libere);
-      extra.forEach(x=>{
-        if(desiderio.has(x)) tetto -= assegna(x, k, Math.min(desiderio.get(x), Math.max(0, tetto)));
       });
     }
     cur = sommaGiorni(cur, 1);
@@ -367,15 +389,6 @@ function elencoConModifica(a){
 // "a" può essere una versione non ancora salvata (anteprima dell'editor, spostamenti di prova)
 function distribuzione(a){
   return simulaPersona(a.personaId, elencoConModifica(a)).get(a.id) || new Map();
-}
-// vero se l'attività resta in overtime senza chiederlo di nuovo: lo era già e non cambia
-// nulla di ciò che decide le sue ore (note e descrizione si possono toccare liberamente).
-// Assente, null e false valgono uguale: un vecchio dato senza il campo non è "cambiato"
-function restaOvertime(vecchia, nuova){
-  if(!vecchia || !vecchia.straordinario) return false;
-  const norma = v => (v === undefined || v === null || v === false) ? null : v;
-  return ["personaId","dataInizio","scadenza","oreTotali","orePerGiorno","modo","fatta","sospesa","dataFine"]
-    .every(k => norma(vecchia[k]) === norma(nuova[k]));
 }
 // confronto fra versioni "1.4.0": negativo se a < b, zero se uguali, positivo se a > b
 function confrontaVersioni(a, b){
@@ -399,9 +412,8 @@ function slittamentiAggiornamento(){
   return out.sort((u,v)=> u.prima < v.prima ? -1 : 1);
 }
 // attività aperte che, salvando "a" così, finirebbero più tardi di adesso: è quello che
-// l'utente deve accettare (o evitare con lo straordinario) prima che diventi definitivo
+// l'utente deve accettare (o evitare con l'overtime) prima che diventi definitivo
 function slittamentiAltre(a){
-  if(a.straordinario) return [];
   const dist = distribuzioni();
   const dopo = simulaPersona(a.personaId, elencoConModifica(a));
   const out = [];
@@ -585,14 +597,13 @@ async function applicaRiassegnazione(attivitaId, nuovaDataInizio){
   const a = S.assegnazioni.find(x=>x.id===attivitaId);
   if(!a) return;
   const n = diffGiorni(a.dataInizio, nuovaDataInizio);
-  // provaSpostamento propone solo giorni che non creano sovraccarico: l'overtime non serve più
-  const nuova = Object.assign({}, a, {dataInizio:nuovaDataInizio, straordinario:false},
+  // provaSpostamento propone solo giorni che non creano sovraccarico
+  const nuova = Object.assign({}, a, {dataInizio:nuovaDataInizio},
     a.scadenza ? {scadenza: iso(sommaGiorni(d(a.scadenza), n))} : {});
   const successive = await controllaSuccessive(nuova, true);
   if(successive === null) return;
   a.dataInizio = nuova.dataInizio;
   if(a.scadenza) a.scadenza = nuova.scadenza;
-  a.straordinario = false;
   invalida(); spostaSuccessive(successive); segnaModificato(); rendi();
   brindisi(tr("Attività spostata al {0}", itData(nuovaDataInizio)));
 }
@@ -602,11 +613,10 @@ async function applicaSostituzione(attivitaId, nuovaPersonaId){
   const a = S.assegnazioni.find(x=>x.id===attivitaId);
   const p = persona(nuovaPersonaId);
   if(!a || !p) return;
-  // candidatiPersona propone solo un collega libero in quei giorni: l'overtime non serve più
-  const successive = await controllaSuccessive(Object.assign({}, a, {personaId:nuovaPersonaId, straordinario:false}), true);
+  // candidatiPersona propone solo un collega libero in quei giorni
+  const successive = await controllaSuccessive(Object.assign({}, a, {personaId:nuovaPersonaId}), true);
   if(successive === null) return;
   a.personaId = nuovaPersonaId;
-  a.straordinario = false;
   invalida(); spostaSuccessive(successive); segnaModificato(); rendi();
   brindisi(tr("Attività riassegnata a {0}", p.nome));
 }

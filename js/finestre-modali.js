@@ -118,6 +118,7 @@ function creaCombo(idInput, opzioni, cfg){
   });
   inp.addEventListener("blur", ()=>{
     setTimeout(()=>{
+      if(!inp.isConnected) return;   // la finestra è già stata chiusa (es. "Salva" subito dopo la scelta)
       chiudiLista();
       // se il testo non corrisponde a una scelta valida, ripristina
       const corr = opzioni.find(o => o.eti.toLowerCase() === inp.value.trim().toLowerCase());
@@ -462,11 +463,6 @@ function apriAttivita(id, pre){
     }
 
     const finto = oggettoForm();
-    // lo stato (conclusa/sospesa) conta per decidere se resta in overtime, ma non entra
-    // nell'anteprima: le giornate liberate dalla chiusura le calcola aggiornaLiberate
-    const fattaOra = document.getElementById("f-fatta").checked, sospOra = document.getElementById("f-sospesa").checked;
-    finto.straordinario = restaOvertime(a, Object.assign({}, finto,
-      {fatta:fattaOra, sospesa:sospOra, dataFine:(fattaOra || sospOra) ? val("f-fine") : null}));
     const m = distribuzione(finto);
     const ch = Array.from(m.keys()).sort();
     box.className = "avviso";
@@ -493,8 +489,7 @@ function apriAttivita(id, pre){
     if(passato) righe.push(allarme(tr("⚠ La partenza cade nel passato.")));
     if(slitta) righe.push(tr("Il {0} non è un giorno utile, la partenza slitta al primo disponibile.", itData(val("f-inizio"))));
     const sl = slittamentiAltre(finto);
-    if(finto.straordinario) righe.push(tr("In overtime: le sue ore si aggiungono a quelle delle altre attività, senza spostarle."));
-    else if(sl.length) righe.push(allarme(tr("⚠ Salvando, finiscono più tardi:")) + " "
+    if(sl.length) righe.push(allarme(tr("⚠ Salvando, finiscono più tardi:")) + " "
       + sl.map(x => esc(testoSlittamento(x))).join("; ") + ". "
       + (overtimeMax() > 0 ? tr("Al salvataggio potrai scegliere se accettare lo slittamento o fare overtime.")
                            : tr("Al salvataggio ti verrà chiesto se accettare lo slittamento.")));
@@ -631,12 +626,12 @@ function apriAttivita(id, pre){
       return;
     }
     // le altre attività della persona che slitterebbero: l'utente accetta lo slittamento,
-    // sceglie l'overtime o torna all'editor — mai uno spostamento silenzioso
-    const scelta = await decidiSlittamento(a, Object.assign({id:a ? a.id : "nuova"}, dati));
-    if(scelta === null) return;
-    dati.straordinario = scelta;
+    // sceglie l'overtime nei giorni che servono o torna all'editor — mai uno spostamento silenzioso
+    const giorniOt = await decidiSlittamento(Object.assign({id:a ? a.id : "nuova"}, dati));
+    if(giorniOt === null) return;
+    const togliOt = aggiungiOvertime(dati.personaId, giorniOt);
     const successive = await controllaSuccessive(Object.assign({id:a ? a.id : "nuova"}, dati));
-    if(successive === null) return;
+    if(successive === null){ togliOt(); return; }
     const primaFine = a ? (estremi(a) || {}).al : null;
     if(a) Object.assign(a, dati);
     else S.assegnazioni.push(Object.assign({id:nuovoId("a")}, dati));
@@ -667,7 +662,7 @@ function anteprimaAttivita(id){
       ${c.descrizione?`<tr><th>Descrizione</th><td>${esc(c.descrizione)}</td></tr>`:""}
       <tr><th>Persona</th><td>${esc(p.nome)}</td></tr>
       ${a.descrizione?`<tr><th>Attività</th><td>${esc(a.descrizione)}</td></tr>`:""}
-      <tr><th>Monte ore</th><td class="mono">${a.oreTotali} h · ${arr(orePerGiornoEff(a))} h/giorno</td></tr>
+      <tr><th>Monte ore</th><td class="mono">${tr("{0} h · {1} h/giorno", a.oreTotali, arr(orePerGiornoEff(a)))}</td></tr>
       <tr><th>Periodo</th><td class="mono">${e?itData(e.dal)+" → "+itData(e.al):"–"}</td></tr>
       <tr><th>Vincolo</th><td>${modoAtt(a)==="fine"?tr("Consegna entro il {0}", itData(a.scadenza)):modoAtt(a)==="finestra"?tr("Finestra dal {0} al {1}, carico ripartito", itData(a.dataInizio), itData(a.scadenza)):tr("Parte il {0}", itData(a.dataInizio))}</td></tr>
       ${a.annullata?`<tr><th>Stato</th><td style="color:var(--allarme)"><b>✕ Annullata</b></td></tr>`
@@ -706,35 +701,69 @@ function testoSlittamento(x){
     + (x.a.descrizione ? " (" + x.a.descrizione + ")" : ""), itData(x.prima), itData(x.dopo));
 }
 // decide come salvare "nuova" (versione non ancora salvata di un'attività): se farebbe finire
-// più tardi altre attività della stessa persona, chiede con un banner. Restituisce il valore
-// di straordinario da salvare (true = overtime), oppure null se l'utente annulla
-async function decidiSlittamento(vecchia, nuova){
-  if(restaOvertime(vecchia, nuova)) return true;
-  const sl = slittamentiAltre(Object.assign({}, nuova, {straordinario:false}));
-  if(!sl.length) return false;
-  // con l'overtime le altre restano dove sono, ma questa attività può finire più tardi se il
-  // tetto della giornata (config.overtimeMax) non basta: il banner lo dice prima della scelta
-  let fineOvertime = null;
-  if(overtimeMax() > 0){
-    const ot = Object.assign({}, nuova, {straordinario:true});
-    const m = simulaPersona(ot.personaId, elencoConModifica(ot)).get(ot.id);
-    fineOvertime = m && m.size ? Array.from(m.keys()).sort().pop() : null;
+// più tardi altre attività della stessa persona, chiede con un banner. Restituisce i giorni da
+// mettere in overtime ([] = accetta lo slittamento o nulla slitta), oppure null se l'utente annulla
+async function decidiSlittamento(nuova){
+  const sl = slittamentiAltre(nuova);
+  if(!sl.length) return [];
+  // l'overtime serve solo nei giorni in cui le altre attività perdono ore
+  const giorni = overtimeMax() > 0
+    ? giorniDaRecuperare(nuova.personaId, distribuzioni(), simulaPersona(nuova.personaId, elencoConModifica(nuova)), nuova.id) : [];
+  // anche con l'overtime il tetto della giornata può non bastare: il banner lo dice prima della scelta
+  let restano = [];
+  if(giorni.length){
+    const togli = aggiungiOvertime(nuova.personaId, giorni);
+    restano = slittamentiAltre(nuova);
+    togli();
   }
-  const r = await bannerSlittamento(nuova.personaId, sl, fineOvertime);
-  return r === "overtime" ? true : r === "slitta" ? false : null;
+  const r = await bannerSlittamento(nuova.personaId, sl, giorni, restano);
+  return r === "overtime" ? giorni : r === "slitta" ? [] : null;
 }
 // banner sopra a tutto (anche all'editor aperto, che resta com'è): slittamento, overtime o annulla
-function bannerSlittamento(personaId, sl, fineOvertime){
+function bannerSlittamento(personaId, sl, giorni, restano){
   const p = persona(personaId);
   return bannerScelta(tr("Altre attività di {0} finirebbero più tardi", esc(p ? p.nome : "")),
     `<ul>${sl.map(x => `<li>${esc(testoSlittamento(x))}</li>`).join("")}</ul>
      <p class="nota">${overtimeMax() > 0
-       ? tr("Con l'overtime le altre restano dove sono e le giornate arrivano al massimo al {0}% delle ore ordinarie.", Math.round(100 + overtimeMax()*100))
-         + (fineOvertime ? " " + tr("Questa attività finirebbe il {0}.", itData(fineOvertime)) : "")
+       ? (giorni.length ? tr("Con l'overtime nei giorni {0} le giornate arrivano al massimo al {1}% delle ore ordinarie.", giorni.map(itData).join(", "), Math.round(100 + overtimeMax()*100))
+                        : tr("Nei giorni interessati l'overtime è già attivo: non può evitare lo slittamento."))
+         + (restano.length ? " " + tr("Anche così finirebbero più tardi: {0}.", restano.map(x => esc(testoSlittamento(x))).join("; ")) : "")
        : tr("L'overtime non è previsto: si attiva in Impostazioni → Calendario e orario → Overtime massimo.")}</p>`,
     [{r:"annulla", eti:tr("Annulla")},
-     ...(overtimeMax() > 0 ? [{r:"overtime", eti:tr("Overtime")}] : []),
+     ...(giorni.length ? [{r:"overtime", eti:tr("Overtime")}] : []),
      {r:"slitta", eti:tr("Accetta lo slittamento"), primario:true}]);
+}
+// overtime di una persona in un giorno, dalla barra di carico del Gantt: attivarlo o toglierlo.
+// Togliendolo, il banner elenca le attività che finirebbero più tardi (nulla cambia senza conferma)
+async function apriOvertimeGiorno(personaId, k){
+  const p = persona(personaId);
+  if(!p) return;
+  const titolo = tr("Overtime di {0}, {1}", esc(p.nome), itData(k));
+  if(!haOvertime(personaId, k)){
+    if(overtimeMax() <= 0) return brindisi(tr("L'overtime non è previsto: si attiva in Impostazioni → Calendario e orario → Overtime massimo."));
+    if(capacitaGiorno(personaId, k) <= 0) return brindisi(tr("Giorno non lavorabile per questa persona."));
+    const r = await bannerScelta(titolo,
+      `<p class="nota">${tr("La giornata arriva al massimo al {0}% delle ore ordinarie.", Math.round(100 + overtimeMax()*100))}</p>`,
+      [{r:"annulla", eti:tr("Annulla")}, {r:"attiva", eti:tr("Attiva overtime"), primario:true}]);
+    if(r !== "attiva") return;
+    aggiungiOvertime(personaId, [k]); segnaModificato(); rendi();
+    return;
+  }
+  const tolti = S.overtime.filter(o => o.personaId === personaId && o.giorno === k);
+  const fine = m => (m && m.size) ? Array.from(m.keys()).sort().pop() : null;
+  const prima = distribuzioni();
+  S.overtime = S.overtime.filter(o => !tolti.includes(o)); invalida();
+  const dopo = distribuzioni();
+  S.overtime = S.overtime.concat(tolti); invalida();
+  const sl = S.assegnazioni.filter(x => x.personaId === personaId && !x.fatta && !x.sospesa)
+    .map(x => ({a:x, prima:fine(prima.get(x.id)), dopo:fine(dopo.get(x.id))}))
+    .filter(x => x.prima && x.dopo && x.dopo > x.prima);
+  const r = await bannerScelta(titolo,
+    sl.length ? `<ul>${sl.map(x => `<li>${esc(testoSlittamento(x))}</li>`).join("")}</ul>
+      <p class="nota">${tr("Togliendo l'overtime queste attività finiscono più tardi.")}</p>` : "",
+    [{r:"annulla", eti:tr("Annulla")}, {r:"togli", eti:tr("Togli overtime"), primario:true}]);
+  if(r !== "togli") return;
+  S.overtime = S.overtime.filter(o => !tolti.includes(o)); invalida(); segnaModificato(); rendi();
 }
 /* Banner di scelta generico, sopra a tutto (anche all'editor aperto, che resta com'è).
    pulsanti = [{r, eti, primario}]: risolve con la "r" del pulsante premuto; Esc chiude solo
@@ -1229,6 +1258,7 @@ function apriPersona(id){
     S.persone = S.persone.filter(x=>x.id!==p.id);
     S.assegnazioni = S.assegnazioni.filter(a=>a.personaId!==p.id);
     S.assenze = S.assenze.filter(a=>a.personaId!==p.id);
+    S.overtime = (S.overtime||[]).filter(o=>o.personaId!==p.id);
     // il backlog non si elimina con la persona: gli elementi restano, senza responsabile
     (S.backlog||[]).forEach(b=>{ if(b.ownerId===p.id) b.ownerId = null; });
     // riunioni e formazione: esce dai partecipanti; un evento rimasto senza nessuno sparisce
@@ -1462,7 +1492,7 @@ function anteprimaEvento(id){
       <tr><th>${tr("Descrizione")}</th><td>${esc(ev.descrizione)}</td></tr>
       ${c?`<tr><th>${tr("Progetto")}</th><td><span class="pastiglia" style="background:${coloreCommessa(c)}"></span><span class="mono">${esc(c.numero)}</span>${c.cliente?" · "+esc(c.cliente):""}</td></tr>`:""}
       <tr><th>${tr("Giorno")}</th><td class="mono">${itData(ev.giorno)} · ${arr(ev.ore)} h</td></tr>
-      <tr><th>${tr("Persone")}</th><td>${tutti ? tr("Tutto l'organico") + ` <span class="nota">(${tr("{0} persone", nomi.length)})</span>` : nomi.join(", ")}</td></tr>
+      <tr><th>${tr("Persone")}</th><td>${tutti ? tr("Tutto l'organico") + ` <span class="nota">(${trN(nomi.length, "1 persona", "{0} persone")})</span>` : nomi.join(", ")}</td></tr>
       ${ev.fatta?`<tr><th>${tr("Stato")}</th><td style="color:var(--positivo)"><b>✓ ${tr("Conclusa")}</b></td></tr>`:""}
     </tbody></table>
     <p class="nota" style="margin-top:12px">${tr("Attiva la modifica in alto a destra per cambiarla.")}</p>`,
@@ -1527,7 +1557,7 @@ function apriEvento(id, pre){
     optPersone.length = 0;
     S.gruppi.forEach(g => {
       const n = attivi().filter(p => p.gruppoId === g.id && !scelti.has(p.id)).length;
-      if(n) optPersone.push({id:"g:" + g.id, eti:tr("Gruppo: {0}", g.nome), sotto:tr("{0} persone", n)});
+      if(n) optPersone.push({id:"g:" + g.id, eti:tr("Gruppo: {0}", g.nome), sotto:trN(n, "1 persona", "{0} persone")});
     });
     personeOrdinate(true).filter(p => !scelti.has(p.id)).forEach(p =>
       optPersone.push({id:p.id, eti:p.nome, sotto:(gruppo(p.gruppoId)||{}).nome || ""}));
@@ -1586,19 +1616,37 @@ function apriEvento(id, pre){
     const coinvolte = new Set([...dati.personeIds, ...(ev ? ev.personeIds : [])]);
     const fine = () => new Map(S.assegnazioni.filter(a => coinvolte.has(a.personaId) && !a.fatta && !a.sospesa)
       .map(a => [a, (estremi(a)||{}).al]));
-    const prima = fine();
+    const prima = fine(), distPrima = distribuzioni();
     const vecchi = S.eventi;
     S.eventi = nuovi; invalida();
-    const dopo = fine();
-    S.eventi = vecchi; invalida();
+    const dopo = fine(), distDopo = distribuzioni();
     const slittano = Array.from(prima).filter(([a, al]) => al && dopo.get(a) && dopo.get(a) > al);
+    // overtime proposto: solo alle persone che slittano e solo nei giorni in cui perdono ore
+    let proposte = [], restano = [];
+    if(slittano.length && overtimeMax() > 0){
+      proposte = Array.from(new Set(slittano.map(([a]) => a.personaId)))
+        .map(pid => ({pid, giorni: giorniDaRecuperare(pid, distPrima, distDopo)})).filter(x => x.giorni.length);
+      const togli = proposte.map(x => aggiungiOvertime(x.pid, x.giorni));
+      const ancora = fine();
+      restano = slittano.filter(([a, al]) => ancora.get(a) > al);
+      togli.forEach(f => f());
+    }
+    S.eventi = vecchi; invalida();
+    let conOvertime = false;
     if(slittano.length){
       const r = await bannerScelta(tr("Alcune attività finiscono più tardi"),
         `<ul>${slittano.map(([a, al]) => `<li>${esc(nomeAttivita(a))}: ${itData(al)} → ${itData(dopo.get(a))}</li>`).join("")}</ul>
-         <p class="nota">${tr("Riunioni e formazione hanno la precedenza: le attività si dividono le ore che restano.")}</p>`,
-        [{r:"annulla", eti:tr("Torna all'editor")}, {r:"salva", eti:tr("Salva comunque"), primario:true}]);
-      if(r !== "salva") return;
+         <p class="nota">${tr("Riunioni e formazione hanno la precedenza: le attività si dividono le ore che restano.")}</p>
+         ${!proposte.length && overtimeMax() > 0 ? `<p class="nota">${tr("Nei giorni interessati l'overtime è già attivo: non può evitare lo slittamento.")}</p>` : ""}
+         ${proposte.length ? `<p class="nota">${tr("Overtime proposto:")} ${proposte.map(x => esc((persona(x.pid)||{}).nome || "?") + " (" + x.giorni.map(itData).join(", ") + ")").join("; ")}.
+           ${restano.length ? tr("Anche così finirebbero più tardi: {0}.", restano.map(([a]) => esc(nomeAttivita(a))).join("; ")) : ""}</p>` : ""}`,
+        [{r:"annulla", eti:tr("Torna all'editor")},
+         ...(proposte.length ? [{r:"overtime", eti:tr("Salva con overtime")}] : []),
+         {r:"salva", eti:tr("Salva comunque"), primario:true}]);
+      if(r !== "salva" && r !== "overtime") return;
+      conOvertime = r === "overtime";
     }
+    if(conOvertime) proposte.forEach(x => aggiungiOvertime(x.pid, x.giorni));
     S.eventi = nuovi;
     invalida(); segnaModificato(); chiudi(); rendi();
   };

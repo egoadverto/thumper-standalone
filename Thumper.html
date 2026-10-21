@@ -37,7 +37,7 @@ A tool to support team management and coordination.
 <div id="app">
   <div class="barra">
     <div class="barra-sx">
-      <div class="marchio din"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#152029"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo"><b>Thumper</b><span>Micro Planner</span></span></div>
+      <div class="marchio din"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#182129"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo"><b>Thumper</b><span>Micro Planner</span></span></div>
       <div class="schede" role="tablist" id="schede">
         <button class="scheda din" role="tab" data-vista="piano" aria-selected="true">Pianificazione</button>
         <button class="scheda din" role="tab" data-vista="commesse" aria-selected="false">Progetti</button>
@@ -108,26 +108,29 @@ A tool to support team management and coordination.
       <button class="btn piccolo" id="btn-nuovo-evento">+ Riunione o formazione</button>
       <label class="spunta" style="text-transform:none;letter-spacing:0;color:var(--inchiostro)">
         <input type="checkbox" id="nascondi-fatte"> Nascondi concluse</label>
-      <div class="divisore"></div>
-      <div class="legenda">
-        <span><i style="background:var(--festivo)"></i>Weekend</span>
-        <span><i style="background:var(--chiuso)"></i>Festivi e chiusure</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#C3EEF0 0 3px,#D5F3F5 3px 6px)"></i>Ferie</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#E953FA 0 3px,#F087FC 3px 6px)"></i>Permessi</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#BD3C63 0 3px,#D17792 3px 6px)"></i>Malattia</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#D3D9DE 0 3px,#E4E8EB 3px 6px)"></i>Assenze</span>
-        <span><i style="background:#63737F"></i>Riunioni e formazione</span>
-        <span><i style="background:#438A8C"></i>Smart working</span>
-        <span><i style="background:#343A40"></i>Trasferta</span>
-        <span><i style="background:#438A8C;border-style:dashed;border-color:#fff"></i>Deroga</span>
-        <span>✓ Conclusa</span>
-        <span>⛓ Collegata</span>
-        <span>⚠ Fuori sequenza</span>
-      </div>
     </span>
   </div>
 
   <div class="pagina" id="pagina"></div>
+
+  <footer class="piede-app">
+    <div class="legenda solo-piano">
+        <span><i style="background:var(--festivo)"></i>Weekend</span>
+        <span><i style="background:var(--chiuso)"></i>Festivi e chiusure</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-ferie-1) 0 3px,var(--fascia-ferie-2) 3px 6px)"></i>Ferie</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-permesso-1) 0 3px,var(--fascia-permesso-2) 3px 6px)"></i>Permessi</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-malattia-1) 0 3px,var(--fascia-malattia-2) 3px 6px)"></i>Malattia</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--linea) 0 3px,var(--assenza-chiara) 3px 6px)"></i>Assenze</span>
+        <span><i style="background:var(--tenue)"></i>Riunioni e formazione</span>
+        <span><i style="background:var(--fascia-smart)"></i>Smart working</span>
+        <span><i style="background:var(--fascia-trasferta)"></i>Trasferta</span>
+        <span><i style="background:var(--fascia-smart);border-style:dashed;border-color:#fff"></i>Deroga</span>
+        <span>✓ Conclusa</span>
+        <span>⛓ Collegata</span>
+        <span>⚠ Fuori sequenza</span>
+</div>
+    <span class="versione" id="versione-app"></span>
+  </footer>
 </div>
 
 <script src="js/internazionalizzazione.js"></script>

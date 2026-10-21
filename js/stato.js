@@ -31,7 +31,7 @@ A tool to support team management and coordination.
 // vedi PLANNER_DATA in CLAUDE.md), mostrata in Impostazioni > Licenza. Politica di
 // aggiornamento in CLAUDE.md, sezione "Versione dell'app": semver, un push su main = un
 // rilascio, incremento a cura di chi fa il push in base a cosa contiene quel push.
-const VERSIONE_APP = "1.6.0";
+const VERSIONE_APP = "1.6.1";
 let S = null;
 let modificabile = false;
 let modificato = false;
@@ -123,7 +123,7 @@ function dataStato(c){
 }
 // colore stabile ricavato dal numero: con centinaia di commesse sceglierlo a mano non ha senso
 function coloreCommessa(c){
-  if(!c) return "#63737F";
+  if(!c) return "#5C6B76";
   if(c.colore) return c.colore;
   let h = 0;
   const s = String(c.numero||c.id);

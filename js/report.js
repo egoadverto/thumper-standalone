@@ -138,7 +138,7 @@ function sezioneReport(){
       <div id="casa-strumenti" class="non-stampare"></div>
       <div class="marchio din solo-stampa stampa-intestazione">
         <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none">
-          <path d="M16 34 L32 18" stroke="#152029"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/>
+          <path d="M16 34 L32 18" stroke="#182129"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/>
         </g></svg>
         <span class="marchio-testo"><b>Thumper</b><span>Micro Planner</span></span>
       </div>

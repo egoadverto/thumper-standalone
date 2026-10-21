@@ -56,6 +56,9 @@ function tr(testo, ...v){
   return out;
 }
 
+// singolare/plurale: trN(n, "1 persona", "{0} persone")
+function trN(n, uno, molti){ return n === 1 ? tr(uno) : tr(molti, n); }
+
 // applica la lingua all'interfaccia già disegnata, conservando l'originale italiano
 function applicaLingua(){
   document.documentElement.lang = lingua;

@@ -39,8 +39,9 @@ A tool to support team management and coordination.
   }
   .indice a{display:block;padding:4px 8px;border-radius:6px;color:var(--tenue);text-decoration:none;font-size:12px}
   .indice a:hover{background:var(--carta);color:var(--inchiostro)}
-  .indice .cap{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue);
-    margin:16px 0 4px;padding:0 8px}
+  .indice .cap{font-family:Bahnschrift,"DIN Alternate","DIN Condensed","Segoe UI Semibold","Segoe UI",sans-serif;
+    font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue);
+    margin:16px 0 4px;padding:0 8px}   /* stessa formula delle piccole etichette maiuscole dell'app */
   .indice .cap:first-child{margin-top:0}
   .testo{flex:1 1 auto;min-width:0;padding:20px 20px 60px}
   .testo h2{margin-top:0}
@@ -50,8 +51,8 @@ A tool to support team management and coordination.
   .testo ul,.testo ol{margin:0 0 10px;padding-left:20px}
   .testo li{margin-bottom:5px}
   .testo table{margin:10px 0}
-  kbd{font-family:Consolas,monospace;background:#EFF1F2;border:1px solid var(--linea-forte);
-    border-radius:4px;padding:1px 6px;font-size:11px}
+  kbd{font-family:Consolas,monospace;background:var(--linea-tenue);border:1px solid var(--linea-forte);
+    border-radius:4px;padding:1px 6px;font-size:10px}
   .torna-su{position:fixed;right:22px;bottom:22px;z-index:5}
   [hidden]{display:none !important}
   @media (max-width:860px){ .indice{display:none} }
@@ -60,7 +61,7 @@ A tool to support team management and coordination.
 <body>
 
 <div class="barra">
-  <div class="marchio din"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#152029"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo" id="marchio-sotto"><b>Thumper</b><span>Manuale utente</span></span></div>
+  <div class="marchio din"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#182129"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo" id="marchio-sotto"><b>Thumper</b><span>Manuale utente</span></span></div>
   <div class="spazio"></div>
   <div class="azioni">
     <button class="btn" id="btn-lingua" title="Cambia lingua / Change language">IT</button>
@@ -192,15 +193,19 @@ A tool to support team management and coordination.
       di lavoro, e una colonna per giorno. I blocchi colorati sono le attività assegnate; fai clic
       sul nome di una persona per aprire la sua scheda.</p>
       <h3>Leggere il calendario</h3>
+      <p>La <b>legenda dei colori</b> sta nella striscia in fondo alla schermata, a sinistra, e compare solo in
+      Pianificazione; a destra, in ogni schermata, trovi il nome e la versione del programma.</p>
       <div class="legenda" style="flex-wrap:wrap;gap:14px;margin-bottom:10px">
         <span><i style="background:var(--festivo)"></i>Weekend</span>
         <span><i style="background:var(--chiuso)"></i>Festivi e chiusure</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#C3EEF0 0 3px,#D5F3F5 3px 6px)"></i>Ferie</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#E953FA 0 3px,#F087FC 3px 6px)"></i>Permessi</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#BD3C63 0 3px,#D17792 3px 6px)"></i>Malattia</span>
-        <span><i style="background:#438A8C"></i>Smart working</span>
-        <span><i style="background:#343A40"></i>Trasferta</span>
-        <span><i style="background:#438A8C;border-style:dashed;border-color:#fff"></i>Deroga</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-ferie-1) 0 3px,var(--fascia-ferie-2) 3px 6px)"></i>Ferie</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-permesso-1) 0 3px,var(--fascia-permesso-2) 3px 6px)"></i>Permessi</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-malattia-1) 0 3px,var(--fascia-malattia-2) 3px 6px)"></i>Malattia</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--linea) 0 3px,var(--assenza-chiara) 3px 6px)"></i>Assenze</span>
+        <span><i style="background:var(--tenue)"></i>Riunioni e formazione</span>
+        <span><i style="background:var(--fascia-smart)"></i>Smart working</span>
+        <span><i style="background:var(--fascia-trasferta)"></i>Trasferta</span>
+        <span><i style="background:var(--fascia-smart);border-style:dashed;border-color:#fff"></i>Deroga</span>
         <span>✓ Conclusa</span>
         <span>✕ Annullata</span>
         <span>⏸ Sospesa</span>
@@ -213,7 +218,7 @@ A tool to support team management and coordination.
       segno <b>⚠</b>, un'attività <b>fuori sequenza</b>: parte prima che sia finita un'attività da
       cui dipende. Il segno <b>⛓</b> indica un'attività collegata ad altre dello stesso progetto
       (vedi "Attività collegate" più sotto). Passando con il
-      mouse su un blocco vedi ore totali, ore al giorno, periodo, vincolo ed eventuale overtime.</p>
+      mouse su un blocco vedi ore totali, ore al giorno, periodo e vincolo.</p>
       <p>Le giornate particolari della persona si vedono sulla sua riga: ferie, permessi, assenze e
       malattia di una giornata intera sono riquadri tratteggiati che coprono tutta la riga, quelli
       di poche ore sono una fascia tratteggiata in basso, smart working e trasferta sono fasce a tinta unita in basso. Una fascia di smart
@@ -222,7 +227,9 @@ A tool to support team management and coordination.
       mostrato.</p>
       <p>Sotto ogni persona c'è una sottile <b>barra di carico</b>, una colonnina per giorno:
       <b>azzurra</b> se la giornata è parzialmente occupata, <b>blu</b> se è piena, <b>arancione</b>
-      se va oltre le ore disponibili (succede solo con l'overtime). I colori sono scelti per
+      se va oltre le ore disponibili o se quel giorno è in overtime. Cliccando sulla barra di un
+      giorno (con la modifica attiva) attivi o togli l'overtime di quella persona in quel giorno;
+      cliccando sopra la barra si crea invece una nuova attività. I colori sono scelti per
       restare distinguibili anche da chi è daltonico.</p>
       <p>In testa al calendario, sotto il mese, ogni settimana è indicata con il suo numero
       nell'anno (<b>W42</b>, standard ISO: da lunedì a domenica), come nelle tabelle di Verifiche e
@@ -294,10 +301,15 @@ A tool to support team management and coordination.
       altre attività che si sovrappongono si dividono le ore in parti uguali.</p>
       <p>Se salvando (o trascinando nel calendario) un'attività un'altra finirebbe più tardi,
       compare un avviso che elenca quali attività slittano e fino a quando, con tre scelte:
-      <b>Accetta lo slittamento</b>; <b>Overtime</b>, dove le ore si aggiungono senza spostare
-      nulla, fino al massimo impostato in Impostazioni (quei giorni risultano oltre il limite e
-      restano segnalati in Verifiche); oppure <b>Annulla</b>, che lascia tutto com'era. Se
-      l'overtime massimo è 0%, la scelta Overtime non compare.</p>
+      <b>Accetta lo slittamento</b>; <b>Overtime</b>, che mette in overtime solo i giorni in cui
+      le altre attività perdono ore (l'avviso li elenca), fino al massimo impostato in
+      Impostazioni: quei giorni risultano oltre il limite e restano segnalati in Verifiche;
+      oppure <b>Annulla</b>, che lascia tutto com'era. Se l'overtime massimo è 0%, la scelta
+      Overtime non compare. Lo stesso avviso compare salvando una riunione o una formazione:
+      l'overtime vale solo per le persone che altrimenti slitterebbero. L'overtime è una
+      decisione del singolo giorno, non dell'attività: lo togli (o lo aggiungi a mano) cliccando
+      sulla barra di carico di quel giorno, e se togliendolo qualche attività finisce più tardi
+      te lo dice prima di confermare.</p>
       <h3>Attività collegate</h3>
       <p>Quando un lavoro può partire solo dopo un altro — per esempio la progettazione dopo i
       calcoli dimensionali di un collega — si collegano con <b>Parte dopo</b> nell'editor della
@@ -340,7 +352,8 @@ A tool to support team management and coordination.
       così, mentre il 25-0412 è lasciato apposta fuori sequenza, per vedere gli avvisi.</p>
       <h3>Spostare e correggere</h3>
       <p>Per <b>spostare</b> un'attività già pianificata trascinala orizzontalmente con il mouse:
-      si muove di un giorno alla volta. Per intervenire nel dettaglio, fai clic sul blocco.</p>
+      si muove di un giorno alla volta. Per intervenire nel dettaglio, fai clic sul blocco. Le attività
+      già <b>concluse, annullate o sospese</b> non si trascinano: restano dove sono, e si aprono con un clic.</p>
       <p>Se chiudi o sospendi un'attività <b>prima</b> del previsto, quella persona si ritrova
       delle giornate libere. Il programma allora ti chiede se vuoi <b>anticipare le attività
       successive</b>: ti elenca quelle che vengono dopo, con le loro date e le loro ore, e scegli
@@ -542,8 +555,7 @@ A tool to support team management and coordination.
       <b>Applica</b>.</p>
       <p>Poiché una giornata non supera mai le ore disponibili, i giorni con troppe ore assegnate
       nascono solo dall'<b>overtime</b>: restano segnalati qui apposta, per poter ridare il
-      lavoro a chi nel frattempo si è liberato. Applicando una proposta l'attività non è più in
-      overtime, perché il nuovo giorno o il collega hanno ore libere.</p>
+      lavoro a chi nel frattempo si è liberato.</p>
       <h3>Tempistiche</h3>
       <p>Quattro pannelli, tutti indipendenti dal periodo mostrato nel calendario.</p>
       <ul>
@@ -724,7 +736,7 @@ A tool to support team management and coordination.
       <p>Una nota ricorda la sottocartella <span class="mono">backup</span> con le ultime 5 copie,
       e in fondo trovi chi ha salvato per ultimo e quando.</p>
       <h3>Licenza</h3>
-      <p>La versione del programma e il testo completo della licenza con cui è distribuito.</p>
+      <p>La versione del programma (la stessa che vedi in basso a destra in ogni schermata) e il testo completo della licenza con cui è distribuito.</p>
     </div>
 
     <div class="pannello" id="domande">
@@ -761,8 +773,8 @@ A tool to support team management and coordination.
       <p>Se non ne assegni uno esplicitamente nella scheda del progetto, il programma ne sceglie
       uno stabile in base al numero, così due aperture diverse del programma mostrano sempre lo
       stesso colore per lo stesso progetto, senza doverlo scegliere a mano. I colori automatici
-      sono blu, viola, azzurri e grigi, scelti per restare distinguibili anche da chi è
-      daltonico.</p>
+      sono blu, viola, grigi e un rosa acceso, tutti abbastanza scuri da far leggere il testo
+      bianco, e scelti per restare distinguibili anche da chi è daltonico.</p>
     </div>
 
   </div>
@@ -889,15 +901,19 @@ A tool to support team management and coordination.
       one column per day. The coloured blocks are the assigned activities; click a person's name
       to open their record.</p>
       <h3>Reading the calendar</h3>
+      <p>The <b>colour legend</b> is in the strip at the bottom of the screen, on the left, and only shows in
+      Planning; on the right, on every screen, you'll find the program's name and version.</p>
       <div class="legenda" style="flex-wrap:wrap;gap:14px;margin-bottom:10px">
         <span><i style="background:var(--festivo)"></i>Weekend</span>
         <span><i style="background:var(--chiuso)"></i>Holidays and closures</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#C3EEF0 0 3px,#D5F3F5 3px 6px)"></i>Annual leave</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#E953FA 0 3px,#F087FC 3px 6px)"></i>Time off</span>
-        <span><i style="background:repeating-linear-gradient(135deg,#BD3C63 0 3px,#D17792 3px 6px)"></i>Sick leave</span>
-        <span><i style="background:#438A8C"></i>Remote work</span>
-        <span><i style="background:#343A40"></i>Business trip</span>
-        <span><i style="background:#438A8C;border-style:dashed;border-color:#fff"></i>Exception</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-ferie-1) 0 3px,var(--fascia-ferie-2) 3px 6px)"></i>Annual leave</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-permesso-1) 0 3px,var(--fascia-permesso-2) 3px 6px)"></i>Time off</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fascia-malattia-1) 0 3px,var(--fascia-malattia-2) 3px 6px)"></i>Sick leave</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--linea) 0 3px,var(--assenza-chiara) 3px 6px)"></i>Absences</span>
+        <span><i style="background:var(--tenue)"></i>Meetings and training</span>
+        <span><i style="background:var(--fascia-smart)"></i>Remote work</span>
+        <span><i style="background:var(--fascia-trasferta)"></i>Business trip</span>
+        <span><i style="background:var(--fascia-smart);border-style:dashed;border-color:#fff"></i>Exception</span>
         <span>✓ Completed</span>
         <span>✕ Cancelled</span>
         <span>⏸ On hold</span>
@@ -909,7 +925,7 @@ A tool to support team management and coordination.
       block with a <b>red border</b> is an activity that ends after its due date, or, with the
       <b>⚠</b> sign, an activity <b>out of sequence</b>: it starts before an activity it depends on
       is finished. The <b>⛓</b> sign marks an activity linked to others in the same project (see
-      "Linked activities" below). Hovering over a block shows total hours, hours per day, period, constraint and any overtime.</p>
+      "Linked activities" below). Hovering over a block shows total hours, hours per day, period and constraint.</p>
       <p>A person's special days show on their row: annual leave, time off, absences and sick leave
       for a whole day are hatched boxes covering the whole row, those of a few hours are a hatched
       strip at the bottom, remote work and business
@@ -918,8 +934,10 @@ A tool to support team management and coordination.
       work and business trips they have in the period shown.</p>
       <p>Under each person there is a thin <b>load bar</b>, one small column per day: <b>light
       blue</b> if the day is partly taken, <b>blue</b> if it is full, <b>orange</b> if it goes over
-      the available hours (this only happens with overtime). The colours are chosen to stay
-      distinguishable for colour-blind people too.</p>
+      the available hours or if that day is in overtime. Clicking the bar of a day (with editing
+      on) turns that person's overtime on or off for that day; clicking above the bar creates a
+      new activity instead. The colours are chosen to stay distinguishable for colour-blind
+      people too.</p>
       <p>At the top of the calendar, under the month, each week is shown with its number in the
       year (<b>W42</b>, ISO standard: Monday to Sunday), as in the Checks tables and the Load
       report.</p>
@@ -988,10 +1006,14 @@ A tool to support team management and coordination.
       overlapping activities split the hours in equal parts.</p>
       <p>If saving (or dragging in the calendar) an activity would make another one finish later,
       a notice lists which activities slip and until when, with three choices: <b>Accept the
-      delay</b>; <b>Overtime</b>, where the hours are added without moving anything, up to the
-      maximum set in Settings (those days show as over the limit and stay flagged in Checks); or
-      <b>Cancel</b>, which leaves everything as it was. If the maximum overtime is 0%, the
-      Overtime choice does not appear.</p>
+      delay</b>; <b>Overtime</b>, which turns overtime on only for the days where the other
+      activities lose hours (the notice lists them), up to the maximum set in Settings: those
+      days show as over the limit and stay flagged in Checks; or <b>Cancel</b>, which leaves
+      everything as it was. If the maximum overtime is 0%, the Overtime choice does not appear.
+      The same notice appears when saving a meeting or training: overtime applies only to the
+      people who would otherwise slip. Overtime is a decision about a single day, not about the
+      activity: you remove it (or add it by hand) by clicking the load bar of that day, and if
+      removing it makes some activity finish later you are told before confirming.</p>
       <h3>Linked activities</h3>
       <p>When a piece of work can only start after another — for instance design after a
       colleague's sizing calculations — link them with <b>Starts after</b> in the editor of the
@@ -1036,7 +1058,8 @@ A tool to support team management and coordination.
       on purpose, to show the warnings.</p>
       <h3>Moving and correcting</h3>
       <p>To <b>move</b> an activity that's already planned, drag it horizontally with the mouse:
-      it moves one day at a time. To make detailed changes, click the block.</p>
+      it moves one day at a time. To make detailed changes, click the block. Activities that are
+      already <b>completed, cancelled or on hold</b> can't be dragged: they stay where they are, and open with a click.</p>
       <p>If you complete or put on hold an activity <b>earlier</b> than planned, that person ends
       up with some free days. The program then asks whether you want to <b>bring forward the
       following activities</b>: it lists the ones that come after, with their dates and hours,
@@ -1236,8 +1259,7 @@ A tool to support team management and coordination.
       <b>Apply</b>.</p>
       <p>Since a day never goes over the available hours, days with too many hours assigned only
       come from <b>overtime</b>: they are deliberately flagged here so the work can be handed to
-      someone who has meanwhile become free. Applying a proposal takes the activity out of
-      overtime, because the new day or the colleague has free hours.</p>
+      someone who has meanwhile become free.</p>
       <h3>Timing</h3>
       <p>Four panels, all independent of the period shown in the calendar.</p>
       <ul>
@@ -1412,7 +1434,7 @@ A tool to support team management and coordination.
       <p>A note mentions the <span class="mono">backup</span> subfolder with the last 5 copies,
       and at the bottom you find who saved last and when.</p>
       <h3>Licence</h3>
-      <p>The program's version and the full text of the licence it's distributed under.</p>
+      <p>The program's version (the same one shown at the bottom right of every screen) and the full text of the licence it's distributed under.</p>
     </div>
 
     <div class="pannello" id="faq-en">
@@ -1447,8 +1469,8 @@ A tool to support team management and coordination.
       <p>If you don't explicitly assign one on the project's record, the program picks a stable
       one based on the number, so two different sessions of the program always show the same
       colour for the same project, without having to choose it by hand. The automatic colours
-      are blues, purples, light blues and greys, chosen to stay distinguishable for colour-blind
-      people too.</p>
+      are blues, purples, greys and one bright pink, all dark enough to keep the white text
+      readable, and chosen to stay distinguishable for colour-blind people too.</p>
     </div>
 
   </div>

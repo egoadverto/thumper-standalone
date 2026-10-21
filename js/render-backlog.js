@@ -83,7 +83,7 @@ function rendiBacklog(){
     <div class="pannello">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <h2 class="din" style="margin:0">${tr("Backlog")}</h2>
-        <span class="conteggio mono" style="margin:0">${tr("{0} elementi", totale)}</span>
+        <span class="conteggio mono" style="margin:0">${trN(totale, "1 elemento", "{0} elementi")}</span>
         <button class="btn primario" style="margin-left:auto" data-mod-backlog="">${tr("+ Nuovo elemento")}</button>
       </div>
       <p class="nota" style="margin:0 0 14px">${tr("Richieste, idee o attività fuori progetto, ancora senza commessa né data. “Promuovi” le trasforma in un'attività pianificata vera e propria.")}</p>

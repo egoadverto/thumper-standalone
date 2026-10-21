@@ -35,7 +35,7 @@ A tool to support team management and coordination.
 function chiediChiSei(primoAvvio){
   const elenco = personeOrdinate(true);
   finestra(tr("Chi sei?"),
-    `<div class="marchio din verticale"><svg class="logo grande" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#152029"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo"><b>Thumper</b><span>Micro Planner</span></span></div>
+    `<div class="marchio din verticale"><svg class="logo grande" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="9" stroke-linecap="round" fill="none"><path d="M16 34 L32 18" stroke="#182129"/><path d="M24 42 L52 14" stroke="#0F6E8C"/><path d="M32 50 L54 28" stroke="#C97A0A"/></g></svg><span class="marchio-testo"><b>Thumper</b><span>Micro Planner</span></span></div>
      <p style="margin:0 0 2px;text-align:center">${tr("Il nome firma le note che scrivi e il salvataggio del piano.")}</p>
      <p class="nota" style="margin:0 0 14px;text-align:center">${tr("Non è una password: serve a farsi riconoscere dai colleghi.")}</p>
      <div class="campo"><label for="lg-persona">Nome</label>

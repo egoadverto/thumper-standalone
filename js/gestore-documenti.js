@@ -349,7 +349,7 @@ function leggiNote(testo){
     if(m){ voci.push({quando:m[1], chi:m[2], testo:"", da:n, riga:riga}); }
     else if(voci.length && !/^#{1,6}\s/.test(riga)){
       const v = voci[voci.length - 1];
-      v.testo = (v.testo + "\n" + riga).trim();
+      v.testo = (v.testo + "\n" + riga.replace(/^\\(#{1,6}\s)/, "$1")).trim();   // toglie il "\" messo da scriviNota
     }
   });
   return voci.reverse();                                 // la piu' recente in alto
@@ -510,7 +510,8 @@ async function scriviNota(c, testo){
     return alert(tr("Non riesco a leggere il file appunti: la nota non è stata salvata.") + "\n" + err.message);
   }
 
-  const blocco = "\n### " + iso(new Date()) + " · " + AUTORE + "\n" + testo.trim() + "\n";
+  // una riga della nota che comincia con "# " sarebbe letta come titolo e spezzerebbe la nota: si protegge con "\"
+  const blocco = "\n### " + iso(new Date()) + " · " + AUTORE + "\n" + testo.trim().replace(/^(#{1,6}\s)/gm, "\\$1") + "\n";
   try{
     const controllo = await (await handle.getFile()).text();
     if(controllo !== vecchio){

@@ -31,7 +31,7 @@ A tool to support team management and coordination.
   --tenue:#5C6B76;
   --linea:#D3D9DE;
   --linea-forte:#B9C4CA;
-  --accento:#B5652D;
+  --accento:#A85D29;
   --accento-scuro:#8C4A20;
   --allarme:#B0293D;
   --allarme-tenue:#F9E4E7;
@@ -53,15 +53,32 @@ A tool to support team management and coordination.
   --festivo:#F3E9D6;
   --chiuso:#F6D2B8;
   --oggi:#C1701F;
+  /* fasce del calendario (assenze, smart working, trasferta): una sola definizione, usata dalle bande e dalla legenda */
+  --assenza-chiara:#E4E8EB;
+  --fascia-ferie-1:#C3EEF0;--fascia-ferie-2:#D5F3F5;--fascia-ferie-bordo:#92B3B4;
+  --fascia-malattia-1:#BD3C63;--fascia-malattia-2:#D17792;--fascia-malattia-bordo:#8E2D4A;
+  --fascia-permesso-1:#E953FA;--fascia-permesso-2:#F087FC;--fascia-permesso-bordo:#AF3EBC;
+  --fascia-smart:#438A8C;--fascia-smart-bordo:#2E6A6C;
+  --fascia-trasferta:#343A40;--fascia-trasferta-bordo:#14181C;
+  /* scala di carico delle tabelle (.q1-.q4) */
+  --carico-q1:#E6F0F3;--carico-q2:#CFE3E9;--carico-q3:#B2D3DC;--carico-q4:#F5B97F;
+  --attiva-tenue:#F3E7DB;
+  --chiusa-tenue:#EAF0EA;--chiusa:#3D5C42;
+  --selezione:#F1E2D2;
+  --allarme-bordo:#EDCDD1;
+  --opzione-migliore-bordo:#D8B98C;
   /* superfici "appena colorate" — un valore per ruolo, non uno per pannello */
   --superficie:#FAF8F5;         /* strisce strumenti, righe in hover, campi, colonne kanban */
   --superficie-tinta:#F5F1EA;   /* scheda attiva, righe di gruppo, hover sui nomi */
   --superficie-fredda:#F1F4F6;  /* hover sui pulsanti, campi disabilitati */
   --linea-tenue:#EFF1F2;        /* separatori di riga, più leggeri di --linea */
+  /* altezze dei controlli: due sole misure — compatta (barre, filtri, tabelle) e standard (moduli, finestre) */
+  --h-compatto:30px;
+  --h-standard:36px;
   --r:8px;
   --r-piccolo:4px;   /* chip, tag, pulsantini — var(--r) resta solo per pannelli/campi/finestre */
   --col:34px;
-  --colonna-nomi:250px;
+  --colonna-nomi:270px;
   --corsia:26px;
   --nastro:9px;
 }
@@ -70,12 +87,12 @@ html,body{height:100%}
 body{
   margin:0;background:var(--sfondo);color:var(--inchiostro);
   font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
-  font-size:13px;line-height:1.35;
+  font-size:12px;line-height:1.35;
   -webkit-font-smoothing:antialiased;
 }
 .din{font-family:Bahnschrift,"DIN Alternate","DIN Condensed","Segoe UI Semibold","Segoe UI",sans-serif;font-variation-settings:"wght" 600,"wdth" 87;letter-spacing:.02em}
 .mono{font-family:Consolas,"SF Mono","Roboto Mono","DejaVu Sans Mono",monospace;font-variant-numeric:tabular-nums}
-button,input,select,textarea{font-family:inherit;font-size:13px;color:inherit}
+button,input,select,textarea{font-family:inherit;font-size:12px;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accento);outline-offset:1px}
 
@@ -90,12 +107,12 @@ button{cursor:pointer}
   background:var(--carta);box-shadow:0 1px 0 rgba(var(--inchiostro-rgb),.05),0 3px 10px rgba(var(--inchiostro-rgb),.05);flex:0 0 auto;
 }
 .barra-sx{display:flex;align-items:stretch}
-.marchio b{font-size:15px;text-transform:uppercase;letter-spacing:.06em}
+.marchio b{font-size:14px;text-transform:uppercase;letter-spacing:.06em}
 .marchio span{font-size:10px;color:var(--tenue);text-transform:uppercase;letter-spacing:.1em}
 .schede{display:flex;align-items:stretch}
 .scheda{
   border:0;background:transparent;padding:0 16px;color:var(--tenue);
-  text-transform:uppercase;font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;font-size:12px;letter-spacing:.06em;
   border-bottom:2px solid transparent;border-radius:var(--r-piccolo) var(--r-piccolo) 0 0;
   flex:0 0 auto;white-space:nowrap;
 }
@@ -107,7 +124,7 @@ button{cursor:pointer}
 
 /* ---------- menu "altre azioni" in barra ---------- */
 .menu-altro{position:relative;align-self:center}
-#btn-altro{font-size:16px;font-weight:700;line-height:1;padding:5px 10px}
+#btn-altro{font-size:16px;font-weight:700;line-height:1;padding:0 10px}
 .menu-lista{
   position:absolute;top:calc(100% + 6px);right:0;min-width:200px;
   background:var(--carta);border:1px solid var(--linea-forte);border-radius:var(--r);
@@ -117,13 +134,13 @@ button{cursor:pointer}
 .menu-lista[hidden]{display:none}   /* "display:flex" sopra batte l'attributo hidden da solo: va rinforzato */
 .menu-lista .btn{
   border:0;box-shadow:none;background:none;text-align:left;justify-content:flex-start;
-  padding:8px 10px;border-radius:var(--r-piccolo);white-space:nowrap;
+  height:auto;padding:8px 10px;border-radius:var(--r-piccolo);white-space:nowrap;
 }
 .menu-lista .btn:hover{background:var(--superficie-fredda)}
 .voce-lingua{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px}
 .voce-lingua-eti{font-size:12px;color:var(--inchiostro)}
 .lingua-scelta{display:flex;border:1px solid var(--linea);border-radius:var(--r);overflow:hidden}
-.lingua-opt{border:0;background:var(--carta);color:var(--tenue);padding:4px 10px;font-size:11px;font-weight:600}
+.lingua-opt{border:0;background:var(--carta);color:var(--tenue);padding:4px 10px;font-size:12px;font-weight:600}
 .lingua-opt+.lingua-opt{border-left:1px solid var(--linea)}
 .lingua-opt:hover{background:var(--superficie-fredda)}
 .lingua-opt[aria-pressed="true"]{background:var(--accento);color:#fff}
@@ -135,7 +152,7 @@ button{cursor:pointer}
 }
 .sotto-scheda{
   border:0;background:transparent;padding:8px 14px;color:var(--tenue);
-  font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  font-size:12px;letter-spacing:.06em;text-transform:uppercase;
   border-bottom:2px solid transparent;margin-bottom:-1px;
 }
 .sotto-scheda:hover{color:var(--inchiostro);background:var(--superficie-tinta)}
@@ -143,18 +160,18 @@ button{cursor:pointer}
 
 .btn{
   border:1px solid var(--linea);background:var(--carta);border-radius:var(--r);
-  padding:5px 11px;color:var(--inchiostro);white-space:nowrap;box-shadow:0 1px 2px rgba(var(--inchiostro-rgb),.05);
-  text-decoration:none;display:inline-block;   /* .btn si usa anche su <a>: niente sottolineatura da link */
+  height:var(--h-compatto);padding:0 11px;color:var(--inchiostro);white-space:nowrap;box-shadow:0 1px 2px rgba(var(--inchiostro-rgb),.05);
+  text-decoration:none;display:inline-flex;align-items:center;justify-content:center;   /* .btn si usa anche su <a>: niente sottolineatura da link */
 }
 .btn:hover{background:var(--superficie-fredda);border-color:var(--tenue)}
-.btn.primario{background:var(--accento);border-color:var(--accento);color:#fff;box-shadow:0 2px 6px rgba(181,101,45,.28)}
+.btn.primario{background:var(--accento);border-color:var(--accento);color:#fff;box-shadow:0 2px 6px rgba(168,93,41,.28)}
 .btn.primario:hover{background:var(--accento-scuro)}
-.btn.pericolo{color:var(--allarme);border-color:#EDCDD1}
+.btn.pericolo{color:var(--allarme);border-color:var(--allarme-bordo)}
 .btn.pericolo:hover{background:var(--allarme-tenue)}
 .btn:disabled,.btn[disabled]{opacity:.45;cursor:not-allowed}
-.btn.piccolo{padding:5px 10px;font-size:12px;border-radius:var(--r-piccolo)}
+.btn.piccolo{padding:0 10px;font-size:12px;border-radius:var(--r-piccolo)}
 
-.stato{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--tenue);padding:0 4px}
+.stato{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tenue);padding:0 4px}
 .pallino{width:10px;height:10px;border-radius:50%;background:var(--positivo)}
 .pallino.modificato{background:var(--oggi)}
 .pallino.lettura{background:var(--tenue)}
@@ -163,10 +180,11 @@ button{cursor:pointer}
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:11px 18px;background:var(--superficie);box-shadow:inset 0 1px 0 rgba(var(--inchiostro-rgb),.04);flex:0 0 auto;
 }
-.strumenti label{font-size:11px;color:var(--tenue);font-weight:500}
+.strumenti label{font-size:12px;color:var(--tenue);font-weight:500}
 .strumenti input[type=date],.strumenti select,.strumenti input[type=number]{
-  border:1px solid var(--linea);border-radius:var(--r);padding:5px 8px;background:var(--carta);
+  border:1px solid var(--linea);border-radius:var(--r);height:var(--h-compatto);padding:0 8px;background:var(--carta);
 }
+.strumenti label.spunta{font-size:12px;font-weight:400}
 .divisore{width:1px;height:20px;background:var(--linea-forte)}
 
 .pagina{flex:1;overflow:auto;position:relative}
@@ -207,7 +225,7 @@ button{cursor:pointer}
 }
 /* settimane ISO (W42) fra mesi e giorni: banda da lunedì a domenica, separata come le colonne del lunedì */
 .settimane-test{position:relative;height:16px}
-.sett-testa{position:absolute;top:0;height:16px;padding:1px 5px;font-size:9.5px;color:var(--tenue);
+.sett-testa{position:absolute;top:0;height:16px;padding:1px 5px;font-size:10px;color:var(--tenue);
   border-left:1px solid var(--linea);overflow:hidden;white-space:nowrap}
 .giorni-test{position:relative;height:34px}
 .gt{
@@ -217,12 +235,12 @@ button{cursor:pointer}
 .gt.nonlav{background:var(--festivo)}
 .gt.fest{background:var(--chiuso)}
 .gt b{display:block;font-size:12px;font-weight:600}
-.gt span{display:block;font-size:9px;color:var(--tenue)}
+.gt span{display:block;font-size:10px;color:var(--tenue)}
 /* stesso esadecimale di --avviso-tenue per coincidenza, non per lo stesso significato
    (qui è "oggi", non "in sospeso"): resta un colore proprio, non va agganciato a quella
    variabile solo perché oggi coincidono */
 .gt.oggi{background:#FBEFD9}
-.gt.oggi b{color:var(--oggi)}
+.gt.oggi b{color:var(--accento-scuro)}
 
 .sfondo{position:absolute;inset:0;pointer-events:none}
 .col-nonlav{position:absolute;top:0;bottom:0;background:var(--festivo)}
@@ -242,28 +260,28 @@ button{cursor:pointer}
   font-size:10px;letter-spacing:.1em;background:var(--inchiostro);color:#fff;
   padding:2px 6px;border-radius:var(--r-piccolo);
 }
-.gruppo-nome{font-size:11px;letter-spacing:.03em;font-weight:600;color:var(--tenue)}
-.gruppo-conta{margin-left:auto;font-size:11px;color:var(--tenue)}
+.gruppo-nome{font-size:12px;letter-spacing:0;font-weight:600;color:var(--tenue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.gruppo-conta{margin-left:auto;font-size:10px;color:var(--tenue)}
 
 .persona-nome{display:flex;align-items:center;gap:6px}
-.persona-nome b{font-weight:600;font-size:13px}
-.tag{font-size:9.5px;padding:1px 4px;border:1px solid var(--linea-forte);border-radius:2px;color:var(--tenue)}
+.persona-nome b{font-weight:600;font-size:12px}
+.tag{font-size:10px;display:inline-flex;align-items:center;height:16px;padding:0 4px;border:1px solid var(--linea-forte);border-radius:2px;color:var(--tenue)}
 .persona-sub{font-size:10px;color:var(--tenue);margin-top:1px}
 
 .blocco{
   position:absolute;height:calc(var(--corsia) - 5px);border-radius:var(--r-piccolo);
   padding:0 6px;overflow:hidden;white-space:nowrap;color:#fff;
   display:flex;align-items:center;gap:6px;cursor:grab;
-  font-size:11px;box-shadow:0 1px 3px rgba(var(--inchiostro-rgb),.22);
+  font-size:12px;box-shadow:0 1px 3px rgba(var(--inchiostro-rgb),.22);
   transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
 }
 .blocco:hover{filter:brightness(1.08)}
 .blocco.tardi{box-shadow:0 1px 3px rgba(var(--inchiostro-rgb),.22),0 0 0 2px var(--allarme)}
 .blocco.fatta{opacity:.55}
 .blocco.fatta .cli{text-decoration:line-through}
-.blocco .segno{font-size:11px;font-weight:700;position:relative;z-index:1}
+.blocco .segno{font-size:12px;font-weight:700;position:relative;z-index:1}
 /* riunioni e formazione: data fissa, si aprono col clic ma non si trascinano */
-.blocco.evento{cursor:pointer}
+.blocco.evento{cursor:pointer;font-size:10px}   /* blocco di un solo giorno: il testo resta piccolo per far stare il tipo */
 /* dipendenza: un'unica icona neutra, uguale per chi viene prima e chi viene dopo */
 .blocco .segno.dip{font-weight:400;opacity:.9}
 .blocco .num,.blocco .cli,.blocco .ore{position:relative;z-index:1}
@@ -274,37 +292,42 @@ button{cursor:pointer}
 
 /* le assenze stanno sopra le barre: nei giorni di stop il lavoro non c'e' */
 .assenza{position:absolute;top:1px;bottom:calc(var(--nastro) + 3px);border-radius:var(--r-piccolo);z-index:4;
-  font-size:9.5px;overflow:hidden;color:#fff;font-weight:700;letter-spacing:.04em;
+  font-size:10px;overflow:hidden;color:#fff;font-weight:700;letter-spacing:.04em;
   text-shadow:0 1px 2px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;
   box-shadow:0 0 0 1px rgba(255,255,255,.7);
 }
 /* sfondo chiaro: testo scuro invece del bianco generico, altrimenti illeggibile */
-.assenza.ferie{background:repeating-linear-gradient(135deg,#C3EEF0 0 6px,#D5F3F5 6px 12px);border:1px solid #92B3B4;color:var(--inchiostro);text-shadow:none}
-.assenza.malattia{background:repeating-linear-gradient(135deg,#BD3C63 0 6px,#D17792 6px 12px);border:1px solid #8E2D4A}
+.assenza.ferie{background:repeating-linear-gradient(135deg,var(--fascia-ferie-1) 0 6px,var(--fascia-ferie-2) 6px 12px);border:1px solid var(--fascia-ferie-bordo);color:var(--inchiostro);text-shadow:none}
+.assenza.malattia{background:repeating-linear-gradient(135deg,var(--fascia-malattia-1) 0 6px,var(--fascia-malattia-2) 6px 12px);border:1px solid var(--fascia-malattia-bordo)}
 /* assenza "generica": grigio tratteggiato, testo scuro — distinto dal grigio pieno delle riunioni */
-.assenza.generica{background:repeating-linear-gradient(135deg,#D3D9DE 0 6px,#E4E8EB 6px 12px);border:1px solid #8A969F;color:var(--inchiostro);text-shadow:none}
-.assenza.permesso{background:repeating-linear-gradient(135deg,#E953FA 0 6px,#F087FC 6px 12px);
-  border:1px solid #AF3EBC;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.assenza.generica{background:repeating-linear-gradient(135deg,var(--linea) 0 6px,var(--assenza-chiara) 6px 12px);border:1px solid var(--neutro);color:var(--inchiostro);text-shadow:none}
+.assenza.permesso{background:repeating-linear-gradient(135deg,var(--fascia-permesso-1) 0 6px,var(--fascia-permesso-2) 6px 12px);
+  border:1px solid var(--fascia-permesso-bordo);text-shadow:0 1px 2px rgba(0,0,0,.4)}
 /* un'assenza a ore (permesso, ferie, assenza) occupa solo parte della giornata: fascia in basso
    come lo smart working, non in alto dove coprirebbe le attività. Una banda sopra quella di
    .fs-fascia (smart/trasferta, bottom:13px), non la stessa: se coincidono lo stesso giorno non si
    devono sovrapporre. La riga è più alta apposta quando ce n'è una (vedi render-piano.js). */
-.assenza.parziale{top:auto;bottom:26px;height:12px;font-size:9px}
+.assenza.parziale{top:auto;bottom:26px;height:12px;font-size:10px;line-height:1}
 
 .fs-fascia{position:absolute;height:12px;border-radius:var(--r-piccolo);z-index:3;overflow:hidden;
-  font-size:8.5px;font-weight:700;letter-spacing:.05em;color:#fff;white-space:nowrap;
+  font-size:10px;line-height:1;font-weight:700;letter-spacing:.05em;color:#fff;white-space:nowrap;
   display:flex;align-items:center;justify-content:center;
   text-shadow:0 1px 1px rgba(0,0,0,.45);box-shadow:0 0 0 1px rgba(255,255,255,.8)}
-.fs-fascia.smart{background:#438A8C;border:1px solid #2E6A6C}
-.fs-fascia.trasferta{background:#343A40;border:1px solid #14181C}
-.fs-fascia.deroga{background:#438A8C;border:1px dashed #fff;box-shadow:0 0 0 1px #2E6A6C}
-.fs-fascia.oltre{background:repeating-linear-gradient(135deg,#438A8C 0 5px,var(--allarme) 5px 10px);
+.fs-fascia.smart{background:var(--fascia-smart);border:1px solid var(--fascia-smart-bordo)}
+.fs-fascia.trasferta{background:var(--fascia-trasferta);border:1px solid var(--fascia-trasferta-bordo)}
+.fs-fascia.deroga{background:var(--fascia-smart);border:1px dashed #fff;box-shadow:0 0 0 1px var(--fascia-smart-bordo)}
+.fs-fascia.oltre{background:repeating-linear-gradient(135deg,var(--fascia-smart) 0 5px,var(--allarme) 5px 10px);
   border:1px solid var(--allarme);box-shadow:0 0 0 1px #fff,0 0 0 2px var(--allarme)}
+.piede-app{display:flex;align-items:center;gap:16px;flex:0 0 auto;padding:6px 18px;background:var(--carta);box-shadow:0 -1px 0 rgba(var(--inchiostro-rgb),.08)}
+.piede-app .legenda{flex:1 1 auto}
+.piede-app .versione{margin-left:auto;flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--tenue)}
 .legenda{display:flex;align-items:center;flex-wrap:wrap;row-gap:4px;gap:11px;font-size:10px;color:var(--tenue)}
 .legenda span{display:flex;align-items:center;gap:4px}
 .legenda i{width:11px;height:11px;border-radius:2px;border:1px solid rgba(0,0,0,.18)}
 
-.nastro{position:absolute;left:0;right:0;bottom:2px;height:var(--nastro)}
+.nastro{position:absolute;left:0;right:0;bottom:2px;height:var(--nastro);cursor:pointer}
+/* zona cliccabile più alta della barra (9 px), senza cambiarne l'aspetto */
+.nastro::before{content:"";position:absolute;left:0;right:0;top:-5px;height:5px}
 .n-cella{position:absolute;bottom:0;height:var(--nastro);background:rgba(255,255,255,.62);border-left:1px solid rgba(255,255,255,.85)}
 .n-carico{position:absolute;bottom:0;background:var(--carico-parz)}
 .n-carico.pieno{background:var(--carico-pieno)}
@@ -312,14 +335,14 @@ button{cursor:pointer}
 .n-limite{position:absolute;left:0;right:0;bottom:calc(var(--nastro) - 1px);height:1px;background:var(--linea-forte)}
 
 .vuoto-messaggio{padding:40px;text-align:center;color:var(--tenue)}
-.vuoto-messaggio b{display:block;font-size:15px;color:var(--inchiostro);margin-bottom:6px}
+.vuoto-messaggio b{display:block;font-size:14px;color:var(--inchiostro);margin-bottom:6px}
 
 /* ---------- tabelle e schede ---------- */
 h2{font-size:14px;text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px}
 h3,.h3{
   font-family:Bahnschrift,"DIN Alternate","DIN Condensed","Segoe UI Semibold","Segoe UI",sans-serif;
   font-variation-settings:"wght" 600,"wdth" 87;
-  font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue);margin:22px 0 8px;
+  font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue);margin:22px 0 8px;
   font-weight:700;display:block;
 }
 /* .h3: stessa regola di h3, per elementi che non possono essere un h3 (es. un <label> che
@@ -330,7 +353,7 @@ h3,.h3{
 .pannello{background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:14px;margin-bottom:16px}
 table{border-collapse:collapse;width:100%}
 th{
-  text-align:left;font-size:11px;letter-spacing:.01em;
+  text-align:left;font-size:12px;letter-spacing:.01em;
   color:var(--tenue);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--linea);
 }
 td{padding:8px 12px;border-bottom:1px solid var(--linea-tenue)}
@@ -346,15 +369,15 @@ tr:hover td.q0,tr:hover td.q1,tr:hover td.q2,tr:hover td.q3,tr:hover td.q4{box-s
 .tabella-editabile td{padding:6px 8px}
 .tabella-editabile td input:not([type=checkbox]),.tabella-editabile td select{
   width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--linea);border-radius:var(--r);
-  padding:6px 8px;background:var(--superficie);
+  height:var(--h-compatto);padding:0 8px;background:var(--superficie);
 }
 .tabella-editabile td input:not([type=checkbox]):focus,.tabella-editabile td select:focus{outline:none;border-color:var(--accento);background:var(--carta)}
 .tabella-editabile td input:not([type=checkbox]):disabled,.tabella-editabile td select:disabled{background:transparent;border-color:transparent;color:var(--tenue)}
-.q0{background:#F2F5F6;color:#9AA7B0}
-.q1{background:#E6F0F3}
-.q2{background:#CFE3E9}
-.q3{background:#B2D3DC}
-.q4{background:#F5B97F;color:var(--inchiostro);font-weight:700}
+.q0{background:var(--superficie-fredda);color:var(--tenue)}
+.q1{background:var(--carico-q1)}
+.q2{background:var(--carico-q2)}
+.q3{background:var(--carico-q3)}
+.q4{background:var(--carico-q4);color:var(--inchiostro);font-weight:700}
 .pastiglia{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:6px}
 .commessa-link{cursor:pointer}
 .commessa-link:hover .mono{text-decoration:underline}
@@ -365,34 +388,36 @@ tr:hover td.q0,tr:hover td.q1,tr:hover td.q2,tr:hover td.q3,tr:hover td.q4{box-s
 
 /* ---------- moduli ---------- */
 .campo{display:flex;flex-direction:column;gap:3px;margin-bottom:14px}
-.campo label{font-size:11px;color:var(--tenue);font-weight:500}
+.campo label{font-size:12px;color:var(--tenue);font-weight:500}
 .campo input,.campo select,.campo textarea{
   border:1px solid var(--linea);border-radius:var(--r);padding:8px 10px;background:var(--superficie);
   transition:border-color .15s ease,background .15s ease;
 }
 .campo input:focus,.campo select:focus,.campo textarea:focus{outline:none;border-color:var(--accento);background:var(--carta)}
-.aiuto{font-size:11px;color:var(--tenue)}
+.campo input:not([type=checkbox]):not([type=radio]),.campo select{height:var(--h-standard);padding-top:0;padding-bottom:0}
+.filtri .campo input:not([type=checkbox]):not([type=radio]),.filtri .campo select{height:var(--h-compatto)}   /* filtri delle liste: compatti come le barre */
+.aiuto{font-size:10px;color:var(--tenue)}
 .riga-campi{display:flex;gap:12px;flex-wrap:wrap}
 .riga-campi>*{flex:1 1 130px;min-width:0}
 .campo input,.campo select,.campo textarea{width:100%;min-width:0}
 .campo input[type=checkbox],.campo input[type=radio],.caselle input[type=checkbox]{width:auto;min-width:0;flex:0 0 auto}
 .pannello .campo input[type=number]{max-width:120px}   /* nei pannelli di Impostazioni i numeri hanno tutti la stessa larghezza, non quella della colonna */
-.campo label.spunta{display:flex;align-items:center;gap:8px;font-size:13px;
-  text-transform:none;letter-spacing:0;color:var(--inchiostro)}
+.campo label.spunta{display:flex;align-items:center;gap:8px;font-size:12px;
+  text-transform:none;letter-spacing:0;font-weight:400;color:var(--inchiostro)}
 .caselle{display:flex;flex-wrap:wrap;gap:10px}
-.caselle label{display:flex;align-items:center;gap:5px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--inchiostro)}
+.caselle label{display:flex;align-items:center;gap:5px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--inchiostro);font-weight:400}
 
 /* banner di scelta (slittamento / overtime): sopra a tutto, anche a una finestra aperta,
    che resta com'era sotto — il velo trasparente blocca solo i clic altrove finché non si sceglie */
 .velo-banner{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}
 .banner-scelta{background:var(--carta);border:1px solid var(--avviso-bordo);border-left:4px solid var(--avviso);border-radius:var(--r);
-  box-shadow:0 12px 32px rgba(var(--inchiostro-rgb),.28);padding:14px 16px;max-width:560px;width:100%;font-size:13px}
+  box-shadow:0 12px 32px rgba(var(--inchiostro-rgb),.28);padding:14px 16px;max-width:560px;width:100%;font-size:12px}
 .banner-scelta ul{margin:8px 0;padding-left:18px}
 .banner-scelta .nota{margin:0 0 10px}
 .bs-pulsanti{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 /* banner con un elenco di attività da spuntare (annullare/sospendere la catena a valle) */
 .bs-elenco{margin:8px 0 10px;max-height:40vh;overflow:auto}
-.bs-voce{display:flex;gap:8px;align-items:flex-start;margin:4px 0;font-size:13px}
+.bs-voce{display:flex;gap:8px;align-items:flex-start;margin:4px 0;font-size:12px}
 .velo{position:fixed;inset:0;background:rgba(var(--inchiostro-rgb),.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;overflow:auto;
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 /* dove la sfocatura non è supportata resta solo il velo scuro: nessun danno */
@@ -404,29 +429,32 @@ tr:hover td.q0,tr:hover td.q1,tr:hover td.q2,tr:hover td.q3,tr:hover td.q4{box-s
 .finestra .corpo-f{padding:6px 20px 20px}
 .finestra footer{padding:14px 20px;box-shadow:inset 0 1px 0 rgba(var(--inchiostro-rgb),.06);display:flex;gap:8px;justify-content:flex-end}
 .finestra footer .sinistra{margin-right:auto}
+.finestra .btn,.banner-scelta .btn,.campo .btn{height:var(--h-standard)}
+.finestra .btn.piccolo,.banner-scelta .btn.piccolo,.campo .btn.piccolo{height:var(--h-compatto)}
 
 .avviso{background:var(--avviso-tenue);border:1px solid var(--avviso-bordo);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;font-size:12px}
-.avviso b{display:block;margin-bottom:3px}
-.nota{font-size:11px;color:var(--tenue)}
+.avviso>b:first-child{display:block;margin-bottom:3px}   /* solo il titolo: un grassetto dentro la frase resta nella riga */
+.nota{font-size:10px;color:var(--tenue)}
 .colori{display:flex;flex-wrap:wrap;gap:5px}
 .colori button{width:24px;height:24px;border-radius:3px;border:2px solid transparent}
 .colori button[aria-pressed="true"]{border-color:var(--inchiostro)}
 /* ---------- campo di ricerca a discesa ---------- */
 .cerca{position:relative;display:inline-block}
-.cerca input{border:1px solid var(--linea-forte);border-radius:var(--r);padding:5px 7px;background:var(--carta);width:100%}
+.cerca input{border:1px solid var(--linea-forte);border-radius:var(--r);height:var(--h-compatto);padding:0 8px;background:var(--carta);width:100%}
 /* dentro una scheda (.campo, es. "Progetto" in Nuova attività) l'input di ricerca deve
    avere la stessa altezza, bordo e stato a fuoco di tutti gli altri campi lì dentro —
    non quello più compatto pensato per quando .cerca vive nella barra strumenti */
-.campo .cerca input{padding:8px 10px;background:var(--superficie);border-color:var(--linea)}
+.campo .cerca input{height:var(--h-standard);padding:0 10px;background:var(--superficie);border-color:var(--linea)}
 .campo .cerca input:focus{outline:none;border-color:var(--accento);background:var(--carta)}
+.filtri .campo .cerca input{height:var(--h-compatto)}
 .cb-lista{
   position:absolute;top:calc(100% + 2px);left:0;min-width:280px;max-height:270px;overflow:auto;
   background:var(--carta);border:1px solid var(--linea-forte);border-radius:var(--r);
   z-index:70;box-shadow:0 8px 24px rgba(var(--inchiostro-rgb),.18);
 }
 .cb-voce{padding:5px 9px;cursor:pointer;display:flex;gap:8px;align-items:baseline;white-space:nowrap}
-.cb-voce[aria-selected="true"],.cb-voce:hover{background:#F1E2D2}
-.cb-voce .cb-sotto{color:var(--tenue);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.cb-voce[aria-selected="true"],.cb-voce:hover{background:var(--selezione)}
+.cb-voce .cb-sotto{color:var(--tenue);font-size:10px;overflow:hidden;text-overflow:ellipsis}
 .cb-vuoto{padding:9px;color:var(--tenue);font-size:12px}
 .cb-azione{border-top:1px solid var(--linea);color:var(--accento-scuro);font-weight:600}
 /* con un campo di ricerca il menu a discesa non deve essere tagliato dal bordo: niente
@@ -436,18 +464,18 @@ tr:hover td.q0,tr:hover td.q1,tr:hover td.q2,tr:hover td.q3,tr:hover td.q4{box-s
 .finestra.con-lista{overflow:visible;max-height:none}
 .finestra.con-lista .corpo-f{overflow:visible}
 
-.chip{display:inline-block;font-size:10px;letter-spacing:.02em;font-weight:600;
-  padding:3px 9px;border-radius:20px;color:var(--tenue)}
-.chip.attiva{background:#F3E7DB;color:var(--accento-scuro)}
+.chip{display:inline-flex;align-items:center;height:20px;font-size:10px;letter-spacing:.02em;font-weight:600;
+  padding:0 9px;border-radius:20px;color:var(--tenue)}
+.chip.attiva{background:var(--attiva-tenue);color:var(--accento-scuro)}
 .chip.sospesa{background:var(--avviso-tenue);color:var(--avviso)}
-.chip.chiusa{background:#EAF0EA;color:#3D5C42}
-.chip.annullata,.chip.archiviata{background:var(--neutro-tenue);color:var(--neutro)}
+.chip.chiusa{background:var(--chiusa-tenue);color:var(--chiusa)}
+.chip.annullata,.chip.archiviata{background:var(--neutro-tenue);color:var(--tenue)}
 .chip.ritardo{background:var(--allarme-tenue);color:var(--allarme);font-weight:700}
 
 .filtri{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
 .filtri .campo{margin-bottom:0}
-.filtri label.spunta{min-height:36px}   /* alta quanto un campo: la spunta resta centrata rispetto ai select accanto */
-.conteggio{font-size:11px;color:var(--tenue);margin-left:auto;padding-bottom:7px}
+.filtri label.spunta{min-height:var(--h-compatto)}   /* alta quanto un campo: la spunta resta centrata rispetto ai select accanto */
+.conteggio{font-size:10px;color:var(--tenue);margin-left:auto;padding-bottom:7px}
 tr.spenta td{opacity:.55}
 .brindello{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--inchiostro);color:#fff;padding:9px 16px;border-radius:var(--r-piccolo);z-index:80;font-size:12px}
 @media (prefers-reduced-motion:no-preference){.brindello{animation:su .15s ease-out}}
@@ -464,14 +492,14 @@ tr.spenta td{opacity:.55}
   .sc-due{grid-template-columns:1fr}
   .sc-due>.sc-dx{border-left:0;padding-left:0;border-top:1px solid var(--linea);padding-top:14px}
 }
-.titoletto{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+.titoletto{font-size:12px;text-transform:uppercase;letter-spacing:.08em;
   color:var(--tenue);margin:0 0 8px}
 .sc-sezione+.sc-sezione{margin-top:20px}
 .sc-stat{display:flex;border:1px solid var(--linea);border-radius:var(--r);overflow:hidden}
 .sc-stat>div{flex:1 1 0;min-width:0;padding:8px 10px;border-left:1px solid var(--linea)}
 .sc-stat>div:first-child{border-left:0}
-.sc-stat .eti{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--tenue)}
-.sc-stat .val{font-size:17px;margin-top:2px;white-space:nowrap}
+.sc-stat .eti{font-family:Bahnschrift,"DIN Alternate","DIN Condensed","Segoe UI Semibold","Segoe UI",sans-serif;font-weight:600;letter-spacing:.08em;font-size:10px;text-transform:uppercase;color:var(--tenue)}
+.sc-stat .val{font-size:16px;margin-top:2px;white-space:nowrap}
 .sc-vuoto{border:1px dashed var(--linea-forte);border-radius:var(--r);
   padding:14px;color:var(--tenue);background:var(--superficie)}
 /* stesso sfondo/bordo/padding di .avviso: unico avviso "vero", solo con accento a
@@ -510,8 +538,8 @@ tr.spenta td{opacity:.55}
 .sc-nota-voce{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--linea);align-items:flex-start}
 .sc-nota-voce:first-child{border-top:0}
 .sc-nota-voce .quando{flex:0 0 110px;min-width:0}
-.sc-nota-voce .quando .mono{color:var(--tenue);font-size:11px}
-.sc-nota-voce .chi{font-weight:600;font-size:11px;word-break:break-word}
+.sc-nota-voce .quando .mono{color:var(--tenue);font-size:10px}
+.sc-nota-voce .chi{font-weight:600;font-size:12px;word-break:break-word}
 .sc-nota-voce .testo-nota{flex:1 1 auto;min-width:0;word-break:break-word}
 .btn-x{flex:0 0 auto;border:1px solid var(--linea);background:var(--carta);
   color:var(--tenue);cursor:pointer;border-radius:var(--r);font-size:12px;line-height:1;
@@ -524,27 +552,27 @@ tr.riga-sovra.aperta td{background:var(--superficie)}
 .aperta .freccia{transform:rotate(90deg)}
 tr.riga-opzioni td{padding:0;border-bottom:1px solid var(--linea-forte)}
 .opzioni-corpo{background:var(--superficie);padding:4px 12px 14px 34px}
-.opzioni-intro{font-size:11px;color:var(--tenue);margin:8px 0 10px}
+.opzioni-intro{font-size:10px;color:var(--tenue);margin:8px 0 10px}
 .carta-opzione{
   display:flex;align-items:flex-start;flex-wrap:wrap;gap:14px;background:var(--carta);border:1px solid var(--linea);
   border-radius:var(--r);padding:10px 12px;margin-bottom:8px;
 }
-.carta-opzione.migliore{border-color:#D8B98C}
+.carta-opzione.migliore{border-color:var(--opzione-migliore-bordo)}
 .carta-opzione.non-applicabile{background:var(--superficie)}
 .carta-opzione.non-applicabile .opz-proposta{color:var(--tenue)}
 .opz-commessa{flex:0 0 190px;display:flex;align-items:center;min-width:0;padding-top:2px}
 .opz-commessa b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.opz-commessa .cliente{color:var(--tenue);font-size:11px;display:block}
+.opz-commessa .cliente{color:var(--tenue);font-size:10px;display:block}
 .opz-margine{flex:0 0 110px;text-align:center;padding-top:2px}
-.opz-margine .num{font-size:15px;font-weight:700}
-.opz-margine .eti{font-size:10px;color:var(--tenue);text-transform:uppercase;letter-spacing:.05em}
+.opz-margine .num{font-size:14px;font-weight:700}
+.opz-margine .eti{font-family:Bahnschrift,"DIN Alternate","DIN Condensed","Segoe UI Semibold","Segoe UI",sans-serif;font-weight:600;letter-spacing:.08em;font-size:10px;color:var(--tenue);text-transform:uppercase;}
 .opz-proposta{flex:1 1 auto;font-size:12px;padding-top:2px}
 .opz-azione{flex:0 0 auto;min-width:70px;text-align:right;padding-top:2px}
 /* piu' di una proposta sulla stessa attivita' (data e/o persona): una riga per proposta, ognuna col suo Applica */
 .opz-proposte{flex:1 1 auto;display:flex;flex-direction:column;gap:8px}
 .proposta-riga{display:flex;align-items:center;gap:12px}
 .proposta-riga .testo{flex:1 1 auto;font-size:12px}
-.proposta-riga .etichetta-via{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--tenue);
+.proposta-riga .etichetta-via{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tenue);
   display:block;margin-bottom:1px}
 .pallino-commessa{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex:0 0 auto}
 
@@ -552,18 +580,18 @@ tr.riga-opzioni td{padding:0;border-bottom:1px solid var(--linea-forte)}
 .bk-tabellone{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 @media (max-width:860px){.bk-tabellone{grid-template-columns:1fr}}
 .bk-colonna{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--r);padding:10px;min-width:0}
-.bk-titolo{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.bk-titolo{display:flex;align-items:center;gap:8px;margin:0 0 10px;letter-spacing:.08em}
 .bk-lista{display:flex;flex-direction:column;gap:8px;min-height:36px}
 .bk-card{background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:9px 10px}
 .bk-card-alto{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
 .bk-card-titolo{font-weight:600;cursor:pointer}
 .bk-card-titolo:hover{text-decoration:underline}
 .bk-card-azioni{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
-.bk-card-azioni select{border:1px solid var(--linea);border-radius:var(--r);padding:4px 6px;font-size:12px;background:var(--carta)}
+.bk-card-azioni select{border:1px solid var(--linea);border-radius:var(--r);height:var(--h-compatto);padding:0 6px;font-size:12px;background:var(--carta)}
 /* stessi colori di .chip.ritardo/.sospesa/.archiviata: alta=urgente, media=in sospeso, bassa=in secondo piano */
 .chip.bk-pri-alta{background:var(--allarme-tenue);color:var(--allarme);font-weight:700}
 .chip.bk-pri-media{background:var(--avviso-tenue);color:var(--avviso)}
-.chip.bk-pri-bassa{background:var(--neutro-tenue);color:var(--neutro)}
+.chip.bk-pri-bassa{background:var(--neutro-tenue);color:var(--tenue)}
 
 /* ---------- stampa del report ---------- */
 .solo-stampa{display:none}   /* intestazione/piede pensati solo per il foglio, ridondanti a schermo */
@@ -576,7 +604,7 @@ tr.riga-opzioni td{padding:0;border-bottom:1px solid var(--linea-forte)}
   html, body{ height:auto }
   #app{ height:auto; overflow:visible }
   .pagina{ height:auto; overflow:visible; position:static }
-  .barra, .strumenti, .sotto-schede, .rep-comandi, .non-stampare,
+  .barra, .strumenti, .piede-app, .sotto-schede, .rep-comandi, .non-stampare,
   .velo, .brindello{ display:none !important }
   body, #app{ background:#fff }
   .contenuto{ max-width:none; padding:0 }
@@ -621,7 +649,7 @@ tr.riga-opzioni td{padding:0;border-bottom:1px solid var(--linea-forte)}
 .marchio.verticale{flex-direction:column;gap:12px;padding:0;margin:0 0 12px;text-align:center}
 .marchio.verticale .marchio-testo{align-items:center}
 .marchio.verticale b{font-size:22px}
-.marchio.verticale span{font-size:11px}
+.marchio.verticale span{font-size:10px}
 /* riga di intestazione dei gruppi negli elenchi */
 tr.riga-gruppo td{background:var(--superficie-tinta);padding-top:7px;padding-bottom:7px}
 tr.riga-gruppo .nota{margin-left:8px;font-size:10px}

@@ -40,7 +40,7 @@ function rendiCarichi(){
   S.gruppi.forEach(gr=>{
     const membri = persone.filter(p=>p.gruppoId===gr.id);
     if(!membri.length) return;
-    corpo += `<tr><td colspan="${sett.length+2}" style="background:#E4E9ED"><span class="sigla din">${gr.sigla}</span> <span class="din">${esc(gr.nome)}</span></td></tr>`;
+    corpo += `<tr class="riga-gruppo"><td colspan="${sett.length+2}"><span class="sigla din">${gr.sigla}</span> <span class="din">${esc(gr.nome)}</span></td></tr>`;
     membri.forEach(p=>{
       const mia = carichi.get(p.id) || new Map();
       let ggOltre = 0;
@@ -101,7 +101,7 @@ function rendiCarichi(){
     const margineTesto = x.margine == null ? tr("nessuna scadenza") : tr("{0} gg", x.margine);
     const numero = x.c ? esc(x.c.numero) : "–";
     const cliente = x.c && x.c.cliente ? esc(x.c.cliente) : "";
-    const intestazione = `<div class="opz-commessa"${x.c?` data-scheda="${x.c.id}"`:""}><span class="pallino-commessa" style="background:${x.c?coloreCommessa(x.c):"#9AA7B0"}"></span>
+    const intestazione = `<div class="opz-commessa"${x.c?` data-scheda="${x.c.id}"`:""}><span class="pallino-commessa" style="background:${x.c?coloreCommessa(x.c):"#8C9AA4"}"></span>
       <span><b class="mono">${numero}</b><span class="cliente">${cliente}</span></span></div>
       <div class="opz-margine"><div class="num din"${x.margine!=null&&x.margine<=2?' style="color:var(--allarme)"':""}>${margineTesto}</div><div class="eti">${tr("di margine")}</div></div>`;
     if(x.spostamento || x.sostituto){
