@@ -299,6 +299,10 @@ A tool to support team management and coordination.
       nessun giorno impegna più della metà della giornata (soglia impostabile), ha la precedenza:
       quella lunga già pianificata quel giorno prende solo le ore rimaste e finisce più tardi. Le
       altre attività che si sovrappongono si dividono le ore in parti uguali.</p>
+      <p>Il giorno in cui un'attività <b>finisce</b> e ne parte un'altra, ha la precedenza quella che
+      chiude: prende le sue ore e la nuova prende tutte le ore che restano, anche più di quante ne
+      chiederebbe di solito (ore al giorno o finestra), perché la persona quel giorno non resta
+      ferma e la fine dell'altra non slitta. Se la nuova è breve, passa avanti lei.</p>
       <p>Se salvando (o trascinando nel calendario) un'attività un'altra finirebbe più tardi,
       compare un avviso che elenca quali attività slittano e fino a quando, con tre scelte:
       <b>Accetta lo slittamento</b>; <b>Overtime</b>, che mette in overtime solo i giorni in cui
@@ -370,7 +374,7 @@ A tool to support team management and coordination.
       gruppo le aggiungi tutte insieme, e "Tutto l'organico" vale per tutti. Il progetto è
       facoltativo e si cerca come nell'editor delle attività.</p>
       <p>Riunioni e formazione hanno la precedenza su tutto: in quel giorno le attività si dividono
-      le ore che restano, e se per questo qualcuna finisce più tardi il programma te lo dice prima
+      le ore che restano (le ore di riunione sono sempre reali: l'efficienza scala solo il resto della giornata), e se per questo qualcuna finisce più tardi il programma te lo dice prima
       di salvare. Se superano le ore della giornata restano comunque intere, e il giorno risulta
       in sovraccarico in Verifiche. Nel calendario sono un blocco grigio (o del colore del
       progetto, se ne hanno uno); si aprono con un clic (in sola lettura una scheda con tipo,
@@ -657,8 +661,8 @@ A tool to support team management and coordination.
       <h3>Calendario e orario</h3>
       <ul>
         <li><b>Coefficiente di efficienza</b>: riduce le ore nominali di ogni giorno per ottenere
-        quanto tempo è davvero disponibile da pianificare (ore moltiplicate per il coefficiente).
-        Lascialo al 100% se non vuoi nessuna riduzione.</li>
+        quanto tempo è davvero disponibile da pianificare (ore moltiplicate per il coefficiente);
+        non vale per riunioni e formazione, che contano a ore reali. Lascialo al 100% se non vuoi nessuna riduzione.</li>
         <li><b>Overtime massimo</b>: quanto una giornata può superare le ore ordinarie quando, per
         non far slittare altre attività, si sceglie l'overtime (con 25%, al massimo 10 h su 8).
         Parte da 0%, cioè overtime non previsto.</li>
@@ -1004,6 +1008,10 @@ A tool to support team management and coordination.
       takes up more than half the working day (threshold can be set), takes precedence: the long
       one already planned that day only gets the remaining hours and finishes later. Other
       overlapping activities split the hours in equal parts.</p>
+      <p>On the day one activity <b>ends</b> and another starts, the one that is ending comes first: it
+      takes its hours and the new one takes all the hours that are left, even more than it would
+      usually ask for (hours per day or window), because the person doesn't sit idle that day and
+      the other activity's end doesn't slip. If the new one is short, it goes first.</p>
       <p>If saving (or dragging in the calendar) an activity would make another one finish later,
       a notice lists which activities slip and until when, with three choices: <b>Accept the
       delay</b>; <b>Overtime</b>, which turns overtime on only for the days where the other
@@ -1075,7 +1083,7 @@ A tool to support team management and coordination.
       name and stay as tags, which you remove with the ×; searching for a group adds all of its members
       at once, and "All staff" covers everyone. The project is optional and is searched as in the
       activity editor.</p>
-      <p>Meetings and training come first: on that day the activities share the hours that are left,
+      <p>Meetings and training come first: on that day the activities share the hours that are left (meeting hours are always real: efficiency only scales the rest of the day),
       and if this makes one of them end later the program tells you before saving. If they take more
       than the working day they stay whole anyway, and the day shows as overloaded in Checks. In the
       calendar they are a grey block (or in the project's colour, if they have one); they open with
@@ -1357,7 +1365,8 @@ A tool to support team management and coordination.
       <h3>Calendar and working time</h3>
       <ul>
         <li><b>Efficiency coefficient</b>: reduces each day's nominal hours to get how much time
-        is really available to plan (hours multiplied by the coefficient). Leave it at 100% if you
+        is really available to plan (hours multiplied by the coefficient); it doesn't apply to meetings
+        and training, which count in real hours. Leave it at 100% if you
         don't want any reduction.</li>
         <li><b>Maximum overtime</b>: how much a day can go over the ordinary hours when overtime
         is chosen so that other activities don't slip (with 25%, at most 10 h out of 8). It starts

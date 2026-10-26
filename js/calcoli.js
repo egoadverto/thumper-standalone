@@ -300,11 +300,15 @@ function ritmoFissato(a){
 }
 // breve = in nessun giorno chiede più della soglia delle ore nominali di quel giorno
 // (ore nominali, prima dell'efficienza: "metà di una giornata da 8 h" sono 4 h)
-function prioritaria(a){
+function sogliaOre(a){
   const k = primoGiornoUtile(a.personaId, a.dataInizio);
-  const soglia = sogliaBreve() * capacitaPersonaGiorno(persona(a.personaId), k) + 0.001;
+  return sogliaBreve() * capacitaPersonaGiorno(persona(a.personaId), k) + 0.001;
+}
+// breve "davvero": poche ore in tutto, indipendentemente dal ritmo — passa avanti anche a chi chiude
+function cortaInOre(a){ return (a.oreTotali||0) <= sogliaOre(a); }
+function prioritaria(a){
   const ritmo = ritmoFissato(a);
-  return ritmo != null ? ritmo <= soglia : (a.oreTotali||0) <= soglia;
+  return ritmo != null ? ritmo <= sogliaOre(a) : cortaInOre(a);
 }
 // distribuzioni di tutte le attività di una persona, prese da "elenco" (di solito
 // S.assegnazioni, o una sua copia con una modifica non ancora salvata): id -> (iso -> ore)
@@ -327,7 +331,7 @@ function simulaPersona(personaId, elenco){
     const inizio = base ? giorniBase[0] : a.dataInizio;
     if(!inizio || (limite && limite < inizio)) return;
     att.push({a, m, inizio, limite, base, fineBase: base ? giorniBase[giorniBase.length-1] : null,
-              debito:0, resto:Math.max(0, a.oreTotali||0), prior: prioritaria(a)});
+              debito:0, resto:Math.max(0, a.oreTotali||0), prior: prioritaria(a), corta: cortaInOre(a)});
   });
   if(!att.length) return out;
   // ordine di precedenza delle brevi: chi parte prima; a pari data, l'ordine di inserimento
@@ -364,14 +368,22 @@ function simulaPersona(personaId, elenco){
       const ev = oreEventi(personaId, k), cap = Math.max(0, capPiena - ev);
       const desiderio = new Map(vive.map(x => [x, voglio(x, k, ord)]));
       let libere = cap;
+      // chi oggi può chiudere (partita prima, il residuo ci sta) passa avanti a chi parte oggi, breve
+      // o no: le nuove vengono servite per ultime e prendono tutte le ore rimaste, anche oltre il
+      // loro ritmo (la persona non resta ferma), così la fine dell'altra non slitta
+      const chiude = x => x.inizio < k && x.resto <= desiderio.get(x) + 0.001;
+      const ultime = vive.some(chiude) ? vive.filter(x => x.inizio === k && !x.corta) : [];
       prior.forEach(x=>{
-        if(desiderio.has(x)) libere -= assegna(x, k, Math.min(desiderio.get(x), libere));
+        if(desiderio.has(x) && !ultime.includes(x)) libere -= assegna(x, k, Math.min(desiderio.get(x), libere));
       });
       // le altre si dividono il resto: in ordine di bisogno crescente, così chi ha bisogno di
       // meno della propria parte lascia la differenza alle successive
-      const altre = vive.filter(x => !x.prior).sort((x,y)=> desiderio.get(x) - desiderio.get(y));
+      const altre = vive.filter(x => !x.prior && !ultime.includes(x)).sort((x,y)=> desiderio.get(x) - desiderio.get(y));
       altre.forEach((x,i)=>{
         libere -= assegna(x, k, Math.min(desiderio.get(x), libere / (altre.length - i)));
+      });
+      ultime.sort((x,y)=> x.resto - y.resto).forEach((x,i)=>{
+        libere -= assegna(x, k, Math.min(x.resto, libere / (ultime.length - i)));
       });
     }
     cur = sommaGiorni(cur, 1);
@@ -487,7 +499,9 @@ function capacitaGiorno(personaId, isoStr){
     const t = trasfertaGiorno(personaId, isoStr);
     if(t){ const o = oreAssenza(t); cap = o == null ? 0 : Math.max(0, cap - o); }
   }
-  return cap * efficienza();
+  // riunioni e formazione non si scalano con l'efficienza (come un permesso): contano a ore reali
+  const ev = Math.min(oreEventi(personaId, isoStr), cap);
+  return ev + (cap - ev) * efficienza();
 }
 // mappa personaId -> (iso -> ore assegnate)
 function caricoPersone(){
