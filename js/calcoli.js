@@ -336,7 +336,8 @@ function simulaPersona(personaId, elenco){
   if(!att.length) return out;
   // ordine di precedenza delle brevi: chi parte prima; a pari data, l'ordine di inserimento
   const perPartenza = (x,y)=> x.inizio < y.inizio ? -1 : x.inizio > y.inizio ? 1 : 0;
-  const prior = att.filter(x => x.prior).sort(perPartenza);
+  // a pari partenza le brevi vere (poche ore in tutto) passano davanti a chi è "breve" solo per il ritmo
+  const prior = att.filter(x => x.prior).sort((x,y)=> perPartenza(x,y) || (y.corta - x.corta));
   const aperta = (x, k) => x.resto > 0.001 && !(x.limite && k > x.limite);
   // quanto vuole l'attività oggi: il ritmo della finestra (con il debito dei giorni in cui non
   // ci è stata), la deroga, oppure tutto il residuo se è a tempo pieno
