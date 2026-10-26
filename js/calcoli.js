@@ -374,7 +374,13 @@ function simulaPersona(personaId, elenco){
       const chiude = x => x.inizio < k && x.resto <= desiderio.get(x) + 0.001;
       const ultime = vive.some(chiude) ? vive.filter(x => x.inizio === k && !x.corta) : [];
       prior.forEach(x=>{
-        if(desiderio.has(x) && !ultime.includes(x)) libere -= assegna(x, k, Math.min(desiderio.get(x), libere));
+        if(!desiderio.has(x) || ultime.includes(x)) return;
+        let q = Math.min(desiderio.get(x), libere);
+        // una breve senza ritmo non si spezza: se oggi non ci sta intera ma in un giorno libero sì,
+        // parte intera il giorno dopo (spezzarla costa più del tempo che serve a chiuderla).
+        // shortcut: "giorno libero" = la capacità di oggi dopo le riunioni, non quella di un giorno qualunque
+        if(x.corta && !x.base && ritmoFissato(x.a) == null && !x.m.size && q < desiderio.get(x) - 0.001 && x.resto <= cap + 0.001) q = 0;
+        libere -= assegna(x, k, q);
       });
       // le altre si dividono il resto: in ordine di bisogno crescente, così chi ha bisogno di
       // meno della propria parte lascia la differenza alle successive
