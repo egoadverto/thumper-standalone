@@ -30,13 +30,6 @@ A tool to support team management and coordination.
 // Il file esportato è sempre in inglese, a prescindere dalla lingua dell'interfaccia: un file
 // scaricato non ha un pubblico che sceglie la lingua (vedi CLAUDE.md). Per lo stesso motivo le
 // date sono ISO aaaa-mm-gg, uguali per tutti — non itData(), che cambia con la lingua.
-// Excel valuta come formula una cella che inizia con = + - @ (o TAB/CR): la si prefissa con '.
-// I numeri, anche negativi (con virgola decimale), restano numeri.
-function cellaCsv(v){
-  let s = String(v);
-  if(/^[=+\-@\t\r]/.test(s) && !/^-?\d+(,\d+)?$/.test(s)) s = "'" + s;
-  return `"${s.replace(/"/g,'""')}"`;
-}
 function esportaCsv(){
   const MODI = {inizio:"Starts on", fine:"Due by", finestra:"Spread load"};
   const num = v => String(v).replace(".", ",");   // virgola decimale, come il CSV del report (Excel in italiano)
@@ -59,7 +52,7 @@ function esportaCsv(){
       predecessori(a).map(nomeAttivita).join(", "),
       a.note||""]);
   });
-  const csv = "\uFEFF" + righe.map(r=>r.map(cellaCsv).join(";")).join("\r\n");
+  const csv = "\uFEFF" + righe.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
   const b = new Blob([csv], {type:"text/csv;charset=utf-8"});
   const u = URL.createObjectURL(b);
   const a = document.createElement("a"); a.href=u; a.download="plan.csv"; a.click();
@@ -77,7 +70,7 @@ function esportaCsv(){
    ---------------------------------------------------------- */
 // testo dentro un campo iCal: \ ; , e a capo vanno protetti (RFC 5545, 3.3.11)
 function icsTesto(s){
-  return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r\n|\r|\n/g,"\\n");
+  return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
 }
 // righe oltre 75 byte vanno spezzate, con uno spazio all'inizio della continuazione
 function icsPiega(riga){

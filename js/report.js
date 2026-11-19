@@ -192,7 +192,8 @@ function reportCsv(){
             r.disp > 0 ? Math.round(r.sat*100) : "", r.oltre || 0,
             r.primoOltre || ""];   // ISO, come in plan.csv: il file è uguale in ogni lingua
   });
-  const testo = "\uFEFF" + [testa, ...corpo].map(r=>r.map(cellaCsv).join(";")).join("\r\n");
+  const virgolette = v => `"${String(v).replace(/"/g, '""')}"`;
+  const testo = "\uFEFF" + [testa, ...corpo].map(r=>r.map(virgolette).join(";")).join("\r\n");
   const b = new Blob([testo], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(b);
