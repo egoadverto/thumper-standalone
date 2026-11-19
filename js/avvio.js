@@ -372,6 +372,7 @@ function avvia(){
     else if(e.target.id==="cfg-smart"){ if(!modificabile) return; S.config.smartMaxSettimana = Math.max(0, parseInt(e.target.value)||0); segnaModificato(); rendi(); }
     else if(e.target.id==="cfg-prot-att"){
       if(!modificabile){ e.target.checked = !e.target.checked; return brindisi(tr("Attiva prima la modifica")); }
+      if(!e.target.checked && protetto() && !autorizza(tr("Disattivazione della protezione delle attività."))){ e.target.checked = true; return; }
       S.config.proteggiAttivita = e.target.checked;
       segnaModificato(); rendi();
     }

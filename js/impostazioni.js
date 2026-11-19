@@ -251,11 +251,11 @@ function rendiImpostazioni(){
         <tr><td>${tr("Eliminare una mansione, una tipologia o una festività")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Eliminare un elemento del backlog")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Applicare un calendario nazionale")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Eliminare una singola attività o annullare un progetto")}</td><td class="num-cella">${protetto()&&S.config.proteggiAttivita?"✓":"–"}</td></tr>
+        <tr><td>${tr("Eliminare una singola attività o una riunione")}</td><td class="num-cella">${protetto()&&S.config.proteggiAttivita?"✓":"–"}</td></tr>
       </tbody></table>
       <div class="campo" style="margin-top:10px"><label class="spunta">
         <input type="checkbox" id="cfg-prot-att" ${S.config.proteggiAttivita?"checked":""} ${modificabile?"":"disabled"}>
-        ${tr("Chiedi il codice anche per eliminare una singola attività o annullare un progetto")}</label>
+        ${tr("Chiedi il codice anche per eliminare una singola attività o una riunione")}</label>
         <span class="aiuto">${tr("È l'operazione più frequente: attivalo solo se serve davvero.")}</span></div>
     </div>
 `;

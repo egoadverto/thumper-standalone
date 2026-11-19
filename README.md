@@ -115,6 +115,7 @@ stile.css                — foglio di stile principale (variabili CSS per temi/
 dizionario.js            — stringhe di interfaccia IT→EN
 data.js (o dati.js)       — stato applicativo corrente (non tracciato in git)
 manuale.html              — manuale utente, pagina statica bilingue
+SICUREZZA.md              — verifica di sicurezza: esito, correzioni, punti aperti
 js/                        — tutta la logica applicativa, un file per area
 LICENSE                    — AGPL-3.0
 LICENZA-COMMERCIALE.md     — termini della licenza commerciale alternativa
@@ -123,6 +124,7 @@ LICENZA-COMMERCIALE.md     — termini della licenza commerciale alternativa
 ### Documentazione
 
 - [`manuale.html`](manuale.html) — manuale utente, in italiano e inglese
+- [`SICUREZZA.md`](SICUREZZA.md) — esito della verifica di sicurezza, correzioni applicate e punti aperti
 
 ### Contribuire
 
@@ -224,6 +226,7 @@ stile.css                — main stylesheet (CSS custom properties for themes/c
 dizionario.js            — UI strings, IT→EN
 data.js (or dati.js)      — current application state (not tracked in git)
 manuale.html              — user manual, static bilingual page
+SICUREZZA.md              — security review: outcome, fixes, open points (Italian)
 js/                        — all application logic, one file per area
 LICENSE                    — AGPL-3.0
 LICENZA-COMMERCIALE.md     — terms of the alternative commercial license
@@ -232,6 +235,7 @@ LICENZA-COMMERCIALE.md     — terms of the alternative commercial license
 ### Documentation
 
 - [`manuale.html`](manuale.html) — user manual, in Italian and English
+- [`SICUREZZA.md`](SICUREZZA.md) — security review outcome, fixes applied and open points (in Italian)
 
 ### Contributing
 

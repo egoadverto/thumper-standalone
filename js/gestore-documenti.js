@@ -320,7 +320,7 @@ function disegnaAlbero(nodi, base, liv){
     if(t === "interno" || t === "immagine")
       azione = `<button class="btn piccolo" data-vedi="${esc(n.rel)}">${tr("Apri")}</button>`;
     else if(link)
-      azione = `<a class="btn piccolo" href="${link}"${t === "pdf" ? ' target="_blank"' : ""}>${tr("Apri")}</a>`;
+      azione = `<a class="btn piccolo" href="${esc(link)}"${t === "pdf" ? ' target="_blank"' : ""}>${tr("Apri")}</a>`;
     else if(base)
       azione = `<button class="btn piccolo tenue" data-percorso="${esc(unisciPercorso(base, n.rel))}">${tr("Percorso")}</button>`;
     return `<div class="alb-riga">
