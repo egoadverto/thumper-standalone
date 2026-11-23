@@ -52,7 +52,6 @@ function datiDemo(){
       smartMaxSettimana:2,
       giorniArchiviazione:180,
       codice:null,
-      proteggiAttivita:false,
       oreGiorniSettimana:{1:8,2:8,3:8,4:8,5:8,6:8,0:8},
       margineGiorni:0,
       leadFornitura:[],

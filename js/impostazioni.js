@@ -226,7 +226,7 @@ function rendiImpostazioni(){
   sez.protezione = `
     <div class="pannello">
       <h2 class="din">Protezione</h2>
-      <p class="nota">${tr("Un codice richiesto prima delle azioni che cancellano dati o sostituiscono un elenco in blocco, elencate qui sotto. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.")}</p>
+      <p class="nota">${tr("Un codice richiesto prima delle azioni ad alto impatto sul piano, elencate qui sotto. Le altre azioni che cancellano dati chiedono una conferma. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.")}</p>
       <p style="margin:10px 0">
         <span class="chip ${protetto()?"attiva":"archiviata"}">
           ${protetto() ? tr("Protezione attiva") : tr("Protezione non attiva")}</span>
@@ -246,17 +246,12 @@ function rendiImpostazioni(){
         <tr><td>${tr("Svuota tutto")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Eliminare una persona")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Eliminare un progetto")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Eliminare un gruppo")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Togliere una persona dall'organico")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Eliminare una mansione, una tipologia o una festività")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Eliminare un elemento del backlog")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
+        <tr><td>${tr("Eliminare una singola attività")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
+        <tr><td>${tr("Eliminare una voce di Fornitura esterna o di Sviluppo interno")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
+        <tr><td>${tr("Sospendere o annullare un progetto")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
         <tr><td>${tr("Applicare un calendario nazionale")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
-        <tr><td>${tr("Eliminare una singola attività o annullare un progetto")}</td><td class="num-cella">${protetto()&&S.config.proteggiAttivita?"✓":"–"}</td></tr>
+        <tr><td>${tr("Cambiare o rimuovere la protezione")}</td><td class="num-cella">${protetto()?"✓":"–"}</td></tr>
       </tbody></table>
-      <div class="campo" style="margin-top:10px"><label class="spunta">
-        <input type="checkbox" id="cfg-prot-att" ${S.config.proteggiAttivita?"checked":""} ${modificabile?"":"disabled"}>
-        ${tr("Chiedi il codice anche per eliminare una singola attività o annullare un progetto")}</label>
-        <span class="aiuto">${tr("È l'operazione più frequente: attivalo solo se serve davvero.")}</span></div>
     </div>
 `;
   const cartelleAttive = RADICI.map(r=>`<tr><td class="mono">${esc(r.name)}</td>

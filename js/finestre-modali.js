@@ -554,7 +554,7 @@ function apriAttivita(id, pre){
 
   document.getElementById("f-annulla").onclick = chiudi;
   if(a) document.getElementById("f-elimina").onclick = ()=>{
-    const consenso = S.config.proteggiAttivita ? autorizza(tr("Eliminare questa attività?")) : confirm(tr("Eliminare questa attività?"));
+    const consenso = autorizza(tr("Eliminare questa attività?"));
     if(consenso){
       S.assegnazioni = S.assegnazioni.filter(x=>x.id!==a.id);
       dipendenzeValide(S.assegnazioni);   // chi dipendeva da lei non ne dipende più
@@ -1019,7 +1019,7 @@ function apriGruppo(id){
       return;
     }
     if(S.gruppi.length <= 1){ alert(tr("Deve restare almeno un gruppo.")); return; }
-    if(!autorizza(tr("Eliminare questo gruppo?"))) return;
+    if(!confirm(tr("Eliminare questo gruppo?"))) return;
     S.gruppi = S.gruppi.filter(x=>x.id!==g.id);
     S.persone.forEach(p=>{ p.gruppiExtra = (p.gruppiExtra||[]).filter(x=>x!==g.id); });
     segnaModificato(); chiudi(); rendi();
@@ -1051,8 +1051,8 @@ function apriMansione(id){
   finestra(m?"Modifica mansione":"Nuova mansione", corpo, piede);
   document.getElementById("m-annulla").onclick = chiudi;
   if(m) document.getElementById("m-elimina").onclick = ()=>{
-    if(membri.length && !autorizza(tr("{0} persone hanno questa mansione: resteranno senza. Procedere?", membri.length))) return;
-    if(!membri.length && !autorizza(tr("Eliminare questa mansione?"))) return;
+    if(membri.length && !confirm(tr("{0} persone hanno questa mansione: resteranno senza. Procedere?", membri.length))) return;
+    if(!membri.length && !confirm(tr("Eliminare questa mansione?"))) return;
     S.mansioni = S.mansioni.filter(x=>x.id!==m.id);
     S.persone.forEach(p=>{ if(p.mansioneId===m.id) p.mansioneId = null; });
     segnaModificato(); chiudi(); rendi();
@@ -1086,8 +1086,8 @@ function apriTipologia(id){
   finestra(t?"Modifica tipologia":"Nuova tipologia", corpo, piede);
   document.getElementById("t-annulla").onclick = chiudi;
   if(t) document.getElementById("t-elimina").onclick = ()=>{
-    if(usate.length && !autorizza(tr("{0} progetti hanno questa tipologia: resteranno senza. Procedere?", usate.length))) return;
-    if(!usate.length && !autorizza(tr("Eliminare questa tipologia?"))) return;
+    if(usate.length && !confirm(tr("{0} progetti hanno questa tipologia: resteranno senza. Procedere?", usate.length))) return;
+    if(!usate.length && !confirm(tr("Eliminare questa tipologia?"))) return;
     S.tipologie = S.tipologie.filter(x=>x.id!==t.id);
     S.commesse.forEach(c=>{ if(c.natura===t.id) c.natura = null; });
     segnaModificato(); chiudi(); rendi();
@@ -1152,7 +1152,7 @@ function apriFestivita(id){
   document.getElementById("fe-tipo").addEventListener("change", mostraCampi);
   document.getElementById("fe-annulla").onclick = chiudi;
   if(v) document.getElementById("fe-elimina").onclick = ()=>{
-    if(!autorizza(tr("Eliminare questa festività?"))) return;
+    if(!confirm(tr("Eliminare questa festività?"))) return;
     S.config.festivitaNazionali = S.config.festivitaNazionali.filter(x=>x.id!==v.id);
     invalida(); segnaModificato(); chiudi(); rendi();
   };
@@ -1200,7 +1200,7 @@ function apriBacklogItem(id){
   finestra(it?"Modifica elemento backlog":"Nuovo elemento backlog", corpo, piede);
   document.getElementById("bk-annulla").onclick = chiudi;
   if(it) document.getElementById("bk-elimina").onclick = ()=>{
-    if(!autorizza(tr("Eliminare questo elemento dal backlog?"))) return;
+    if(!confirm(tr("Eliminare questo elemento dal backlog?"))) return;
     S.backlog = S.backlog.filter(x=>x.id!==it.id);
     segnaModificato(); chiudi(); rendi();
   };
@@ -1274,7 +1274,7 @@ function apriPersona(id){
     const inOrganico = document.getElementById("p-attivo").checked;
     if(p && p.attivo !== false && !inOrganico){
       const n = S.assegnazioni.filter(x=>x.personaId===p.id).length;
-      if(!autorizza(tr("Togliendo {0} dall'organico le sue {1} attività spariscono dal calendario. I dati restano nel file. Procedere?", nome, n))) return;
+      if(!confirm(tr("Togliendo {0} dall'organico le sue {1} attività spariscono dal calendario. I dati restano nel file. Procedere?", nome, n))) return;
     }
     const dati = {nome, gruppoId:val("p-gruppo"), gruppiExtra:extra.filter(g=>g!==val("p-gruppo")),
                   mansioneId: val("p-mansione") || null,
@@ -1447,7 +1447,7 @@ function apriCommessa(id, pre){
     const cambia = !c || nuovoStato !== c.stato, data = campoData.value;
     if(cambia && nuovoStato !== "attiva" && !data){ alert(tr("Indica la data accanto allo stato.")); return; }
     // sospendere e annullare chiedono sempre conferma (con la protezione, il codice); chiudere
-    // solo il codice, se la protezione è attiva
+    // solo il popup di conferma, mai il codice
     const tipo = tipoFermo(nuovoStato);
     if(cambia && (nuovoStato === "sospesa" || nuovoStato === "annullata")){
       const n = tipo ? fermoProgetto(c, data, tipo).length : 0;   // un progetto nuovo non ha attività
@@ -1457,7 +1457,7 @@ function apriCommessa(id, pre){
           : (n ? tr("Sospendere il progetto con ultimo giorno di lavoro il {0}? Le {1} attività ancora aperte verranno sospese; riprenderle sarà manuale.", itData(data), n)
                : tr("Sospendere il progetto con ultimo giorno di lavoro il {0}?", itData(data))))) return;
     }
-    if(c && cambia && nuovoStato === "chiusa" && protetto() && !autorizza(tr("Chiudere il progetto il {0}?", itData(data)))) return;
+    if(c && cambia && nuovoStato === "chiusa" && !confirm(tr("Chiudere il progetto il {0}?", itData(data)))) return;
     // sospesa+dataFine: storia congelata, ore dopo liberate, non implica fatta. Riattivare è
     // manuale, attività per attività
     const persone = tipo ? applicaFermoProgetto(c, data, tipo) : [];
@@ -1587,8 +1587,7 @@ function apriEvento(id, pre){
     if(soloLei) S.eventi = eventiModificati(S.eventi, ev, {personeIds: ev.personeIds.filter(id => id !== da.id)});
     else {
       const msg = tr("Eliminare questa riunione o formazione?");
-      if(!da && !(S.config.proteggiAttivita ? autorizza(msg) : confirm(msg))) return;
-      if(da && S.config.proteggiAttivita && !autorizza(msg)) return;
+      if(!confirm(msg)) return;
       S.eventi = S.eventi.filter(x => x.id !== ev.id);
     }
     invalida(); segnaModificato(); chiudi(); rendi();
@@ -1728,6 +1727,7 @@ function apriAssenza(id){
   aggiornaTipo();
   document.getElementById("s-annulla").onclick = chiudi;
   if(a) document.getElementById("s-elimina").onclick = ()=>{
+    if(!confirm(tr("Eliminare questa giornata?"))) return;
     S.assenze = S.assenze.filter(x=>x.id!==a.id);
     invalida(); segnaModificato(); chiudi(); rendi();
   };

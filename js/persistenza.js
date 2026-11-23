@@ -92,18 +92,24 @@ function conflittoSalvataggio(vecchio){
   finestraConflittoSalvataggio(meta);
   return true;
 }
+// rilegge il file, e se qualcuno ha salvato nel frattempo si ferma (false, salvatoIl com'era);
+// altrimenti scrive. Il backup solo se c'è una cartella dove metterlo (conBackup)
+async function scrivi(testo, vecchioTimestamp, conBackup){
+  const vecchio = await manico.getFile().then(f=>f.text()).catch(()=>"");
+  if(conflittoSalvataggio(vecchio)){ S.meta.salvatoIl = vecchioTimestamp; return false; }
+  const w = await manico.createWritable();
+  await w.write(testo); await w.close();
+  if(conBackup) await backupPrimaDiScrivere(vecchio);
+  salvatoIlConosciuto = S.meta.salvatoIl;
+  modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
+  return true;
+}
 async function salva(){
   const vecchioTimestamp = S.meta.salvatoIl;   // ripristinato se il salvataggio si ferma senza scrivere nulla
   const testo = serializza();
   if(manico){
     try{
-      const vecchio = await manico.getFile().then(f=>f.text()).catch(()=>"");
-      if(conflittoSalvataggio(vecchio)){ S.meta.salvatoIl = vecchioTimestamp; return; }
-      const w = await manico.createWritable();
-      await w.write(testo); await w.close();
-      if(cartellaSalvataggio) await backupPrimaDiScrivere(vecchio);
-      salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
+      await scrivi(testo, vecchioTimestamp, true);
       return;
     }catch(err){
       // il file non si scrive più (rete caduta, permessi): lo si dice prima di chiedere un'altra cartella
@@ -116,13 +122,7 @@ async function salva(){
       const dir = await window.showDirectoryPicker({mode:"readwrite", id:"dati-planner"});
       manico = await dir.getFileHandle(nomeFileDati(), {create:true});
       cartellaSalvataggio = dir;
-      const vecchio = await manico.getFile().then(f=>f.text()).catch(()=>"");
-      if(conflittoSalvataggio(vecchio)){ S.meta.salvatoIl = vecchioTimestamp; return; }
-      const w = await manico.createWritable();
-      await w.write(testo); await w.close();
-      await backupPrimaDiScrivere(vecchio);
-      salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
+      await scrivi(testo, vecchioTimestamp, true);
       return;
     }catch(err){
       if(err && err.name === "AbortError"){ S.meta.salvatoIl = vecchioTimestamp; return; }
@@ -133,12 +133,7 @@ async function salva(){
         suggestedName: nomeFileDati(),
         types:[{description:"Dati Thumper", accept:{"text/javascript":[".js"]}}]
       });
-      const vecchio = await manico.getFile().then(f=>f.text()).catch(()=>"");
-      if(conflittoSalvataggio(vecchio)){ S.meta.salvatoIl = vecchioTimestamp; return; }
-      const w = await manico.createWritable();
-      await w.write(testo); await w.close();
-      salvatoIlConosciuto = S.meta.salvatoIl;
-      modificato = false; aggiornaStato(); brindisi(tr("Salvato in {0}", manico.name));
+      await scrivi(testo, vecchioTimestamp, false);
       return;
     }catch(err){
       if(err && err.name === "AbortError"){ S.meta.salvatoIl = vecchioTimestamp; return; }
@@ -190,6 +185,32 @@ function caricaTesto(testo){
     return false;                                  // il file non e' valido: non va usato per salvare
   }
 }
+// Valori non di testo di un file dati (colore, id, date, numeri, tipo) finiscono in attributi
+// HTML senza esc(): un file ricevuto da fuori e aperto con "Apri file…" non deve poterli usare per
+// iniettare markup. L'interfaccia non può produrre questi valori, quindi qui si riducono alla forma
+// ammessa. Gli id e le date si ripuliscono in modo deterministico (stessa stringa -> stesso
+// risultato), così i riferimenti fra record restano coerenti.
+function puliziaValoriNonTesto(s){
+  const CHIAVI_ID = ["id","personaId","commessaId","gruppoId","mansioneId","tipologiaId","ownerId","natura"];
+  const CHIAVI_ID_ELENCO = ["personeIds","gruppiExtra","dipendeDa"];
+  const CHIAVI_DATA = ["dataInizio","scadenza","dataFine","dal","al","giorno","apertura","consegnaCliente","chiusaIl","sospesaIl","creato"];
+  const CHIAVI_NUM = ["oreTotali","orePerGiorno","ore","oreGiorno","smartMax"];
+  const idPulito = v => typeof v === "string" ? v.replace(/[^\w.-]/g,"") : v;
+  const pulisci = r => {
+    if(!r || typeof r !== "object") return;
+    CHIAVI_ID.forEach(k => { if(k in r) r[k] = idPulito(r[k]); });
+    CHIAVI_ID_ELENCO.forEach(k => { if(Array.isArray(r[k])) r[k] = r[k].map(idPulito); });
+    CHIAVI_DATA.forEach(k => { if(typeof r[k] === "string") r[k] = r[k].replace(/[^0-9-]/g,""); });
+    CHIAVI_NUM.forEach(k => { if(typeof r[k] === "string"){ const n = parseFloat(r[k]); r[k] = isFinite(n) ? n : null; } });
+  };
+  ["gruppi","mansioni","tipologie","persone","commesse","assegnazioni","assenze","eventi","overtime","backlog"]
+    .forEach(k => (s[k]||[]).forEach(pulisci));
+  (s.config.chiusure||[]).forEach(pulisci);
+  (s.config.festivitaNazionali||[]).forEach(pulisci);
+  [s.config.leadFornitura, s.config.leadProduzione].forEach(l => (l||[]).forEach(v => { v.id = idPulito(v.id); }));
+  s.commesse.forEach(c => { if(c.colore && !/^#[0-9a-fA-F]{3,8}$/.test(c.colore)) c.colore = null; });
+  s.assenze.forEach(a => { if(!TIPI_GIORNO[a.tipo]) a.tipo = "generica"; });
+}
 function normalizza(x){
   const base = datiDemo();
   const s = Object.assign({}, base, x);
@@ -216,6 +237,7 @@ function normalizza(x){
   if(s.config.sogliaBreve == null) s.config.sogliaBreve = 0.5;
   delete s.config.oreStandard;
   delete s.config.oreGiornoDefault;
+  delete s.config.proteggiAttivita;   // la spunta non esiste più: eliminare una singola attività chiede sempre il codice
   delete s.config.patrono;   // sostituito da una voce in config.chiusure
   // festività nazionali: da elenco fisso (10 voci italiane + Pasquetta, con opt-out in
   // festivitaEscluse) a elenco personalizzabile come le mansioni — vedi CLAUDE.md. Un vecchio
@@ -308,6 +330,7 @@ function normalizza(x){
     if(!PRIORITA_BACKLOG[q.priorita]) q.priorita = "media";
     return q;
   });
+  puliziaValoriNonTesto(s);
   return s;
 }
 // archiviazione automatica: sposta in archivio le commesse chiuse da piu' del periodo impostato

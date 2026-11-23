@@ -27,6 +27,13 @@ A tool to support team management and coordination.
 /* ==========================================================
    11. CSV
    ========================================================== */
+// Cella CSV tra virgolette. Un testo che inizia con = + - @ (o tab/CR) verrebbe valutato come
+// formula da Excel/LibreOffice: si antepone un apice. I numeri (anche negativi, virgola decimale) restano tali.
+function cellaCsv(v){
+  let s = String(v);
+  if(/^[=+\-@\t\r]/.test(s) && !/^-?\d+([.,]\d+)?$/.test(s)) s = "'" + s;
+  return `"${s.replace(/"/g,'""')}"`;
+}
 // Il file esportato è sempre in inglese, a prescindere dalla lingua dell'interfaccia: un file
 // scaricato non ha un pubblico che sceglie la lingua (vedi CLAUDE.md). Per lo stesso motivo le
 // date sono ISO aaaa-mm-gg, uguali per tutti — non itData(), che cambia con la lingua.
@@ -52,7 +59,7 @@ function esportaCsv(){
       predecessori(a).map(nomeAttivita).join(", "),
       a.note||""]);
   });
-  const csv = "\uFEFF" + righe.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const csv = "\uFEFF" + righe.map(r=>r.map(cellaCsv).join(";")).join("\r\n");
   const b = new Blob([csv], {type:"text/csv;charset=utf-8"});
   const u = URL.createObjectURL(b);
   const a = document.createElement("a"); a.href=u; a.download="plan.csv"; a.click();

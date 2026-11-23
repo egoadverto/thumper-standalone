@@ -88,7 +88,7 @@ function rendiPiano(){
     const cls = ["gt"];
     if(g.fest) cls.push("fest"); else if(!g.lav) cls.push("nonlav");
     if(g.k===oggiK) cls.push("oggi");
-    const tit = g.fest ? ` title="${nomeFestivita(g.k)}"` : "";
+    const tit = g.fest ? ` title="${esc(nomeFestivita(g.k))}"` : "";
     testaGiorni += `<div class="${cls.join(" ")}" style="left:${i*C}px"${tit}><b class="mono">${g.dt.getDate()}</b><span>${inizialeGiorno(g.gs)}</span></div>`;
   });
 
@@ -256,8 +256,8 @@ function rendiPiano(){
   </div>`;
 
   const tab = document.getElementById("tabella");
-  // porta "oggi" in vista se presente
-  if(indice[oggiK] !== undefined) tab.scrollLeft = Math.max(0, indice[oggiK]*C - 200);
+  // nessuno scorrimento forzato: la finestra parte già dalla settimana scelta (V.inizio). Portare
+  // "oggi" in vista a ogni disegno faceva saltare la vista andando indietro di una settimana.
   // .sfondo e' assoluto dentro .tabella, che scorre su se stessa: "inset:0" lo alza solo
   // quanto il riquadro visibile, non quanto il contenuto scorribile. Senza un'altezza
   // esplicita sparisce scendendo oltre la prima schermata di righe.

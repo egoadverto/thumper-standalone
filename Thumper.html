@@ -29,8 +29,8 @@ A tool to support team management and coordination.
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thumper — Micro Planner</title>
 <script src="dizionario.js"></script>
-<script src="data.js" onload="window.PLANNER_DATA_FILE='data.js'"></script>
-<script src="dati.js" onload="if(!window.PLANNER_DATA_FILE)window.PLANNER_DATA_FILE='dati.js'" onerror="if(!window.PLANNER_DATA_FILE)window.PLANNER_DATA_MANCANTE=true"></script>
+<!-- dati.js solo se data.js manca: caricati tutti e due, il vecchio vincerebbe in memoria mentre si salva su data.js -->
+<script src="data.js" onload="window.PLANNER_DATA_FILE='data.js'" onerror="document.write('<script src=&quot;dati.js&quot; onload=&quot;window.PLANNER_DATA_FILE=\'dati.js\'&quot;><\/script>')"></script>
 <link rel="stylesheet" href="stile.css">
 </head>
 <body>
@@ -145,7 +145,6 @@ A tool to support team management and coordination.
 <script src="js/render-commesse.js"></script>
 <script src="js/render-backlog.js"></script>
 <script src="js/report.js"></script>
-<script src="js/stato-sessione-cartelle.js"></script>
 <script src="js/identificazione-utente.js"></script>
 <script src="js/gestore-documenti.js"></script>
 <script src="js/scheda-commessa.js"></script>

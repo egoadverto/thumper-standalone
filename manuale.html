@@ -292,8 +292,7 @@ A tool to support team management and coordination.
       <p>Nell'editor di un'attività già esistente, <b>Duplica attività</b> apre una nuova attività
       con la stessa persona e lo stesso progetto; tutto il resto (descrizione, ore, date, tipologia
       di sviluppo interno, "Parte dopo") è da compilare da capo, di proposito (utile per
-      pianificare il resto di un'attività sospesa). <b>Elimina</b> la cancella, chiedendo il codice se la protezione delle
-      attività è attiva.</p>
+      pianificare il resto di un'attività sospesa). <b>Elimina</b> la cancella, chiedendo il codice se la protezione è attiva.</p>
       <h3>Più attività nello stesso giorno</h3>
       <p>Una giornata non supera mai le ore della persona. Un'attività <b>breve</b>, cioè che in
       nessun giorno impegna più della metà della giornata (soglia impostabile), ha la precedenza:
@@ -714,13 +713,15 @@ A tool to support team management and coordination.
       voce di Sviluppo interno già usata da qualche attività, il programma chiede conferma e quelle
       attività restano senza tipologia.</p>
       <h3>Protezione</h3>
-      <p>Un codice di almeno 4 caratteri, richiesto prima delle azioni che cancellano o cambiano
-      molto: eliminare persone, progetti, gruppi, mansioni, tipologie o festività, togliere una
-      persona dall'organico, eliminare un elemento del backlog, applicare un calendario nazionale,
-      svuotare tutto. Con una spunta apposita viene chiesto anche per eliminare una singola attività
-      o annullare un progetto. La tabella <b>Azioni
-      protette</b> le elenca; i pulsanti permettono di attivare la protezione, cambiare il codice
-      o rimuoverla. Serve contro i danni involontari di un clic distratto, non contro un'azione
+      <p>Un codice di almeno 4 caratteri, richiesto prima delle azioni ad alto impatto sul piano:
+      svuotare tutto, eliminare una persona, un progetto o una singola attività, eliminare una voce
+      di Fornitura esterna o di Sviluppo interno, sospendere o annullare un progetto, applicare un
+      calendario nazionale, cambiare o rimuovere la protezione. Senza un codice impostato queste
+      azioni chiedono comunque una conferma. Le altre azioni che cancellano dati (assenze, riunioni
+      e formazione, gruppi, mansioni, tipologie, festività, chiusure aziendali, elementi del
+      backlog, note, cartelle collegate) e la chiusura di un progetto chiedono solo una conferma.
+      La tabella <b>Azioni protette</b> elenca quelle con il codice; i pulsanti permettono di
+      attivare la protezione, cambiare il codice o rimuoverla. Serve contro i danni involontari di un clic distratto, non contro un'azione
       volontaria: quindi non usare una password che usi anche altrove.</p>
       <h3>Archivio e dati</h3>
       <ul>
@@ -1004,7 +1005,7 @@ A tool to support team management and coordination.
       with the same person and project; everything else (description, hours, dates, internal
       development type, "Starts after") is to be filled in from scratch, on purpose (useful to
       plan the rest of an activity on hold).
-      <b>Delete</b> removes it, asking for the code if activity protection is on.</p>
+      <b>Delete</b> removes it, asking for the code if protection is on.</p>
       <h3>Several activities on the same day</h3>
       <p>A day never goes over the person's hours. A <b>short</b> activity, one that on no day
       takes up more than half the working day (threshold can be set), takes precedence: the long
@@ -1419,11 +1420,14 @@ A tool to support team management and coordination.
       development entry already used by some activities asks for confirmation, and those
       activities are left without a type.</p>
       <h3>Protection</h3>
-      <p>A code of at least 4 characters, required before actions that delete or change a lot:
-      deleting people, projects, groups, roles, types or holidays, taking someone off staff,
-      deleting a backlog item, applying a national calendar, clearing everything. With a dedicated
-      box it is also asked for when deleting a single activity or cancelling a project. The <b>Protected actions</b> table lists them; the
-      buttons let you turn protection on, change the code or remove it. It's there against the
+      <p>A code of at least 4 characters, required before the high-impact actions on the plan:
+      clearing everything, deleting a person, a project or a single activity, deleting an External
+      supply or Internal development entry, putting a project on hold or cancelling it, applying a
+      national calendar, changing or removing the protection. With no code set these actions still
+      ask for a confirmation. The other actions that delete data (leave, meetings and training,
+      groups, roles, types, holidays, company closures, backlog items, notes, linked folders) and
+      closing a project only ask for a confirmation. The <b>Protected actions</b> table lists
+      those with the code; the buttons let you turn protection on, change the code or remove it. It's there against the
       accidental damage of a careless click, not against a deliberate action: so don't use a
       password you also use elsewhere.</p>
       <h3>Archive and data</h3>

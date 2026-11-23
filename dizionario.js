@@ -265,15 +265,9 @@ const DIZ = {
 "Togliendo {0} dall'organico le sue {1} attività spariscono dal calendario. I dati restano nel file. Procedere?":"Taking {0} off the staff list hides their {1} activities from the calendar. The data stays in the file. Proceed?",
 "da salvare":"to be saved","Azioni protette":"Protected actions",
 "Eliminare una persona":"Delete a person","Eliminare un progetto":"Delete a project",
-"Eliminare un gruppo":"Delete a group","Togliere una persona dall'organico":"Take a person off the staff list",
-"Eliminare una mansione, una tipologia o una festività":"Delete a role, a type or a holiday",
-"Eliminare un elemento del backlog":"Delete a backlog item",
 "Applicare un calendario nazionale":"Apply a national calendar",
-"Eliminare una singola attività o annullare un progetto":"Delete a single activity or cancel a project",
-"Chiedi il codice anche per eliminare una singola attività o annullare un progetto":"Also ask for the code to delete a single activity or cancel a project",
-"È l'operazione più frequente: attivalo solo se serve davvero.":"It is the most frequent operation: enable it only if you really need to.",
 "Attiva la modifica in alto a destra per impostare il codice.":"Enable editing at the top right to set the code.",
-"Un codice richiesto prima delle azioni che cancellano dati o sostituiscono un elenco in blocco, elencate qui sotto. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.":"A code required before the actions listed below, which delete data or replace a list in one go. It guards against a careless click: anyone opening the file in a text editor can bypass it, so do not reuse a code you use elsewhere.",
+"Un codice richiesto prima delle azioni ad alto impatto sul piano, elencate qui sotto. Le altre azioni che cancellano dati chiedono una conferma. Serve contro il clic distratto: chi apre il file con un editor di testo lo aggira, quindi non usare un codice che usi anche altrove.":"A code required before the high-impact actions on the plan, listed below. The other actions that delete data ask for a confirmation. It guards against careless clicks: anyone opening the file in a text editor can get around it, so do not use a code you use elsewhere.",
 /* --- Lead time, date limite e modalità finestra --- */
 "Lead time e date limite":"Lead times and deadlines",
 "Margine di sicurezza (giorni lavorativi)":"Safety margin (working days)",
@@ -805,5 +799,15 @@ const DIZ = {
 "Includi riunioni e formazione":"Include meetings and training",
 "Lascialo spento se arrivano già dal calendario aziendale, per non averle due volte.":"Leave it off if they already come from the company calendar, so you don't get them twice.",
 "1 riunione o formazione.":"1 meeting or training.",
-"{0} riunioni o formazione.":"{0} meetings or training sessions."
+"{0} riunioni o formazione.":"{0} meetings or training sessions.",
+"Eliminare questa giornata?":"Delete this day?",
+"Scollegare la cartella {0}?":"Unlink the folder {0}?",
+"Dimenticare la cartella {0}?":"Forget the folder {0}?",
+"Eliminare questa chiusura?":"Delete this closure?",
+"Eliminare questa voce di fornitura esterna? Cambiano le date limite di tutte le attività.":"Delete this external supply entry? The deadlines of all activities will change.",
+"Eliminare questa voce di sviluppo interno?":"Delete this internal development entry?",
+"Eliminare una singola attività":"Delete a single activity",
+"Eliminare una voce di Fornitura esterna o di Sviluppo interno":"Delete an External supply or Internal development entry",
+"Sospendere o annullare un progetto":"Put a project on hold or cancel it",
+"Cambiare o rimuovere la protezione":"Change or remove the protection"
 };

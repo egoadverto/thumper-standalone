@@ -40,7 +40,7 @@ function rendiCarichi(){
   S.gruppi.forEach(gr=>{
     const membri = persone.filter(p=>p.gruppoId===gr.id);
     if(!membri.length) return;
-    corpo += `<tr class="riga-gruppo"><td colspan="${sett.length+2}"><span class="sigla din">${gr.sigla}</span> <span class="din">${esc(gr.nome)}</span></td></tr>`;
+    corpo += `<tr class="riga-gruppo"><td colspan="${sett.length+2}"><span class="sigla din">${esc(gr.sigla)}</span> <span class="din">${esc(gr.nome)}</span></td></tr>`;
     membri.forEach(p=>{
       const mia = carichi.get(p.id) || new Map();
       let ggOltre = 0;

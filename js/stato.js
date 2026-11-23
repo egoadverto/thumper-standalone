@@ -31,7 +31,7 @@ A tool to support team management and coordination.
 // vedi PLANNER_DATA in CLAUDE.md), mostrata in Impostazioni > Licenza. Politica di
 // aggiornamento in CLAUDE.md, sezione "Versione dell'app": semver, un push su main = un
 // rilascio, incremento a cura di chi fa il push in base a cosa contiene quel push.
-const VERSIONE_APP = "1.6.2";
+const VERSIONE_APP = "1.6.3";
 let S = null;
 let modificabile = false;
 let modificato = false;
@@ -41,6 +41,29 @@ let cartellaSalvataggio = null;   // handle della cartella di dati.js, solo per 
 // riuscito): se al momento di salvare il file su disco ne ha uno diverso, qualcun altro ha salvato
 // nel frattempo — vedi salva() in persistenza.js
 let salvatoIlConosciuto = null;
+
+/* ==========================================================
+   8quater. STATO DI SESSIONE — CARTELLA DELLA COMMESSA
+   ----------------------------------------------------------
+   Due cose separate, ed e' importante capire perche':
+   - IL PERCORSO (es. Z:\PROGETTI\25-0412 - Frimeccanica) lo scrive
+     l'utente e finisce in dati.js. Il browser non lo rivela
+     mai da solo. Serve per costruire i collegamenti che
+     aprono i file nel loro programma.
+   - IL PERMESSO di leggere la cartella lo concede l'utente
+     scegliendola con la finestra di Windows. Non e'
+     memorizzabile: scade quando si chiude la pagina.
+   ========================================================== */
+const CARTELLE = new Map();   // id commessa -> handle, vive solo in questa sessione
+const ALBERI   = new Map();   // id commessa -> elenco piatto dei file letti
+const RADICI   = [];          // le cartelle archivio collegate in questa sessione
+const PREFISSI = new Map();   // nome radice -> pezzo iniziale del percorso (es. Z:\PROGETTI)
+const DENTRO   = new Map();   // id commessa -> {radice, dentro} dove e' stata trovata
+let RADICI_SOSPESE = [];      // ricordate dal browser, in attesa di una conferma
+/* Chi firma le note. Vive solo in questa sessione e NON finisce in dati.js:
+   il nome di chi ha salvato il piano non deve firmare le note di un collega. */
+let AUTORE = "";
+
 const V = {
   vista:"piano",
   inizio:iso(inizioSettimana(new Date())),
@@ -64,11 +87,13 @@ function nuovoId(pref){ return pref + "_" + crypto.randomUUID(); }
 function persona(id){ return S.persone.find(p=>p.id===id); }
 function commessa(id){ return S.commesse.find(c=>c.id===id); }
 function gruppo(id){ return S.gruppi.find(g=>g.id===id); }
-function mansione(id){ return (S.mansioni||[]).find(m=>m.id===id); }
-function natura(id){ return (S.tipologie||[]).find(t=>t.id===id); }
-function festivita(id){ return (S.config.festivitaNazionali||[]).find(v=>v.id===id); }
-function backlogItem(id){ return (S.backlog||[]).find(x=>x.id===id); }
-function evento(id){ return (S.eventi||[]).find(x=>x.id===id); }
+// stessa ricerca per id su un elenco che in un vecchio dati.js può mancare
+function trova(arr, id){ return (arr||[]).find(x=>x.id===id); }
+function mansione(id){ return trova(S.mansioni, id); }
+function natura(id){ return trova(S.tipologie, id); }
+function festivita(id){ return trova(S.config.festivitaNazionali, id); }
+function backlogItem(id){ return trova(S.backlog, id); }
+function evento(id){ return trova(S.eventi, id); }
 // ore nominali configurate per quel giorno della settimana: la fonte è sempre questa tabella
 function oreGiornoSettimana(isoStr){
   const v = (S.config.oreGiorniSettimana || {})[d(isoStr).getDay()];

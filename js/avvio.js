@@ -232,14 +232,14 @@ function avvia(){
     const bkd = e.target.closest("[data-del-backlog]");
     if(bkd){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
-      if(!autorizza(tr("Eliminare questo elemento dal backlog?"))) return;
+      if(!confirm(tr("Eliminare questo elemento dal backlog?"))) return;
       S.backlog = S.backlog.filter(x=>x.id!==bkd.dataset.delBacklog);
       segnaModificato(); rendi(); return;
     }
     const rr = e.target.closest("[data-rimuovi-radice]");
-    if(rr){ rimuoviRadice(rr.dataset.rimuoviRadice); rendiImpostazioni(); return; }
+    if(rr){ if(!confirm(tr("Scollegare la cartella {0}?", rr.dataset.rimuoviRadice))) return; rimuoviRadice(rr.dataset.rimuoviRadice); rendiImpostazioni(); return; }
     const dr = e.target.closest("[data-dimentica-radice]");
-    if(dr){ dimenticaRadiceSospesa(dr.dataset.dimenticaRadice); rendiImpostazioni(); return; }
+    if(dr){ if(!confirm(tr("Dimenticare la cartella {0}?", dr.dataset.dimenticaRadice))) return; dimenticaRadiceSospesa(dr.dataset.dimenticaRadice); rendiImpostazioni(); return; }
     const rip = e.target.closest("[data-riprendi-radice]");
     if(rip){ riprendiRadiceSingola(rip.dataset.riprendiRadice).then(rendiImpostazioni); return; }
     if(e.target.id === "btn-aggiungi-radice"){ collegaRadice().then(rendiImpostazioni); return; }
@@ -274,7 +274,7 @@ function avvia(){
     if(bp) apriPersona(bp.dataset.modPersona || null);
     else if(bc) apriCommessa(bc.dataset.modCommessa || null);
     else if(ba) apriAssenza(ba.dataset.modAssenza || null);
-    else if(dc){ S.config.chiusure.splice(+dc.dataset.delChiusura,1); invalida(); segnaModificato(); rendi(); }
+    else if(dc){ if(!confirm(tr("Eliminare questa chiusura?"))) return; S.config.chiusure.splice(+dc.dataset.delChiusura,1); invalida(); segnaModificato(); rendi(); }
     else if(e.target.id==="ch-aggiungi"){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const dal=val("ch-dal"), al=val("ch-al");
@@ -308,13 +308,14 @@ function avvia(){
       if(!modificabile) return brindisi(tr("Attiva prima la modifica"));
       const bf = e.target.closest("[data-del-forn]");
       if(bf){
+        if(!autorizza(tr("Eliminare questa voce di fornitura esterna? Cambiano le date limite di tutte le attività."))) return;
         S.config.leadFornitura = (S.config.leadFornitura||[]).filter(v=>v.id!==bf.dataset.delForn);
         V.leadModifica.delete(bf.dataset.delForn);
       } else {
         const bp2 = e.target.closest("[data-del-prod]");
         const id = bp2.dataset.delProd;
         const usata = S.assegnazioni.filter(a=>a.tipologiaId===id).length;
-        if(usata && !confirm(tr("{0} attività usano questa tipologia: resteranno senza tempo di sviluppo interno. Procedere?", usata))) return;
+        if(!autorizza(usata ? tr("{0} attività usano questa tipologia: resteranno senza tempo di sviluppo interno. Procedere?", usata) : tr("Eliminare questa voce di sviluppo interno?"))) return;
         S.config.leadProduzione = (S.config.leadProduzione||[]).filter(v=>v.id!==id);
         S.assegnazioni.forEach(a=>{ if(a.tipologiaId===id) a.tipologiaId = null; });
         V.leadModifica.delete(id);
@@ -370,11 +371,6 @@ function avvia(){
       if(n) brindisi(tr(n===1 ? "{0} progetto archiviato" : "{0} progetti archiviati", n));
     }
     else if(e.target.id==="cfg-smart"){ if(!modificabile) return; S.config.smartMaxSettimana = Math.max(0, parseInt(e.target.value)||0); segnaModificato(); rendi(); }
-    else if(e.target.id==="cfg-prot-att"){
-      if(!modificabile){ e.target.checked = !e.target.checked; return brindisi(tr("Attiva prima la modifica")); }
-      S.config.proteggiAttivita = e.target.checked;
-      segnaModificato(); rendi();
-    }
     else if(e.target.id==="preset-nazionale"){ document.getElementById("preset-fuso").textContent = testoFusoPreset(e.target.value); }
     else if(e.target.id==="anteprima-calendario"){ V.calAnteprima = e.target.value; rendiImpostazioni(); }
     else if(e.target.id==="rep-ambito"){ V.repAmbito = e.target.value; rendi(); }
